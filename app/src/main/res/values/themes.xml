@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- アプリ本体のテーマ（既存のもの） -->
+    <style name="Theme.PromptTile" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- 起動時専用のスプラッシュテーマ（追加分） -->
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <!-- スプラッシュ画面の背景色 -->
+        <item name="windowSplashScreenBackground">#FFFFFF</item>
+
+        <!-- 中央に表示するアイコン（アプリのメインアイコンを指定） -->
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+
+        <!-- スプラッシュ終了後に、上の Theme.PromptTile に自動で切り替える設定 -->
+        <item name="postSplashScreenTheme">@style/Theme.PromptTile</item>
+    </style>
+
+</resources>

@@ -1,0 +1,1284 @@
+{
+  "prefix_templates": [
+    {
+      "name": "標準（アニメ調）",
+      "text": "masterpiece, best quality, ultra detailed, anime artwork"
+    },
+    {
+      "name": "写真・リアル系",
+      "text": "photorealistic, raw photo, 8k uhd, dslr, soft lighting"
+    },
+    {
+      "name": "イラスト調",
+      "text": "masterpiece, best quality, illustration, beautiful detailed"
+    },
+    {
+      "name": "シンプル",
+      "text": "masterpiece, best quality"
+    }
+  ],
+  "categories": [
+    {
+      "id": 1,
+      "nameJa": "人物（女性）",
+      "nameEn": "Character (Female)",
+      "words": [
+        { "wordEn": "solo", "wordJa": "単独" },
+        { "wordEn": "1girl", "wordJa": "女の子1人" },
+        { "wordEn": "2girls", "wordJa": "女の子2人" },
+        { "wordEn": "multiple girls", "wordJa": "複数の女の子" },
+
+        { "wordEn": "girl", "wordJa": "少女" },
+        { "wordEn": "woman", "wordJa": "女性" },
+        { "wordEn": "young woman", "wordJa": "若い女性" },
+        { "wordEn": "teenage girl", "wordJa": "ティーンエイジャーの女の子" },
+        { "wordEn": "adult woman", "wordJa": "大人女性" },
+
+        { "wordEn": "female focus", "wordJa": "女性主体" },
+        { "wordEn": "anime girl", "wordJa": "アニメ風の女の子" }
+      ]
+    },
+    {
+      "id": 2,
+      "nameJa": "人物（男性）",
+      "nameEn": "Character (Male)",
+      "words": [
+        { "wordEn": "solo", "wordJa": "単独" },
+        { "wordEn": "1boy", "wordJa": "男の子1人" },
+        { "wordEn": "2boys", "wordJa": "男の子2人" },
+        { "wordEn": "multiple boys", "wordJa": "複数の男の子" },
+
+        { "wordEn": "boy", "wordJa": "少年" },
+        { "wordEn": "man", "wordJa": "男性" },
+        { "wordEn": "young man", "wordJa": "若い男性" },
+        { "wordEn": "teenage boy", "wordJa": "ティーンエイジャーの男の子" },
+        { "wordEn": "adult man", "wordJa": "大人男性" },
+
+        { "wordEn": "male focus", "wordJa": "男性主体" },
+        { "wordEn": "anime boy", "wordJa": "アニメ風の男の子" }
+      ]
+    },
+    {
+      "id": 3,
+      "nameJa": "髪色",
+      "nameEn": "Hair Color",
+      "words": [
+        { "wordEn": "black hair", "wordJa": "黒髪" },
+        { "wordEn": "brown hair", "wordJa": "茶髪" },
+        { "wordEn": "blonde hair", "wordJa": "金髪" },
+        { "wordEn": "silver hair", "wordJa": "銀髪" },
+
+        { "wordEn": "white hair", "wordJa": "白髪" },
+        { "wordEn": "red hair", "wordJa": "赤髪" },
+        { "wordEn": "pink hair", "wordJa": "ピンク髪" },
+        { "wordEn": "purple hair", "wordJa": "紫髪" },
+
+        { "wordEn": "blue hair", "wordJa": "青髪" },
+        { "wordEn": "light blue hair", "wordJa": "水色髪" },
+        { "wordEn": "green hair", "wordJa": "緑髪" },
+        { "wordEn": "aqua hair", "wordJa": "アクア髪" },
+
+        { "wordEn": "orange hair", "wordJa": "オレンジ髪" },
+        { "wordEn": "gray hair", "wordJa": "灰色髪" },
+
+        { "wordEn": "two-tone hair", "wordJa": "ツートンカラー" },
+        { "wordEn": "multicolored hair", "wordJa": "多色髪" },
+        { "wordEn": "gradient hair", "wordJa": "グラデーション髪" },
+        { "wordEn": "streaked hair", "wordJa": "メッシュ入り" },
+
+        { "wordEn": "colored tips", "wordJa": "毛先カラー" },
+        { "wordEn": "inner hair color", "wordJa": "インナーカラー" },
+
+        { "wordEn": "hair highlights", "wordJa": "ハイライト" },
+        { "wordEn": "lowlights", "wordJa": "ローライト" },
+        { "wordEn": "balayage", "wordJa": "バレイヤージュ" },
+        { "wordEn": "ombre hair", "wordJa": "オンブレ髪" },
+
+        { "wordEn": "dyed hair", "wordJa": "染め髪" },
+        { "wordEn": "vibrant hair color", "wordJa": "鮮やかな髪色" },
+        { "wordEn": "pastel hair", "wordJa": "パステル髪" }
+      ]
+    },
+    {
+      "id": 4,
+      "nameJa": "髪型",
+      "nameEn": "Hair Style",
+      "words": [
+        { "wordEn": "short hair", "wordJa": "ショートヘア" },
+        { "wordEn": "medium hair", "wordJa": "ミディアムヘア" },
+        { "wordEn": "long hair", "wordJa": "ロングヘア" },
+        { "wordEn": "very long hair", "wordJa": "超ロングヘア" },
+
+        { "wordEn": "bob cut", "wordJa": "ボブカット" },
+        { "wordEn": "long bob", "wordJa": "ロングボブ" },
+        { "wordEn": "hime cut", "wordJa": "姫カット" },
+
+        { "wordEn": "twintails", "wordJa": "ツインテール" },
+        { "wordEn": "ponytail", "wordJa": "ポニーテール" },
+        { "wordEn": "low ponytail", "wordJa": "ローポニーテール" },
+        { "wordEn": "high ponytail", "wordJa": "ハイポニーテール" },
+        { "wordEn": "side ponytail", "wordJa": "サイドポニーテール" },
+
+        { "wordEn": "braided hair", "wordJa": "三つ編み" },
+        { "wordEn": "french braid", "wordJa": "フランス編み" },
+        { "wordEn": "braid", "wordJa": "編み込み" },
+        { "wordEn": "drill hair", "wordJa": "ドリルヘア" },
+
+        { "wordEn": "straight hair", "wordJa": "ストレートヘア" },
+        { "wordEn": "wavy hair", "wordJa": "ウェーブヘア" },
+        { "wordEn": "curly hair", "wordJa": "カーリーヘア" },
+        { "wordEn": "messy hair", "wordJa": "くしゃくしゃ髪" },
+
+        { "wordEn": "crew cut", "wordJa": "クルーカット" },
+        { "wordEn": "buzz cut", "wordJa": "バズカット" },
+        { "wordEn": "undercut", "wordJa": "アンダーカット" },
+        { "wordEn": "slicked-back hair", "wordJa": "オールバック" },
+        { "wordEn": "pompadour", "wordJa": "ポンパドール" },
+        { "wordEn": "spiky hair", "wordJa": "スパイクヘア" },
+        { "wordEn": "shaggy hair", "wordJa": "シャギーヘア" },
+        { "wordEn": "mohawk", "wordJa": "モヒカン" },
+
+        { "wordEn": "bangs", "wordJa": "前髪あり" },
+        { "wordEn": "side swept bangs", "wordJa": "横流し前髪" },
+        { "wordEn": "middle parted", "wordJa": "真ん中分け" },
+        { "wordEn": "side parted", "wordJa": "横分け" },
+
+        { "wordEn": "ahoge", "wordJa": "アホ毛" },
+        { "wordEn": "hair bun", "wordJa": "お団子ヘア" },
+        { "wordEn": "double bun", "wordJa": "ツインお団子" }
+      ]
+    },
+    {
+      "id": 5,
+      "nameJa": "目の色",
+      "nameEn": "Eye Color",
+      "words": [
+        { "wordEn": "blue eyes", "wordJa": "青い目" },
+        { "wordEn": "light blue eyes", "wordJa": "水色の目" },
+        { "wordEn": "red eyes", "wordJa": "赤い目" },
+
+        { "wordEn": "green eyes", "wordJa": "緑の目" },
+        { "wordEn": "emerald eyes", "wordJa": "エメラルド色の目" },
+        { "wordEn": "purple eyes", "wordJa": "紫の目" },
+        { "wordEn": "violet eyes", "wordJa": "バイオレットの目" },
+
+        { "wordEn": "golden eyes", "wordJa": "金色の目" },
+        { "wordEn": "amber eyes", "wordJa": "琥珀色の目" },
+        { "wordEn": "silver eyes", "wordJa": "銀色の目" },
+        { "wordEn": "gray eyes", "wordJa": "灰色の目" },
+
+        { "wordEn": "brown eyes", "wordJa": "茶色の目" },
+        { "wordEn": "dark brown eyes", "wordJa": "濃い茶色の目" },
+        { "wordEn": "black eyes", "wordJa": "黒い目" },
+        { "wordEn": "hazel eyes", "wordJa": "ヘーゼル色の目" },
+
+        { "wordEn": "pink eyes", "wordJa": "ピンクの目" },
+        { "wordEn": "aqua eyes", "wordJa": "アクア色の目" },
+        { "wordEn": "turquoise eyes", "wordJa": "ターコイズ色の目" },
+        { "wordEn": "yellow eyes", "wordJa": "黄色い目" },
+        { "wordEn": "orange eyes", "wordJa": "オレンジ色の目" },
+        { "wordEn": "heterochromia", "wordJa": "オッドアイ" },
+
+        { "wordEn": "white eyes", "wordJa": "白い目" },
+        { "wordEn": "multicolored eyes", "wordJa": "多色の目" },
+        { "wordEn": "rainbow eyes", "wordJa": "虹色の目" },
+        { "wordEn": "glowing eyes", "wordJa": "輝く目" }
+      ]
+    },
+    {
+      "id": 6,
+      "nameJa": "目の形・特徴",
+      "nameEn": "Eye Shape",
+      "words": [
+        { "wordEn": "large eyes", "wordJa": "大きな目" },
+        { "wordEn": "round eyes", "wordJa": "丸い目" },
+        { "wordEn": "small eyes", "wordJa": "小さな目" },
+        { "wordEn": "almond eyes", "wordJa": "アーモンド形の目" },
+
+        { "wordEn": "tsurime", "wordJa": "ツリ目" },
+        { "wordEn": "tareme", "wordJa": "タレ目" },
+
+        { "wordEn": "sharp eyes", "wordJa": "鋭い目" },
+        { "wordEn": "narrow eyes", "wordJa": "細い目" },
+        { "wordEn": "fox eyes", "wordJa": "狐目" },
+        { "wordEn": "cat eyes", "wordJa": "猫目" },
+
+        { "wordEn": "sanpaku eyes", "wordJa": "三白眼" },
+        { "wordEn": "doe eyes", "wordJa": "鹿のような目" },
+
+        { "wordEn": "sparkling eyes", "wordJa": "キラキラした目" },
+        { "wordEn": "sleepy eyes", "wordJa": "眠たげな目" },
+        { "wordEn": "half-closed eyes", "wordJa": "半目" },
+        { "wordEn": "empty eyes", "wordJa": "虚ろな目" },
+        { "wordEn": "piercing eyes", "wordJa": "鋭く見つめる目" },
+        { "wordEn": "long eyelashes", "wordJa": "長いまつ毛" },
+        { "wordEn": "thick eyelashes", "wordJa": "濃いまつ毛" }
+      ]
+    },
+    {
+      "id": 7,
+      "nameJa": "表情",
+      "nameEn": "Expression",
+      "words": [
+        { "wordEn": "smile", "wordJa": "笑顔" },
+        { "wordEn": "gentle smile", "wordJa": "優しい笑顔" },
+        { "wordEn": "soft smile", "wordJa": "柔らかい笑顔" },
+        { "wordEn": "wide smile", "wordJa": "満面の笑み" },
+
+        { "wordEn": "grin", "wordJa": "にやりと笑う" },
+        { "wordEn": "smirk", "wordJa": "得意げな笑み" },
+        { "wordEn": "playful smile", "wordJa": "いたずらっぽい笑顔" },
+        { "wordEn": "laughing", "wordJa": "笑っている" },
+
+        { "wordEn": "blush", "wordJa": "赤面" },
+        { "wordEn": "embarrassed", "wordJa": "照れ" },
+        { "wordEn": "flustered", "wordJa": "動揺・慌て" },
+        { "wordEn": "shy smile", "wordJa": "恥ずかしそうな笑顔" },
+        { "wordEn": "expressionless", "wordJa": "無表情" },
+
+        { "wordEn": "surprised", "wordJa": "驚き" },
+        { "wordEn": "shocked", "wordJa": "強い驚き" },
+        { "wordEn": "wide eyed", "wordJa": "目を見開く" },
+
+        { "wordEn": "confused", "wordJa": "困惑" },
+        { "wordEn": "nervous", "wordJa": "緊張している" },
+        { "wordEn": "smug", "wordJa": "どや顔" },
+
+        { "wordEn": "angry", "wordJa": "怒り" },
+        { "wordEn": "glaring", "wordJa": "睨む" },
+        { "wordEn": "pouting", "wordJa": "頰を膨らます" },
+
+        { "wordEn": "crying", "wordJa": "泣き顔" },
+        { "wordEn": "teary eyes", "wordJa": "涙目" },
+
+        { "wordEn": "serious", "wordJa": "真剣" },
+        { "wordEn": "sad", "wordJa": "悲しげ" },
+        { "wordEn": "sleepy", "wordJa": "眠そう" },
+        { "wordEn": "blank stare", "wordJa": "ぼーっとした視線" }
+      ]
+    },
+    {
+      "id": 8,
+      "nameJa": "制服・学校系",
+      "nameEn": "School Uniforms",
+      "words": [
+        { "wordEn": "school uniform", "wordJa": "スクールユニフォーム" },
+        { "wordEn": "sailor uniform", "wordJa": "セーラー服" },
+        { "wordEn": "blazer uniform", "wordJa": "ブレザー制服" },
+        { "wordEn": "school blazer", "wordJa": "スクールブレザー" },
+        { "wordEn": "loose socks", "wordJa": "ルーズソックス" },
+
+        { "wordEn": "hoodie under blazer", "wordJa": "ブレザーの下にパーカー" },
+        { "wordEn": "open cardigan", "wordJa": "前開きカーディガン" },
+
+        { "wordEn": "summer uniform", "wordJa": "夏服" },
+        { "wordEn": "winter uniform", "wordJa": "冬服" },
+        { "wordEn": "gakuran", "wordJa": "学ラン" },
+
+        { "wordEn": "pleated skirt", "wordJa": "プリーツスカート" },
+        { "wordEn": "checkered skirt", "wordJa": "チェック柄スカート" },
+        { "wordEn": "ribbon tie", "wordJa": "リボンタイ" },
+        { "wordEn": "necktie", "wordJa": "ネクタイ" },
+
+        { "wordEn": "white shirt", "wordJa": "白シャツ" },
+        { "wordEn": "cardigan", "wordJa": "カーディガン" },
+        { "wordEn": "sailor collar", "wordJa": "セーラーカラー" }
+      ]
+    },
+    {
+      "id": 9,
+      "nameJa": "トップス・上半身",
+      "nameEn": "Tops",
+      "words": [
+        { "wordEn": "white shirt", "wordJa": "白シャツ" },
+        { "wordEn": "collared shirt", "wordJa": "襟付きシャツ" },
+        { "wordEn": "blouse", "wordJa": "ブラウス" },
+        { "wordEn": "dress shirt", "wordJa": "ドレスシャツ" },
+
+        { "wordEn": "turtleneck", "wordJa": "タートルネック" },
+        { "wordEn": "open shirt", "wordJa": "前開きシャツ" },
+
+        { "wordEn": "t-shirt", "wordJa": "Tシャツ" },
+        { "wordEn": "crop top", "wordJa": "クロップトップ" },
+        { "wordEn": "tank top", "wordJa": "タンクトップ" },
+        { "wordEn": "camisole", "wordJa": "キャミソール" },
+
+        { "wordEn": "sweater", "wordJa": "セーター" },
+        { "wordEn": "hoodie", "wordJa": "パーカー" },
+        { "wordEn": "cardigan", "wordJa": "カーディガン" },
+        { "wordEn": "vest", "wordJa": "ベスト" },
+
+        { "wordEn": "oversized hoodie", "wordJa": "オーバーサイズパーカー" },
+        { "wordEn": "knit sweater", "wordJa": "ニットセーター" },
+        { "wordEn": "zip hoodie", "wordJa": "ジップパーカー" },
+
+        { "wordEn": "off shoulder", "wordJa": "オフショルダー" },
+        { "wordEn": "sleeveless", "wordJa": "ノースリーブ" },
+        { "wordEn": "tube top", "wordJa": "チューブトップ" },
+        { "wordEn": "long sleeves", "wordJa": "長袖" },
+        { "wordEn": "short sleeves", "wordJa": "半袖" }
+      ]
+    },
+    {
+      "id": 10,
+      "nameJa": "ボトムス・下半身",
+      "nameEn": "Bottoms",
+      "words": [
+        { "wordEn": "pleated skirt", "wordJa": "プリーツスカート" },
+        { "wordEn": "mini skirt", "wordJa": "ミニスカート" },
+        { "wordEn": "flared skirt", "wordJa": "フレアスカート" },
+
+        { "wordEn": "long skirt", "wordJa": "ロングスカート" },
+        { "wordEn": "pencil skirt", "wordJa": "タイトスカート" },
+        { "wordEn": "frilled skirt", "wordJa": "フリルスカート" },
+        { "wordEn": "high waisted skirt", "wordJa": "ハイウエストスカート" },
+
+        { "wordEn": "shorts", "wordJa": "ショートパンツ" },
+        { "wordEn": "hot pants", "wordJa": "ホットパンツ" },
+        { "wordEn": "denim shorts", "wordJa": "デニムショーツ" },
+
+        { "wordEn": "jeans", "wordJa": "ジーンズ" },
+        { "wordEn": "skinny jeans", "wordJa": "スキニージーンズ" },
+        { "wordEn": "slacks", "wordJa": "スラックス" },
+
+        { "wordEn": "wide pants", "wordJa": "ワイドパンツ" },
+        { "wordEn": "baggy pants", "wordJa": "バギーパンツ" },
+
+        { "wordEn": "cargo pants", "wordJa": "カーゴパンツ" },
+        { "wordEn": "yoga pants", "wordJa": "ヨガパンツ" },
+
+        { "wordEn": "leggings", "wordJa": "レギンス" }
+      ]
+    },
+    {
+      "id": 11,
+      "nameJa": "ドレス・ワンピース",
+      "nameEn": "Dresses",
+      "words": [
+        { "wordEn": "dress", "wordJa": "ドレス" },
+        { "wordEn": "one-piece dress", "wordJa": "ワンピース" },
+        { "wordEn": "sundress", "wordJa": "サンドレス" },
+        { "wordEn": "summer dress", "wordJa": "夏のワンピース" },
+
+        { "wordEn": "lolita dress", "wordJa": "ロリータドレス" },
+        { "wordEn": "gothic dress", "wordJa": "ゴシックドレス" },
+        { "wordEn": "elegant dress", "wordJa": "エレガントドレス" },
+        { "wordEn": "evening dress", "wordJa": "イブニングドレス" },
+
+        { "wordEn": "mini dress", "wordJa": "ミニドレス" },
+        { "wordEn": "long dress", "wordJa": "ロングドレス" },
+        { "wordEn": "flowing dress", "wordJa": "なびくドレス" },
+        { "wordEn": "frilled dress", "wordJa": "フリルドレス" },
+
+        { "wordEn": "princess dress", "wordJa": "プリンセスドレス" },
+        { "wordEn": "ball gown", "wordJa": "ボールガウン" },
+        { "wordEn": "off shoulder dress", "wordJa": "オフショルダードレス" },
+
+        { "wordEn": "wedding dress", "wordJa": "ウェディングドレス" },
+        { "wordEn": "lace dress", "wordJa": "レースドレス" },
+
+        { "wordEn": "strapless dress", "wordJa": "ストラップレスドレス" },
+        { "wordEn": "backless dress", "wordJa": "背中開きドレス" }
+      ]
+    },
+    {
+      "id": 12,
+      "nameJa": "水着（女性）",
+      "nameEn": "Swimwear (Female)",
+      "words": [
+        { "wordEn": "bikini", "wordJa": "ビキニ" },
+        { "wordEn": "micro bikini", "wordJa": "マイクロビキニ" },
+        { "wordEn": "string bikini", "wordJa": "紐ビキニ" },
+        { "wordEn": "side tie bikini", "wordJa": "サイドタイビキニ" },
+
+        { "wordEn": "one piece swimsuit", "wordJa": "ワンピース水着" },
+        { "wordEn": "school swimsuit", "wordJa": "スクール水着" },
+        { "wordEn": "competition swimsuit", "wordJa": "競泳水着" },
+
+        { "wordEn": "frilled bikini", "wordJa": "フリルビキニ" },
+        { "wordEn": "halter bikini", "wordJa": "ホルタービキニ" },
+        { "wordEn": "bandeau bikini", "wordJa": "チューブトップビキニ" },
+
+        { "wordEn": "high leg swimsuit", "wordJa": "ハイレグ水着" },
+        { "wordEn": "slingshot swimsuit", "wordJa": "スリングショット水着" },
+        { "wordEn": "monokini", "wordJa": "モノキニ" },
+        { "wordEn": "tankini", "wordJa": "タンキニ" },
+        { "wordEn": "striped bikini", "wordJa": "ボーダービキニ" },
+        { "wordEn": "sports bikini", "wordJa": "スポーツビキニ" },
+        { "wordEn": "wet swimsuit", "wordJa": "濡れた水着" },
+        { "wordEn": "swimsuit under clothes", "wordJa": "服の下に水着" },
+        { "wordEn": "see-through swimsuit", "wordJa": "透け感のある水着" }
+
+      ]
+    },
+    {
+      "id": 13,
+      "nameJa": "水着（男性）",
+      "nameEn": "Swimwear (Male)",
+      "words": [
+        { "wordEn": "swim trunks", "wordJa": "スイムトランクス" },
+        { "wordEn": "board shorts", "wordJa": "ボードショーツ" },
+        { "wordEn": "jammers", "wordJa": "ジャマーズ（競泳パンツ）" },
+
+        { "wordEn": "brief swimsuit", "wordJa": "ブーメラン水着" },
+        { "wordEn": "rash guard", "wordJa": "ラッシュガード" },
+        { "wordEn": "competitive swimsuit", "wordJa": "競泳水着" },
+        { "wordEn": "surf shorts", "wordJa": "サーフショーツ" },
+
+        { "wordEn": "wet swim trunks", "wordJa": "濡れた水着" },
+        { "wordEn": "open rash guard", "wordJa": "開いたラッシュガード" }
+      ]
+    },
+    {
+      "id": 14,
+      "nameJa": "下着（女性）",
+      "nameEn": "Underwear (Female)",
+      "words": [
+        { "wordEn": "bra", "wordJa": "ブラ" },
+        { "wordEn": "panties", "wordJa": "パンティ" },
+        { "wordEn": "bra and panties", "wordJa": "ブラとパンティ" },
+        { "wordEn": "matching underwear", "wordJa": "コーディネート下着" },
+
+        { "wordEn": "lingerie", "wordJa": "ランジェリー" },
+        { "wordEn": "lace lingerie", "wordJa": "レースランジェリー" },
+        { "wordEn": "sexy lingerie", "wordJa": "セクシーランジェリー" },
+        { "wordEn": "see-through lingerie", "wordJa": "透けランジェリー" },
+
+        { "wordEn": "babydoll", "wordJa": "ベビードール" },
+        { "wordEn": "negligee", "wordJa": "ネグリジェ" },
+        { "wordEn": "chemise", "wordJa": "シュミーズ" },
+        { "wordEn": "bralette", "wordJa": "ブラレット" },
+        { "wordEn": "silk lingerie", "wordJa": "シルクランジェリー" },
+        { "wordEn": "strapless bra", "wordJa": "ストラップレスブラ" },
+
+        { "wordEn": "garter belt", "wordJa": "ガーターベルト" },
+        { "wordEn": "thong", "wordJa": "Tバック" },
+        { "wordEn": "corset", "wordJa": "コルセット" },
+        { "wordEn": "sports bra", "wordJa": "スポーツブラ" },
+        { "wordEn": "pantyhose", "wordJa": "パンティストッキング" },
+        { "wordEn": "lace bra", "wordJa": "レースブラ" },
+        { "wordEn": "underwear only", "wordJa": "下着姿" }
+      ]
+    },
+    {
+      "id": 15,
+      "nameJa": "下着（男性）",
+      "nameEn": "Underwear (Male)",
+      "words": [
+        { "wordEn": "male underwear", "wordJa": "男性用下着" },
+        { "wordEn": "boxer briefs", "wordJa": "ボクサーブリーフ" },
+        { "wordEn": "briefs", "wordJa": "ブリーフ" },
+        { "wordEn": "trunks", "wordJa": "トランクス" },
+        { "wordEn": "boxers", "wordJa": "ボクサーパンツ" },
+        { "wordEn": "low rise briefs", "wordJa": "ローライズブリーフ" },
+        { "wordEn": "sports underwear", "wordJa": "スポーツ下着" },
+        { "wordEn": "tight boxers", "wordJa": "タイトなボクサーパンツ" },
+
+        { "wordEn": "underwear only", "wordJa": "下着姿" }
+      ]
+    },
+    {
+      "id": 16,
+      "nameJa": "コスプレ・特殊衣装",
+      "nameEn": "Costumes",
+      "words": [
+        { "wordEn": "maid outfit", "wordJa": "メイド服" },
+        { "wordEn": "classic maid", "wordJa": "クラシックメイド" },
+        { "wordEn": "witch costume", "wordJa": "魔女のコスチューム" },
+        { "wordEn": "nun outfit", "wordJa": "シスター服" },
+
+        { "wordEn": "kimono", "wordJa": "着物" },
+        { "wordEn": "yukata", "wordJa": "浴衣" },
+        { "wordEn": "cheongsam", "wordJa": "チャイナ服" },
+
+        { "wordEn": "military uniform", "wordJa": "軍服" },
+        { "wordEn": "idol costume", "wordJa": "アイドル衣装" },
+        { "wordEn": "magical girl", "wordJa": "魔法少女衣装" },
+
+        { "wordEn": "school idol outfit", "wordJa": "スクールアイドル衣装" },
+        { "wordEn": "shrine maiden", "wordJa": "巫女服" },
+        { "wordEn": "catgirl outfit", "wordJa": "猫耳コスチューム" },
+
+        { "wordEn": "bunny girl", "wordJa": "バニーガール" },
+        { "wordEn": "cheerleader", "wordJa": "チアリーダー" },
+        { "wordEn": "nurse outfit", "wordJa": "ナース服" },
+        { "wordEn": "police uniform", "wordJa": "警察官制服" },
+
+        { "wordEn": "armor", "wordJa": "鎧" },
+        { "wordEn": "fantasy armor", "wordJa": "ファンタジー鎧" },
+
+        { "wordEn": "princess dress", "wordJa": "プリンセスドレス" },
+        { "wordEn": "gothic lolita", "wordJa": "ゴシックロリータ" },
+        { "wordEn": "fantasy costume", "wordJa": "ファンタジー衣装" }
+      ]
+    },
+    {
+      "id": 17,
+      "nameJa": "靴下・ストッキング",
+      "nameEn": "Socks & Stockings",
+      "words": [
+        { "wordEn": "knee socks", "wordJa": "ニーソックス" },
+        { "wordEn": "thighhighs", "wordJa": "太もも丈ソックス" },
+        { "wordEn": "over knee socks", "wordJa": "オーバーニーソックス" },
+        { "wordEn": "loose socks", "wordJa": "ルーズソックス" },
+
+        { "wordEn": "ankle socks", "wordJa": "アンクルソックス" },
+        { "wordEn": "short socks", "wordJa": "短いソックス" },
+        { "wordEn": "white thighhighs", "wordJa": "白い太ももソックス" },
+        { "wordEn": "black thighhighs", "wordJa": "黒い太ももソックス" },
+        { "wordEn": "lace stockings", "wordJa": "レースストッキング" },
+
+        { "wordEn": "ribbed socks", "wordJa": "リブソックス" },
+        { "wordEn": "see-through stockings", "wordJa": "透けストッキング" },
+
+        { "wordEn": "mismatched thighhighs", "wordJa": "左右非対称ソックス" },
+
+        { "wordEn": "stockings", "wordJa": "ストッキング" },
+        { "wordEn": "pantyhose", "wordJa": "パンスト" },
+        { "wordEn": "fishnet stockings", "wordJa": "網タイツ" },
+        { "wordEn": "sheer stockings", "wordJa": "薄手ストッキング" },
+
+        { "wordEn": "garter belt", "wordJa": "ガーターベルト" },
+        { "wordEn": "garter straps", "wordJa": "ガーターストラップ" },
+        { "wordEn": "striped thighhighs", "wordJa": "ストライプ太ももソックス" },
+        { "wordEn": "colored thighhighs", "wordJa": "色付き太ももソックス" }
+      ]
+    },
+    {
+      "id": 18,
+      "nameJa": "靴",
+      "nameEn": "Footwear",
+      "words": [
+        { "wordEn": "loafers", "wordJa": "ローファー" },
+        { "wordEn": "mary janes", "wordJa": "メリージェーン" },
+        { "wordEn": "school shoes", "wordJa": "学生靴" },
+
+        { "wordEn": "sneakers", "wordJa": "スニーカー" },
+
+        { "wordEn": "high heels", "wordJa": "ハイヒール" },
+        { "wordEn": "platform heels", "wordJa": "厚底ヒール" },
+        { "wordEn": "pumps", "wordJa": "パンプス" },
+
+        { "wordEn": "boots", "wordJa": "ブーツ" },
+        { "wordEn": "knee high boots", "wordJa": "膝丈ブーツ" },
+        { "wordEn": "ankle boots", "wordJa": "アンクルブーツ" },
+        { "wordEn": "thigh high boots", "wordJa": "太もも丈ブーツ" },
+        { "wordEn": "combat boots", "wordJa": "コンバットブーツ" },
+        { "wordEn": "lace up boots", "wordJa": "編み上げブーツ" },
+
+        { "wordEn": "sandals", "wordJa": "サンダル" },
+        { "wordEn": "flip flops", "wordJa": "ビーチサンダル" },
+        { "wordEn": "running shoes", "wordJa": "ランニングシューズ" },
+        { "wordEn": "slippers", "wordJa": "スリッパ" },
+        { "wordEn": "geta", "wordJa": "下駄" },
+        { "wordEn": "barefoot sandals", "wordJa": "裸足風サンダル" },
+        { "wordEn": "platform boots", "wordJa": "厚底ブーツ" },
+        { "wordEn": "ballet flats", "wordJa": "バレエフラット" }
+      ]
+    },
+    {
+      "id": 19,
+      "nameJa": "アウター・上着",
+      "nameEn": "Outerwear",
+      "words": [
+        { "wordEn": "jacket", "wordJa": "ジャケット" },
+        { "wordEn": "blazer", "wordJa": "ブレザー" },
+        { "wordEn": "leather jacket", "wordJa": "レザージャケット" },
+        { "wordEn": "bomber jacket", "wordJa": "ボンバージャケット" },
+
+        { "wordEn": "hooded jacket", "wordJa": "フード付きジャケット" },
+        { "wordEn": "parka", "wordJa": "パーカーコート" },
+        { "wordEn": "cardigan", "wordJa": "カーディガン" },
+
+        { "wordEn": "coat", "wordJa": "コート" },
+        { "wordEn": "trench coat", "wordJa": "トレンチコート" },
+        { "wordEn": "long coat", "wordJa": "ロングコート" },
+        { "wordEn": "fur coat", "wordJa": "ファーコート" },
+        { "wordEn": "denim jacket", "wordJa": "デニムジャケット" },
+        { "wordEn": "military jacket", "wordJa": "ミリタリージャケット" },
+
+        { "wordEn": "winter coat", "wordJa": "冬用コート" },
+        { "wordEn": "open jacket", "wordJa": "前開きジャケット" },
+        { "wordEn": "oversized jacket", "wordJa": "オーバーサイズジャケット" },
+
+        { "wordEn": "school blazer", "wordJa": "学校ブレザー" },
+        { "wordEn": "hooded cloak", "wordJa": "フード付きマント" },
+
+        { "wordEn": "cloak", "wordJa": "マント" },
+        { "wordEn": "cape", "wordJa": "ケープ" },
+        { "wordEn": "shawl", "wordJa": "ショール" }
+      ]
+    },
+    {
+      "id": 20,
+      "nameJa": "帽子・ヘッドウェア",
+      "nameEn": "Headwear",
+      "words": [
+        { "wordEn": "beret", "wordJa": "ベレー帽" },
+        { "wordEn": "cap", "wordJa": "キャップ" },
+        { "wordEn": "baseball cap", "wordJa": "野球帽" },
+
+        { "wordEn": "beanie", "wordJa": "ニット帽" },
+        { "wordEn": "military cap", "wordJa": "軍帽" },
+        { "wordEn": "hood", "wordJa": "フード" },
+
+        { "wordEn": "witch hat", "wordJa": "魔女帽子" },
+        { "wordEn": "wizard hat", "wordJa": "魔法使い帽子" },
+        { "wordEn": "straw hat", "wordJa": "麦わら帽子" },
+
+        { "wordEn": "headband", "wordJa": "ヘッドバンド" },
+        { "wordEn": "hair ribbon", "wordJa": "髪リボン" },
+        { "wordEn": "bow headband", "wordJa": "リボンヘッドバンド" },
+
+        { "wordEn": "cat ear hood", "wordJa": "猫耳フード" },
+        { "wordEn": "bunny ear hood", "wordJa": "うさ耳フード" },
+        { "wordEn": "animal ears headband", "wordJa": "動物耳ヘッドバンド" },
+        { "wordEn": "maid headband", "wordJa": "メイドカチューシャ" },
+        { "wordEn": "flower crown", "wordJa": "花冠" },
+        { "wordEn": "crown", "wordJa": "王冠" },
+        { "wordEn": "tiara", "wordJa": "ティアラ" },
+
+        { "wordEn": "horned headpiece", "wordJa": "角付きヘッドピース" },
+        { "wordEn": "halo", "wordJa": "天使の輪" }
+      ]
+    },
+    {
+      "id": 21,
+      "nameJa": "服装素材・ディテール",
+      "nameEn": "Fabric & Details",
+      "words": [
+        { "wordEn": "lace trim", "wordJa": "レース縁取り" },
+        { "wordEn": "frills", "wordJa": "フリル" },
+        { "wordEn": "ruffles", "wordJa": "ラッフル" },
+        { "wordEn": "ribbon", "wordJa": "リボン" },
+
+        { "wordEn": "bow", "wordJa": "リボン結び" },
+        { "wordEn": "necktie", "wordJa": "ネクタイ" },
+        { "wordEn": "pleats", "wordJa": "プリーツ" },
+        { "wordEn": "embroidery", "wordJa": "刺繍" },
+
+        { "wordEn": "sheer fabric", "wordJa": "透け素材" },
+        { "wordEn": "see through", "wordJa": "シースルー" },
+        { "wordEn": "leather", "wordJa": "レザー" },
+        { "wordEn": "silk", "wordJa": "シルク" },
+
+        { "wordEn": "fur trim", "wordJa": "ファー縁取り" },
+        { "wordEn": "buttons", "wordJa": "ボタン" },
+        { "wordEn": "zipper", "wordJa": "ジッパー" },
+
+        { "wordEn": "velvet", "wordJa": "ベルベット" },
+        { "wordEn": "glossy", "wordJa": "光沢素材" },
+        { "wordEn": "satin", "wordJa": "サテン" },
+        { "wordEn": "denim", "wordJa": "デニム" },
+
+        { "wordEn": "lace", "wordJa": "レース" },
+        { "wordEn": "transparent fabric", "wordJa": "透明素材" },
+        { "wordEn": "puffy sleeves", "wordJa": "パフスリーブ" },
+
+        { "wordEn": "metallic fabric", "wordJa": "メタリック素材" },
+        { "wordEn": "latex", "wordJa": "ラテックス素材" },
+        { "wordEn": "wet clothes", "wordJa": "濡れた服" }
+      ]
+    },
+    {
+      "id": 22,
+      "nameJa": "ポーズ",
+      "nameEn": "Pose",
+      "words": [
+        { "wordEn": "standing", "wordJa": "立っている" },
+        { "wordEn": "sitting", "wordJa": "座っている" },
+        { "wordEn": "kneeling", "wordJa": "跪いている" },
+        { "wordEn": "lying down", "wordJa": "寝そべっている" },
+        { "wordEn": "walking", "wordJa": "歩いている" },
+        { "wordEn": "running", "wordJa": "走っている" },
+        { "wordEn": "waving", "wordJa": "手を振る" },
+
+        { "wordEn": "looking at viewer", "wordJa": "こちらを見る" },
+        { "wordEn": "head tilt", "wordJa": "首を傾げる" },
+        { "wordEn": "sideways glance", "wordJa": "横目" },
+        { "wordEn": "looking back", "wordJa": "振り返る" },
+        { "wordEn": "looking away", "wordJa": "視線を逸らす" },
+        { "wordEn": "closed eyes", "wordJa": "目を閉じる" },
+        { "wordEn": "looking up", "wordJa": "見上げる" },
+
+        { "wordEn": "hands on hips", "wordJa": "腰に手を当てる" },
+        { "wordEn": "peace sign", "wordJa": "ピースサイン" },
+        { "wordEn": "hand on cheek", "wordJa": "頰に手を当てる" },
+        { "wordEn": "hand in pocket", "wordJa": "ポケットに手を入れる" },
+        { "wordEn": "hands behind back", "wordJa": "後ろで手を組む" },
+        { "wordEn": "finger to lips", "wordJa": "口元に指を当てる" },
+
+        { "wordEn": "crouching", "wordJa": "しゃがむ" },
+        { "wordEn": "stretching", "wordJa": "伸びをする" },
+        { "wordEn": "floating", "wordJa": "浮遊している" },
+
+        { "wordEn": "arms up", "wordJa": "両手を上げる" },
+        { "wordEn": "crossed arms", "wordJa": "腕組み" },
+        { "wordEn": "leaning forward", "wordJa": "前屈み" },
+        { "wordEn": "leaning against wall", "wordJa": "壁にもたれかかる" },
+
+        { "wordEn": "dynamic pose", "wordJa": "ダイナミックなポーズ" },
+        { "wordEn": "jumping", "wordJa": "ジャンプ" },
+        { "wordEn": "sitting on chair", "wordJa": "椅子に座る" },
+        { "wordEn": "crossed legs", "wordJa": "脚を組む" }
+      ]
+    },
+    {
+      "id": 23,
+      "nameJa": "体型・特徴",
+      "nameEn": "Body",
+      "words": [
+        { "wordEn": "slim", "wordJa": "スレンダー" },
+        { "wordEn": "petite", "wordJa": "小柄" },
+        { "wordEn": "medium build", "wordJa": "普通体型" },
+
+        { "wordEn": "tall", "wordJa": "長身" },
+        { "wordEn": "short", "wordJa": "低身長" },
+        { "wordEn": "long legs", "wordJa": "長い脚" },
+        { "wordEn": "graceful figure", "wordJa": "優雅なスタイル" },
+
+        { "wordEn": "small breasts", "wordJa": "小さい胸" },
+        { "wordEn": "medium breasts", "wordJa": "普通の胸" },
+        { "wordEn": "large breasts", "wordJa": "大きな胸" },
+        { "wordEn": "huge breasts", "wordJa": "非常に大きな胸" },
+
+        { "wordEn": "slender waist", "wordJa": "細い腰" },
+        { "wordEn": "wide hips", "wordJa": "広い腰" },
+        { "wordEn": "hourglass figure", "wordJa": "アワーグラス体型" },
+        { "wordEn": "curvy figure", "wordJa": "グラマラス体型" },
+
+        { "wordEn": "athletic", "wordJa": "引き締まった体型" },
+        { "wordEn": "toned body", "wordJa": "引き締まったボディ" },
+        { "wordEn": "cute body", "wordJa": "可愛らしい体型" },
+        { "wordEn": "delicate body", "wordJa": "華奢な体型" },
+
+        { "wordEn": "lean body", "wordJa": "引き締まった体" },
+        { "wordEn": "muscular", "wordJa": "筋肉質" },
+        { "wordEn": "fit body", "wordJa": "健康的な体型" },
+
+        { "wordEn": "pale skin", "wordJa": "色白" },
+        { "wordEn": "fair skin", "wordJa": "明るい肌" },
+        { "wordEn": "smooth skin", "wordJa": "なめらかな肌" },
+        { "wordEn": "flawless skin", "wordJa": "美肌" },
+        { "wordEn": "glossy skin", "wordJa": "艶のある肌" },
+        { "wordEn": "tan skin", "wordJa": "日焼け肌" },
+        { "wordEn": "dark skin", "wordJa": "褐色肌" },
+
+        { "wordEn": "cute face", "wordJa": "可愛い顔" },
+        { "wordEn": "beautiful face", "wordJa": "美しい顔" },
+        { "wordEn": "soft skin", "wordJa": "柔らかそうな肌" }
+      ]
+    },
+    {
+      "id": 24,
+      "nameJa": "背景",
+      "nameEn": "Background",
+      "words": [
+        { "wordEn": "simple background", "wordJa": "シンプルな背景" },
+        { "wordEn": "white background", "wordJa": "白背景" },
+        { "wordEn": "plain background", "wordJa": "単色背景" },
+        { "wordEn": "detailed background", "wordJa": "詳細な背景" },
+
+        { "wordEn": "classroom", "wordJa": "教室" },
+        { "wordEn": "bedroom", "wordJa": "寝室" },
+        { "wordEn": "living room", "wordJa": "リビング" },
+        { "wordEn": "cafe", "wordJa": "カフェ" },
+
+        { "wordEn": "forest", "wordJa": "森" },
+        { "wordEn": "cherry blossoms", "wordJa": "桜" },
+        { "wordEn": "flower field", "wordJa": "花畑" },
+        { "wordEn": "beach", "wordJa": "ビーチ" },
+
+        { "wordEn": "cityscape", "wordJa": "街並み" },
+        { "wordEn": "night city", "wordJa": "夜の街" },
+        { "wordEn": "sunset", "wordJa": "夕焼け" },
+        { "wordEn": "night sky", "wordJa": "夜空" },
+
+        { "wordEn": "fantasy background", "wordJa": "ファンタジー背景" },
+        { "wordEn": "castle interior", "wordJa": "城の中" },
+        { "wordEn": "underwater", "wordJa": "水中" },
+
+        { "wordEn": "library", "wordJa": "図書館" },
+        { "wordEn": "shrine", "wordJa": "神社" },
+        { "wordEn": "traditional japanese room", "wordJa": "和室" },
+
+        { "wordEn": "rooftop", "wordJa": "屋上" },
+        { "wordEn": "street", "wordJa": "通り" },
+        { "wordEn": "alley", "wordJa": "路地裏" },
+
+        { "wordEn": "garden", "wordJa": "庭園" },
+        { "wordEn": "park", "wordJa": "公園" },
+        { "wordEn": "mountains", "wordJa": "山々" },
+
+        { "wordEn": "snowy landscape", "wordJa": "雪景色" },
+        { "wordEn": "rainy street", "wordJa": "雨の街" },
+
+        { "wordEn": "space", "wordJa": "宇宙" },
+        { "wordEn": "cyberpunk city", "wordJa": "サイバーパンク都市" }
+      ]
+    },
+    {
+      "id": 25,
+      "nameJa": "照明・雰囲気",
+      "nameEn": "Lighting & Atmosphere",
+      "words": [
+        { "wordEn": "soft lighting", "wordJa": "柔らかい照明" },
+        { "wordEn": "warm lighting", "wordJa": "暖かい照明" },
+        { "wordEn": "cool lighting", "wordJa": "冷たい照明" },
+        { "wordEn": "bright lighting", "wordJa": "明るい照明" },
+        { "wordEn": "dim lighting", "wordJa": "薄暗い照明" },
+        { "wordEn": "studio lighting", "wordJa": "スタジオ照明" },
+        { "wordEn": "dramatic lighting", "wordJa": "ドラマチックな照明" },
+
+        { "wordEn": "golden hour", "wordJa": "ゴールデンアワー" },
+        { "wordEn": "sunlight", "wordJa": "太陽光" },
+        { "wordEn": "natural lighting", "wordJa": "自然光" },
+        { "wordEn": "moonlight", "wordJa": "月光" },
+        { "wordEn": "backlight", "wordJa": "バックライト" },
+
+        { "wordEn": "rim lighting", "wordJa": "輪郭照明" },
+        { "wordEn": "volumetric lighting", "wordJa": "ボリューメトリック照明" },
+        { "wordEn": "cinematic lighting", "wordJa": "映画的な照明" },
+
+        { "wordEn": "sunset lighting", "wordJa": "夕焼けの照明" },
+        { "wordEn": "sunrise lighting", "wordJa": "朝焼けの照明" },
+
+        { "wordEn": "ambient lighting", "wordJa": "環境光" },
+        { "wordEn": "soft shadows", "wordJa": "柔らかい影" },
+
+        { "wordEn": "glowing", "wordJa": "発光" },
+        { "wordEn": "ethereal lighting", "wordJa": "幻想的な照明" },
+
+        { "wordEn": "moody lighting", "wordJa": "ムードのある照明" },
+        { "wordEn": "foggy atmosphere", "wordJa": "霧がかった雰囲気" },
+
+        { "wordEn": "neon lighting", "wordJa": "ネオン照明" },
+        { "wordEn": "dramatic shadows", "wordJa": "印象的な影" },
+        { "wordEn": "god rays", "wordJa": "光芒（神々しい光線）" }
+      ]
+    },
+    {
+      "id": 26,
+      "nameJa": "構図・視点",
+      "nameEn": "Composition & Angle",
+      "words": [
+        { "wordEn": "full body", "wordJa": "全身" },
+        { "wordEn": "upper body", "wordJa": "上半身" },
+        { "wordEn": "medium shot", "wordJa": "中距離ショット" },
+        { "wordEn": "bust shot", "wordJa": "バストショット" },
+        { "wordEn": "close-up", "wordJa": "クローズアップ" },
+        { "wordEn": "extreme close-up", "wordJa": "極端なクローズアップ" },
+
+        { "wordEn": "from above", "wordJa": "上から見た視点" },
+        { "wordEn": "from below", "wordJa": "下から見た視点" },
+        { "wordEn": "low angle", "wordJa": "ローアングル" },
+        { "wordEn": "high angle", "wordJa": "ハイアングル" },
+
+        { "wordEn": "cowboy shot", "wordJa": "カウボーイショット" },
+        { "wordEn": "wide shot", "wordJa": "ワイドショット" },
+
+        { "wordEn": "profile", "wordJa": "横顔" },
+        { "wordEn": "front view", "wordJa": "正面視点" },
+
+        { "wordEn": "looking away", "wordJa": "視線を逸らす" },
+        { "wordEn": "facing viewer", "wordJa": "正面を向く" },
+
+        { "wordEn": "selfie angle", "wordJa": "自撮り視点" },
+        { "wordEn": "first person view", "wordJa": "一人称視点" },
+
+        { "wordEn": "eye level", "wordJa": "目線の高さ" },
+        { "wordEn": "side view", "wordJa": "横からの視点" },
+        { "wordEn": "looking at viewer", "wordJa": "こちらを見つめる" },
+        { "wordEn": "looking back", "wordJa": "振り返る" },
+
+        { "wordEn": "dynamic angle", "wordJa": "ダイナミックなアングル" },
+        { "wordEn": "dutch angle", "wordJa": "斜めアングル" },
+        { "wordEn": "over the shoulder", "wordJa": "肩越し" },
+        { "wordEn": "from behind", "wordJa": "後ろから" }
+      ]
+    },
+    {
+      "id": 27,
+      "nameJa": "アクセサリー・小物",
+      "nameEn": "Accessories",
+      "words": [
+        { "wordEn": "hair ribbon", "wordJa": "髪リボン" },
+        { "wordEn": "hairband", "wordJa": "ヘアバンド" },
+        { "wordEn": "hair flower", "wordJa": "髪飾りの花" },
+        { "wordEn": "cat ears", "wordJa": "猫耳" },
+
+        { "wordEn": "necklace", "wordJa": "ネックレス" },
+        { "wordEn": "choker", "wordJa": "チョーカー" },
+        { "wordEn": "earrings", "wordJa": "イヤリング" },
+        { "wordEn": "pendant", "wordJa": "ペンダント" },
+
+        { "wordEn": "glasses", "wordJa": "眼鏡" },
+        { "wordEn": "sunglasses", "wordJa": "サングラス" },
+        { "wordEn": "headphones", "wordJa": "ヘッドホン" },
+
+        { "wordEn": "bracelet", "wordJa": "ブレスレット" },
+        { "wordEn": "ring", "wordJa": "指輪" },
+        { "wordEn": "gloves", "wordJa": "手袋" },
+
+        { "wordEn": "hair clip", "wordJa": "ヘアクリップ" },
+        { "wordEn": "hairpin", "wordJa": "ヘアピン" },
+
+        { "wordEn": "wristwatch", "wordJa": "腕時計" },
+        { "wordEn": "belt", "wordJa": "ベルト" },
+
+        { "wordEn": "scarf", "wordJa": "マフラー" },
+        { "wordEn": "mask", "wordJa": "マスク" },
+
+        { "wordEn": "backpack", "wordJa": "リュック" },
+        { "wordEn": "shoulder bag", "wordJa": "ショルダーバッグ" },
+
+        { "wordEn": "microphone", "wordJa": "マイク" },
+        { "wordEn": "camera", "wordJa": "カメラ" },
+
+        { "wordEn": "handbag", "wordJa": "ハンドバッグ" },
+        { "wordEn": "book", "wordJa": "本" },
+        { "wordEn": "umbrella", "wordJa": "傘" },
+        { "wordEn": "smartphone", "wordJa": "スマホ" }
+      ]
+    },
+    {
+      "id": 28,
+      "nameJa": "クオリティ修飾",
+      "nameEn": "Quality",
+      "words": [
+        { "wordEn": "masterpiece", "wordJa": "傑作" },
+        { "wordEn": "best quality", "wordJa": "最高品質" },
+        { "wordEn": "ultra detailed", "wordJa": "超詳細" },
+        { "wordEn": "absurdres", "wordJa": "非常に高解像度" },
+
+        { "wordEn": "intricate details", "wordJa": "複雑で細かいディテール" },
+        { "wordEn": "highly detailed", "wordJa": "非常に詳細" },
+        { "wordEn": "sharp focus", "wordJa": "シャープな焦点" },
+
+        { "wordEn": "amazing quality", "wordJa": "素晴らしい品質" },
+        { "wordEn": "great quality", "wordJa": "高品質" },
+
+        { "wordEn": "official art", "wordJa": "公式イラスト風" },
+        { "wordEn": "professional lighting", "wordJa": "プロ品質の照明" },
+
+        { "wordEn": "detailed skin", "wordJa": "詳細な肌" },
+        { "wordEn": "beautiful eyes", "wordJa": "美しい目" },
+
+        { "wordEn": "clean lines", "wordJa": "綺麗な線画" },
+        { "wordEn": "high detail", "wordJa": "高ディテール" },
+
+        { "wordEn": "highres", "wordJa": "高解像度" },
+        { "wordEn": "8k", "wordJa": "8K品質" },
+        { "wordEn": "finely detailed face", "wordJa": "精細な顔" },
+        { "wordEn": "detailed eyes", "wordJa": "詳細な目" },
+
+        { "wordEn": "vivid colors", "wordJa": "鮮やかな色彩" },
+        { "wordEn": "cinematic", "wordJa": "映画的" },
+        { "wordEn": "detailed background", "wordJa": "詳細な背景" }
+      ]
+    },
+    {
+      "id": 29,
+      "nameJa": "画風",
+      "nameEn": "Art Style",
+      "words": [
+        { "wordEn": "anime style", "wordJa": "アニメ調" },
+        { "wordEn": "manga style", "wordJa": "漫画調" },
+        { "wordEn": "detailed illustration", "wordJa": "詳細なイラスト" },
+
+        { "wordEn": "cel shading", "wordJa": "セルシェーディング" },
+        { "wordEn": "clean lines", "wordJa": "クリーンな線画" },
+        { "wordEn": "sharp lines", "wordJa": "シャープな線画" },
+        { "wordEn": "soft shading", "wordJa": "柔らかい陰影" },
+
+        { "wordEn": "vibrant colors", "wordJa": "鮮やかな色彩" },
+        { "wordEn": "pastel colors", "wordJa": "パステルカラー" },
+
+        { "wordEn": "semi realistic", "wordJa": "セミリアル調" },
+        { "wordEn": "realistic", "wordJa": "リアル調" },
+        { "wordEn": "stylized", "wordJa": "デフォルメ調" },
+
+        { "wordEn": "painterly", "wordJa": "絵画風" },
+        { "wordEn": "watercolor", "wordJa": "水彩風" },
+        { "wordEn": "oil painting", "wordJa": "油絵風" },
+
+        { "wordEn": "sketch", "wordJa": "スケッチ風" },
+        { "wordEn": "lineart", "wordJa": "線画" },
+
+        { "wordEn": "anime screencap", "wordJa": "アニメスクリーンショット風" },
+        { "wordEn": "visual novel style", "wordJa": "ビジュアルノベル風" },
+
+        { "wordEn": "kawaii style", "wordJa": "かわいい系" },
+        { "wordEn": "beautiful illustration", "wordJa": "美しいイラスト" },
+        { "wordEn": "dynamic illustration", "wordJa": "ダイナミックなイラスト" },
+
+        { "wordEn": "fantasy art", "wordJa": "ファンタジーアート" },
+        { "wordEn": "cyberpunk", "wordJa": "サイバーパンク" }
+      ]
+    },
+    {
+      "id": 30,
+      "nameJa": "効果",
+      "nameEn": "Effects",
+      "words": [
+        { "wordEn": "sparkles", "wordJa": "キラキラ" },
+        { "wordEn": "glowing", "wordJa": "輝き" },
+        { "wordEn": "energy glow", "wordJa": "エネルギー輝き" },
+        { "wordEn": "magic particles", "wordJa": "魔法の粒子" },
+
+        { "wordEn": "lens flare", "wordJa": "レンズフレア" },
+        { "wordEn": "light rays", "wordJa": "光の筋" },
+        { "wordEn": "bloom", "wordJa": "ブルーム効果" },
+
+        { "wordEn": "bokeh", "wordJa": "ボケ" },
+        { "wordEn": "depth of field", "wordJa": "被写界深度" },
+
+        { "wordEn": "floating petals", "wordJa": "舞う花びら" },
+        { "wordEn": "cherry blossom petals", "wordJa": "桜の花びら" },
+        { "wordEn": "wind effect", "wordJa": "風の効果" },
+        { "wordEn": "falling leaves", "wordJa": "落ち葉" },
+
+        { "wordEn": "motion blur", "wordJa": "モーションブラー" },
+        { "wordEn": "speed lines", "wordJa": "集中線" },
+        { "wordEn": "glowing particles", "wordJa": "発光粒子" },
+
+        { "wordEn": "mist", "wordJa": "霧" },
+        { "wordEn": "fog", "wordJa": "フォグ" },
+        { "wordEn": "smoke", "wordJa": "煙" },
+
+        { "wordEn": "rain effect", "wordJa": "雨エフェクト" },
+        { "wordEn": "snow effect", "wordJa": "雪エフェクト" },
+        { "wordEn": "aura", "wordJa": "オーラ" },
+        { "wordEn": "electric sparks", "wordJa": "電撃エフェクト" },
+        { "wordEn": "fire effects", "wordJa": "炎エフェクト" },
+        { "wordEn": "ice effects", "wordJa": "氷エフェクト" },
+
+        { "wordEn": "particle effects", "wordJa": "粒子エフェクト" },
+        { "wordEn": "glitter", "wordJa": "グリッター" }
+      ]
+    },
+    {
+      "id": 31,
+      "nameJa": "手・指",
+      "nameEn": "Hands",
+      "words": [
+        { "wordEn": "beautiful hands", "wordJa": "美しい手" },
+        { "wordEn": "detailed hands", "wordJa": "詳細な手" },
+        { "wordEn": "finely detailed fingers", "wordJa": "精細な指" },
+        { "wordEn": "perfect hands", "wordJa": "完璧な手" },
+
+        { "wordEn": "hand on cheek", "wordJa": "頰に手を当てる" },
+        { "wordEn": "hands on hips", "wordJa": "腰に手を当てる" },
+        { "wordEn": "arm behind head", "wordJa": "手を頭の後ろに" },
+        { "wordEn": "hand on chest", "wordJa": "胸に手を当てる" },
+        { "wordEn": "crossed fingers", "wordJa": "指を組む" },
+        { "wordEn": "open hands", "wordJa": "手を開く" },
+        { "wordEn": "hand reaching out", "wordJa": "手を差し伸べる" },
+        { "wordEn": "finger to lips", "wordJa": "唇に指を当てる" },
+        { "wordEn": "touching hair", "wordJa": "髪に触れる" },
+        { "wordEn": "waving", "wordJa": "手を振る" },
+        { "wordEn": "raised hand", "wordJa": "手を上げる" },
+        { "wordEn": "interlocked fingers", "wordJa": "指を絡める" },
+        { "wordEn": "praying hands", "wordJa": "祈る手" },
+
+        { "wordEn": "peace sign", "wordJa": "ピースサイン" },
+        { "wordEn": "pointing", "wordJa": "指差し" },
+        { "wordEn": "fingers spread", "wordJa": "指を広げる" },
+
+        { "wordEn": "holding object", "wordJa": "物を持っている" },
+        { "wordEn": "clenched fist", "wordJa": "握り拳" },
+        { "wordEn": "delicate hands", "wordJa": "繊細な手" },
+        { "wordEn": "slender fingers", "wordJa": "細長い指" }
+      ]
+    },
+    {
+      "id": 32,
+      "nameJa": "天候・季節",
+      "nameEn": "Weather & Season",
+      "words": [
+        { "wordEn": "sunny day", "wordJa": "晴れた日" },
+        { "wordEn": "clear sky", "wordJa": "快晴" },
+        { "wordEn": "cloudy sky", "wordJa": "曇り空" },
+        { "wordEn": "rain", "wordJa": "雨" },
+
+        { "wordEn": "light rain", "wordJa": "小雨" },
+        { "wordEn": "heavy rain", "wordJa": "大雨" },
+        { "wordEn": "thunderstorm", "wordJa": "雷雨" },
+        { "wordEn": "snow", "wordJa": "雪" },
+
+        { "wordEn": "snowy day", "wordJa": "雪の日" },
+        { "wordEn": "blizzard", "wordJa": "吹雪" },
+        { "wordEn": "fog", "wordJa": "霧" },
+        { "wordEn": "misty", "wordJa": "霧がかかった" },
+        { "wordEn": "windy", "wordJa": "風が強い" },
+        { "wordEn": "hail", "wordJa": "雹" },
+
+        { "wordEn": "sunset", "wordJa": "夕暮れ" },
+        { "wordEn": "sunrise", "wordJa": "日の出" },
+        { "wordEn": "night", "wordJa": "夜" },
+
+        { "wordEn": "spring", "wordJa": "春" },
+        { "wordEn": "summer", "wordJa": "夏" },
+        { "wordEn": "autumn", "wordJa": "秋" },
+        { "wordEn": "winter", "wordJa": "冬" },
+
+        { "wordEn": "starry sky", "wordJa": "星空" },
+        { "wordEn": "moonlit night", "wordJa": "月夜" },
+
+        { "wordEn": "rainbow", "wordJa": "虹" },
+        { "wordEn": "aurora", "wordJa": "オーロラ" },
+
+        { "wordEn": "cherry blossoms", "wordJa": "桜" },
+        { "wordEn": "falling leaves", "wordJa": "落ち葉" },
+        { "wordEn": "autumn leaves", "wordJa": "紅葉" },
+        { "wordEn": "winter snow", "wordJa": "冬の雪景色" },
+        { "wordEn": "summer sunlight", "wordJa": "夏の陽光" },
+        { "wordEn": "winter wonderland", "wordJa": "雪景色" }
+      ]
+    },
+    {
+      "id": 33,
+      "nameJa": "ファンタジー要素",
+      "nameEn": "Fantasy Features",
+      "words": [
+        { "wordEn": "elf ears", "wordJa": "エルフ耳" },
+        { "wordEn": "pointed ears", "wordJa": "尖った耳" },
+        { "wordEn": "small horns", "wordJa": "小さな角" },
+        { "wordEn": "dragon horns", "wordJa": "ドラゴンの角" },
+
+        { "wordEn": "angel wings", "wordJa": "天使の翼" },
+        { "wordEn": "demon wings", "wordJa": "悪魔の翼" },
+        { "wordEn": "fairy wings", "wordJa": "妖精の翼" },
+        { "wordEn": "bat wings", "wordJa": "コウモリの翼" },
+
+        { "wordEn": "halo", "wordJa": "天使の輪" },
+        { "wordEn": "magic aura", "wordJa": "魔法のオーラ" },
+        { "wordEn": "mana glow", "wordJa": "魔力の輝き" },
+        { "wordEn": "glowing eyes", "wordJa": "輝く目" },
+
+        { "wordEn": "floating hair", "wordJa": "浮遊する髪" },
+        { "wordEn": "ethereal", "wordJa": "幻想的" },
+        { "wordEn": "glowing markings", "wordJa": "輝くボディマーク" },
+        { "wordEn": "crystal ornament", "wordJa": "クリスタル装飾" },
+
+        { "wordEn": "tail", "wordJa": "尻尾" },
+        { "wordEn": "fox tail", "wordJa": "狐の尻尾" },
+        { "wordEn": "wolf ears", "wordJa": "狼耳" },
+        { "wordEn": "cat ears", "wordJa": "猫耳" },
+
+        { "wordEn": "animal ears", "wordJa": "獣耳" },
+        { "wordEn": "dragon tail", "wordJa": "ドラゴンの尻尾" },
+        { "wordEn": "scales", "wordJa": "鱗" },
+        { "wordEn": "magical staff", "wordJa": "魔法の杖" },
+
+        { "wordEn": "floating crystals", "wordJa": "浮遊クリスタル" },
+        { "wordEn": "magic circle", "wordJa": "魔法陣" },
+        { "wordEn": "summoning circle", "wordJa": "召喚陣" },
+        { "wordEn": "enchanted weapon", "wordJa": "魔法武器" }
+      ]
+    },
+    {
+      "id": 34,
+      "nameJa": "動物特徴",
+      "nameEn": "Animal Features",
+      "words": [
+        { "wordEn": "animal ears", "wordJa": "動物耳" },
+        { "wordEn": "cat ears", "wordJa": "猫耳" },
+        { "wordEn": "fox ears", "wordJa": "狐耳" },
+        { "wordEn": "wolf ears", "wordJa": "狼耳" },
+
+        { "wordEn": "dog ears", "wordJa": "犬耳" },
+        { "wordEn": "rabbit ears", "wordJa": "うさ耳" },
+        { "wordEn": "bear ears", "wordJa": "熊耳" },
+        { "wordEn": "furry ears", "wordJa": "ふさふさの耳" },
+
+        { "wordEn": "cat tail", "wordJa": "猫の尻尾" },
+        { "wordEn": "fox tail", "wordJa": "狐の尻尾" },
+        { "wordEn": "fluffy tail", "wordJa": "ふわふわの尻尾" },
+        { "wordEn": "multiple tails", "wordJa": "複数の尻尾" },
+
+        { "wordEn": "whiskers", "wordJa": "ひげ" },
+        { "wordEn": "paws", "wordJa": "肉球" },
+        { "wordEn": "cute animal features", "wordJa": "可愛い動物特徴" },
+
+        { "wordEn": "animal tail", "wordJa": "動物の尻尾" },
+        { "wordEn": "wolf tail", "wordJa": "狼の尻尾" },
+        { "wordEn": "rabbit tail", "wordJa": "うさぎの尻尾" },
+        { "wordEn": "lion tail", "wordJa": "ライオンの尻尾" },
+
+        { "wordEn": "cat paws", "wordJa": "猫の肉球" },
+        { "wordEn": "paw gloves", "wordJa": "肉球グローブ" },
+        { "wordEn": "animal nose", "wordJa": "動物鼻" },
+        { "wordEn": "fangs", "wordJa": "牙" },
+
+        { "wordEn": "sharp fangs", "wordJa": "鋭い牙" },
+        { "wordEn": "claws", "wordJa": "爪" },
+        { "wordEn": "feathers", "wordJa": "羽毛" },
+        { "wordEn": "bird wings", "wordJa": "鳥の翼" }
+      ]
+    },
+    {
+      "id": 35,
+      "nameJa": "色調・フィルター",
+      "nameEn": "Color Tone",
+      "words": [
+        { "wordEn": "warm colors", "wordJa": "暖色系" },
+        { "wordEn": "cool colors", "wordJa": "寒色系" },
+        { "wordEn": "vibrant colors", "wordJa": "鮮やかな色彩" },
+        { "wordEn": "pastel colors", "wordJa": "パステルカラー" },
+
+        { "wordEn": "soft colors", "wordJa": "柔らかい色調" },
+        { "wordEn": "muted colors", "wordJa": "くすんだ色調" },
+        { "wordEn": "high contrast", "wordJa": "ハイコントラスト" },
+        { "wordEn": "low contrast", "wordJa": "ロウコントラスト" },
+
+        { "wordEn": "monochrome", "wordJa": "モノクロ" },
+        { "wordEn": "sepia", "wordJa": "セピア" },
+
+        { "wordEn": "cinematic color", "wordJa": "映画的な色調" },
+        { "wordEn": "neon colors", "wordJa": "ネオンカラー" },
+        { "wordEn": "golden tone", "wordJa": "黄金色調" }
+      ]
+    },
+    {
+      "id": 36,
+      "nameJa": "SF・メカ要素",
+      "nameEn": "SF & Mecha",
+      "words": [
+        { "wordEn": "cyberpunk", "wordJa": "サイバーパンク" },
+        { "wordEn": "sci-fi", "wordJa": "SF" },
+        { "wordEn": "mecha", "wordJa": "メカ" },
+        { "wordEn": "robot girl", "wordJa": "ロボット少女" },
+
+        { "wordEn": "android", "wordJa": "アンドロイド" },
+        { "wordEn": "cyborg", "wordJa": "サイボーグ" },
+        { "wordEn": "mechanical arms", "wordJa": "機械の腕" },
+        { "wordEn": "mechanical parts", "wordJa": "機械パーツ" },
+
+        { "wordEn": "futuristic outfit", "wordJa": "近未来の服装" },
+        { "wordEn": "high-tech", "wordJa": "ハイテク" },
+        { "wordEn": "neon circuit", "wordJa": "ネオン回路" },
+        { "wordEn": "holographic display", "wordJa": "ホログラフィック" },
+
+        { "wordEn": "energy wings", "wordJa": "エネルギー翼" },
+        { "wordEn": "plasma glow", "wordJa": "プラズマ輝き" },
+        { "wordEn": "visor", "wordJa": "バイザー" },
+        { "wordEn": "cybernetic enhancements", "wordJa": "機械化強化" }
+      ]
+    },
+    {
+      "id": 37,
+      "nameJa": "未分類",
+      "nameEn": "Uncategorized",
+      "isNegative": false,
+      "words": []
+    },
+    {
+      "id": 38,
+      "nameJa": "未分類（ネガティブ）",
+      "nameEn": "Uncategorized (Negative)",
+      "isNegative": true,
+      "words": []
+    }
+  ]
+}
