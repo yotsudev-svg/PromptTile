@@ -1,3 +1,37 @@
 <resources>
     <string name="app_name">PromptTile</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">設定</string>
+    <string name="settings_header_appearance">外観</string>
+    <string name="settings_theme_title">テーマ</string>
+    <string name="settings_theme_description">アプリの配色（ライト・ダーク）を設定します</string>
+    <string name="settings_theme_system">システム設定</string>
+    <string name="settings_theme_light">ライトモード</string>
+    <string name="settings_theme_dark">ダークモード</string>
+    <string name="settings_theme_system_full">システム設定に従う</string>
+
+    <string name="settings_header_prompt">プロンプト</string>
+    <string name="settings_template_title">クオリティテンプレート</string>
+    <string name="settings_template_description">テンプレートの単語をメイン画面のプロンプトに追加します</string>
+    <string name="settings_template_select">選ぶ</string>
+
+    <string name="settings_header_operation">操作</string>
+    <string name="settings_move_to_back_title">コピー後にバックグラウンドへ</string>
+    <string name="settings_move_to_back_description">コピーボタンを押したあと自動でアプリを背面に移動します</string>
+
+    <!-- Template Bottom Sheet -->
+    <string name="template_sheet_title">テンプレートを選ぶ</string>
+    <string name="template_sheet_add_description">テンプレートを追加</string>
+    <string name="template_sheet_empty">テンプレートがありません</string>
+    <string name="template_delete_description">削除</string>
+
+    <!-- Add Template Dialog -->
+    <string name="dialog_add_template_title">テンプレートを追加</string>
+    <string name="dialog_add_template_name_label">テンプレート名</string>
+    <string name="dialog_add_template_name_placeholder">例: 自分用クオリティ</string>
+    <string name="dialog_add_template_text_label">テンプレート内容</string>
+    <string name="dialog_add_template_text_placeholder">例: masterpiece, best quality</string>
+    <string name="dialog_add_template_confirm">追加</string>
+    <string name="dialog_cancel">キャンセル</string>
 </resources>

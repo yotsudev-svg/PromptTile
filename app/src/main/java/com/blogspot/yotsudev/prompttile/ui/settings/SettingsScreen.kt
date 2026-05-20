@@ -1,7 +1,6 @@
 package com.blogspot.yotsudev.prompttile.ui.settings
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -42,10 +42,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.blogspot.yotsudev.prompttile.R
 import com.blogspot.yotsudev.prompttile.data.preferences.ThemeConfig
 import com.blogspot.yotsudev.prompttile.data.seed.PrefixTemplate
 import com.blogspot.yotsudev.prompttile.ui.components.ConfirmDeleteDialog
@@ -65,10 +67,8 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
     var showSheet by rememberSaveable { mutableStateOf(false) }
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
-    // 削除確認ダイアログ用: 削除対象テンプレートを保持する
     var deletingTemplate by rememberSaveable { mutableStateOf<PrefixTemplate?>(null) }
 
-    // 削除確認ダイアログ（ボトムシートの外に置くことで確実に表示される）
     deletingTemplate?.let { template ->
         ConfirmDeleteDialog(
             targetName = template.name,
@@ -90,7 +90,6 @@ fun SettingsScreen(
                 }
             },
             onDelete = { template ->
-                // 削除ボタンタップ → 確認ダイアログを表示
                 deletingTemplate = template
             },
             onAddNew = { showAddDialog = true },
@@ -109,12 +108,10 @@ fun SettingsScreen(
         )
     }
 
-    val isSystemDark = isSystemInDarkTheme()
-
     Scaffold(
         topBar = {
-            key(prefs?.themeConfig ?: ThemeConfig.FOLLOW_SYSTEM, isSystemDark) {
-                TopAppBar(title = { Text("設定") })
+            key(prefs?.themeConfig) {
+                TopAppBar(title = { Text(stringResource(R.string.settings_title)) })
             }
         },
     ) { innerPadding ->
@@ -126,68 +123,52 @@ fun SettingsScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            // ================================================================
-            // セクション0: UI設定 (追加)
-            // ================================================================
-            SettingsSectionHeader(title = "外観")
-            ThemeSelectionRow(
-                title = "テーマ",
-                description = "アプリの配色（ライト・ダーク）を設定します",
-                // prefs が null の場合は FOLLOW_SYSTEM を表示
-                currentTheme = prefs?.themeConfig ?: ThemeConfig.FOLLOW_SYSTEM,
-                onThemeSelected = viewModel::updateThemeConfig
-            )
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            key(prefs?.themeConfig) {
+                SettingsSectionHeader(title = stringResource(R.string.settings_header_appearance))
+                ThemeSelectionRow(
+                    currentTheme = prefs?.themeConfig ?: ThemeConfig.FOLLOW_SYSTEM,
+                    onThemeSelected = viewModel::updateThemeConfig
+                )
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-            // ================================================================
-            // セクション1: プロンプト
-            // ================================================================
-            SettingsSectionHeader(title = "プロンプト")
+                SettingsSectionHeader(title = stringResource(R.string.settings_header_prompt))
+                SettingsRow(
+                    title = stringResource(R.string.settings_template_title),
+                    description = stringResource(R.string.settings_template_description),
+                    trailingContent = {
+                        TextButton(onClick = { showSheet = true }) {
+                            Text(stringResource(R.string.settings_template_select))
+                        }
+                    }
+                )
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-            TemplateButtonRow(onOpenTemplates = { showSheet = true })
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-            // ================================================================
-            // セクション2: 操作
-            // ================================================================
-            SettingsSectionHeader(title = "操作")
-
-            SwitchSettingRow(
-                title = "コピー後にバックグラウンドへ",
-                description = "コピーボタンを押したあと自動でアプリを背面に移動します",
-                // prefs が null の場合は false をデフォルトにする
-                checked = prefs?.moveToBackOnCopy ?: false,
-                onCheckedChange = viewModel::updateMoveToBack,
-            )
+                SettingsSectionHeader(title = stringResource(R.string.settings_header_operation))
+                SwitchSettingRow(
+                    title = stringResource(R.string.settings_move_to_back_title),
+                    description = stringResource(R.string.settings_move_to_back_description),
+                    checked = prefs?.moveToBackOnCopy ?: false,
+                    onCheckedChange = viewModel::updateMoveToBack,
+                )
+            }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ThemeSelectionRow(
+private fun SettingsRow(
     title: String,
     description: String,
-    currentTheme: ThemeConfig,
-    onThemeSelected: (ThemeConfig) -> Unit
+    modifier: Modifier = Modifier,
+    trailingContent: @Composable (() -> Unit)? = null,
 ) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
-
-    val themeLabel = when (currentTheme) {
-        ThemeConfig.FOLLOW_SYSTEM -> "システム設定"
-        ThemeConfig.LIGHT -> "ライトモード"
-        ThemeConfig.DARK -> "ダークモード"
-    }
-
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        // 左側：タイトルと説明
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -201,72 +182,62 @@ private fun ThemeSelectionRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-
-        // 右側：ドロップダウンメニュー
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded },
-        ) {
-            TextButton(
-                onClick = { },
-                modifier = Modifier.menuAnchor()
-            ) {
-                Text(themeLabel)
-                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-            }
-
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                ThemeConfig.entries.forEach { config ->
-                    val label = when (config) {
-                        ThemeConfig.FOLLOW_SYSTEM -> "システム設定に従う"
-                        ThemeConfig.LIGHT -> "ライトモード"
-                        ThemeConfig.DARK -> "ダークモード"
-                    }
-                    DropdownMenuItem(
-                        text = { Text(label) },
-                        onClick = {
-                            onThemeSelected(config)
-                            expanded = false
-                        }
-                    )
-                }
-            }
-        }
+        trailingContent?.invoke()
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TemplateButtonRow(onOpenTemplates: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(end = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            Text(
-                text = "クオリティテンプレート",
-                style = MaterialTheme.typography.bodyLarge,
-            )
-            Text(
-                text = "テンプレートの単語をメイン画面のプロンプトに追加します",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        TextButton(onClick = onOpenTemplates) {
-            Text("選ぶ")
-        }
+private fun ThemeSelectionRow(
+    currentTheme: ThemeConfig,
+    onThemeSelected: (ThemeConfig) -> Unit
+) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+
+    val themeLabel = when (currentTheme) {
+        ThemeConfig.FOLLOW_SYSTEM -> stringResource(R.string.settings_theme_system)
+        ThemeConfig.LIGHT -> stringResource(R.string.settings_theme_light)
+        ThemeConfig.DARK -> stringResource(R.string.settings_theme_dark)
     }
+
+    SettingsRow(
+        title = stringResource(R.string.settings_theme_title),
+        description = stringResource(R.string.settings_theme_description),
+        trailingContent = {
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded },
+            ) {
+                TextButton(
+                    onClick = { },
+                    modifier = Modifier.menuAnchor()
+                ) {
+                    Text(themeLabel)
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                }
+
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    ThemeConfig.entries.forEach { config ->
+                        val label = when (config) {
+                            ThemeConfig.FOLLOW_SYSTEM -> stringResource(R.string.settings_theme_system_full)
+                            ThemeConfig.LIGHT -> stringResource(R.string.settings_theme_light)
+                            ThemeConfig.DARK -> stringResource(R.string.settings_theme_dark)
+                        }
+                        DropdownMenuItem(
+                            text = { Text(label) },
+                            onClick = {
+                                onThemeSelected(config)
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -292,13 +263,13 @@ private fun PrefixTemplateBottomSheet(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "テンプレートを選ぶ",
+                    text = stringResource(R.string.template_sheet_title),
                     style = MaterialTheme.typography.titleMedium,
                 )
                 IconButton(onClick = onAddNew) {
                     Icon(
                         imageVector = Icons.Default.Add,
-                        contentDescription = "テンプレートを追加",
+                        contentDescription = stringResource(R.string.template_sheet_add_description),
                         tint = MaterialTheme.colorScheme.primary,
                     )
                 }
@@ -308,7 +279,7 @@ private fun PrefixTemplateBottomSheet(
 
             if (templates.isEmpty()) {
                 Text(
-                    text = "テンプレートがありません",
+                    text = stringResource(R.string.template_sheet_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(16.dp),
@@ -337,7 +308,7 @@ private fun PrefixTemplateBottomSheet(
                             IconButton(onClick = { onDelete(template) }) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
-                                    contentDescription = "削除",
+                                    contentDescription = stringResource(R.string.template_delete_description),
                                     tint = MaterialTheme.colorScheme.error,
                                 )
                             }
@@ -347,7 +318,6 @@ private fun PrefixTemplateBottomSheet(
                 )
                 HorizontalDivider()
             }
-
             Spacer(modifier = Modifier.height(8.dp))
         }
     }
@@ -364,22 +334,24 @@ private fun AddTemplateDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("テンプレートを追加") },
+        title = { Text(stringResource(R.string.dialog_add_template_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("テンプレート名") },
-                    placeholder = { Text("例: 自分用クオリティ") },
+                    label = { Text(stringResource(R.string.dialog_add_template_name_label)) },
+                    placeholder = { Text(stringResource(R.string.dialog_add_template_name_placeholder)) },
                     singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it },
-                    label = { Text("テンプレート内容") },
-                    placeholder = { Text("例: masterpiece, best quality") },
+                    label = { Text(stringResource(R.string.dialog_add_template_text_label)) },
+                    placeholder = { Text(stringResource(R.string.dialog_add_template_text_placeholder)) },
                     singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         },
@@ -387,10 +359,10 @@ private fun AddTemplateDialog(
             TextButton(
                 onClick = { if (canSave) onConfirm(name.trim(), text.trim()) },
                 enabled = canSave,
-            ) { Text("追加") }
+            ) { Text(stringResource(R.string.dialog_add_template_confirm)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("キャンセル") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.dialog_cancel)) }
         },
     )
 }
@@ -412,29 +384,19 @@ private fun SwitchSettingRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(end = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            Text(text = title, style = MaterialTheme.typography.bodyLarge)
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+    SettingsRow(
+        title = title,
+        description = description,
+        modifier = Modifier.toggleable(
+            value = checked,
+            onValueChange = onCheckedChange,
+            role = Role.Switch
+        ),
+        trailingContent = {
+            Switch(
+                checked = checked,
+                onCheckedChange = null, // toggleable側でハンドリング
             )
         }
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-        )
-    }
+    )
 }
