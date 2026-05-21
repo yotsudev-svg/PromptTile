@@ -3,24 +3,24 @@ package com.blogspot.yotsudev.prompttile.ui.saved
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.blogspot.yotsudev.prompttile.data.entity.SavedPromptEntity
@@ -37,63 +37,42 @@ fun SavedPromptCard(
     onLoadNegative: ((SavedPromptEntity) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
+    // 日付文字列を remember で保持
+    val dateString = remember(entity.createdAt) { entity.createdAt.toDateString() }
+
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
         ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 16.dp, top = 12.dp, bottom = 8.dp, end = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+                .padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            // ---- タイトル行 + コピー・削除ボタン ----
+            // ---- ヘッダー: タイトルと基本アクション ----
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.Top,
             ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = entity.title,
-                        style = MaterialTheme.typography.titleSmall,
+                        style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    if (entity.promptText.isNotBlank()) {
-                        Text(
-                            text = entity.promptText,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                    if (entity.negativeText.isNotBlank()) {
-                        Text(
-                            text = "Negative:",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
-                        )
-                        Text(
-                            text = entity.negativeText,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error.copy(alpha = 0.6f),
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
                     Text(
-                        text = entity.createdAt.toDateString(),
+                        text = dateString,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                     )
                 }
+                
                 IconButton(onClick = { onCopy(entity) }) {
                     Icon(
                         imageVector = Icons.Default.ContentCopy,
@@ -110,55 +89,71 @@ fun SavedPromptCard(
                 }
             }
 
-            // ---- 読み込みボタン行 ----
-            /**
-             * ポジ・ネガのボタンを横並びで配置する。
-             * OutlinedButton を使うことで「コピー・削除」の IconButton と
-             * 視覚的に区別しつつ、タップ領域を広く確保できる。
-             *
-             * null チェックを入れることで、コールバック未指定時は
-             * ボタン行ごと非表示にできる（後方互換性の確保）。
-             *
-             * ポジティブは primary、ネガティブは error カラーにすることで
-             * 「どちらに追加されるか」を色で直感的に伝える。
-             */
+            // ---- プロンプトプレビュー ----
+            if (entity.promptText.isNotBlank()) {
+                PromptPreviewItem(
+                    label = "Positive",
+                    text = entity.promptText,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            if (entity.negativeText.isNotBlank()) {
+                PromptPreviewItem(
+                    label = "Negative",
+                    text = entity.negativeText,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
+            // ---- フッター: 適用ボタン ----
             if (onLoadPositive != null || onLoadNegative != null) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(end = 12.dp),
-                    horizontalArrangement = Arrangement.End,
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                 ) {
                     if (onLoadPositive != null && entity.promptText.isNotBlank()) {
-                        OutlinedButton(
+                        FilledTonalButton(
                             onClick = { onLoadPositive(entity) },
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.primary,
-                            ),
-                        ) {
-                            Text(
-                                text = "+ Positive",
-                                style = MaterialTheme.typography.labelMedium,
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                             )
+                        ) {
+                            Text("+ Positive", style = MaterialTheme.typography.labelLarge)
                         }
                     }
                     if (onLoadNegative != null && entity.negativeText.isNotBlank()) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        OutlinedButton(
+                        FilledTonalButton(
                             onClick = { onLoadNegative(entity) },
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error,
-                            ),
-                        ) {
-                            Text(
-                                text = "+ Negative",
-                                style = MaterialTheme.typography.labelMedium,
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer,
+                                contentColor = MaterialTheme.colorScheme.onErrorContainer
                             )
+                        ) {
+                            Text("+ Negative", style = MaterialTheme.typography.labelLarge)
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun PromptPreviewItem(label: String, text: String, color: Color) {
+    Column {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = color.copy(alpha = 0.8f),
+        )
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 

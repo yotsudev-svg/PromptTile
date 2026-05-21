@@ -23,7 +23,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -79,14 +83,14 @@ fun SavedScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("保存済み") })
+            TopAppBar(
+                title = { Text("保存済み", style = MaterialTheme.typography.titleLarge) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                )
+            )
         },
         floatingActionButton = {
-            /**
-             * FAB で手動追加ダイアログを開く。
-             * EditScreen の「カテゴリ追加」と同じ配置パターンなので
-             * ユーザーが迷わない。
-             */
             FloatingActionButton(onClick = { showAddDialog = true }) {
                 Icon(
                     imageVector = Icons.Default.Add,
@@ -101,9 +105,10 @@ fun SavedScreen(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    text = "保存済みのプロンプトはありません\nメイン画面で単語を選んで保存しましょう",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    text = "保存済みのプロンプトはありません\nメイン画面でプロンプトを保存しましょう",
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                 )
             }
         } else {
@@ -113,13 +118,14 @@ fun SavedScreen(
                     start = 16.dp,
                     end = 16.dp,
                     top = innerPadding.calculateTopPadding() + 8.dp,
-                    bottom = innerPadding.calculateBottomPadding() + 88.dp, // FABと重ならないよう余白
+                    bottom = innerPadding.calculateBottomPadding() + 88.dp,
                 ),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 items(
                     items = savedPrompts,
                     key = { it.id },
+                    contentType = { "saved_prompt_card" }
                 ) { entity ->
                     SavedPromptCard(
                         entity = entity,
@@ -128,11 +134,11 @@ fun SavedScreen(
                             Toast.makeText(context, "コピーしました", Toast.LENGTH_SHORT).show()
                         },
                         onDelete = { deletingPrompt = it },
-                        onLoadPositive = { prompt ->        // ← 追加
+                        onLoadPositive = { prompt ->
                             promptViewModel.loadFromSaved(prompt.promptText, PromptMode.POSITIVE)
                             Toast.makeText(context, "Positiveに追加しました", Toast.LENGTH_SHORT).show()
                         },
-                        onLoadNegative = { prompt ->        // ← 追加
+                        onLoadNegative = { prompt ->
                             promptViewModel.loadFromSaved(prompt.negativeText, PromptMode.NEGATIVE)
                             Toast.makeText(context, "Negativeに追加しました", Toast.LENGTH_SHORT).show()
                         },
@@ -143,17 +149,6 @@ fun SavedScreen(
     }
 }
 
-/**
- * 外部プロンプトを手動入力して保存するダイアログ。
- *
- * タイトルは任意入力（空欄時は日時で自動生成される）。
- * ポジティブ・ネガティブはどちらか一方でも入力があれば保存可能。
- * canSave の条件を「どちらかが非空白」にすることで
- * 「ネガティブのみ」「ポジティブのみ」のストックにも対応できる。
- *
- * OutlinedTextField を複数並べるため maxLines を設定せず、
- * singleLine = false のまま使うことでペースト時に長文でも見やすい。
- */
 @Composable
 private fun AddPromptDialog(
     onConfirm: (title: String, positive: String, negative: String) -> Unit,
@@ -163,38 +158,40 @@ private fun AddPromptDialog(
     var positive by rememberSaveable { mutableStateOf("") }
     var negative by rememberSaveable { mutableStateOf("") }
 
-    // タイトルは任意。ポジ・ネガどちらか一方でも入力があれば保存可能
     val canSave = positive.isNotBlank() || negative.isNotBlank()
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("プロンプトを追加") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
                     label = { Text("タイトル（任意）") },
                     placeholder = { Text("例: キャラクターA") },
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = positive,
                     onValueChange = { positive = it },
                     label = { Text("ポジティブ") },
-                    placeholder = { Text("例: masterpiece, best quality, 1girl") },
+                    placeholder = { Text("例: masterpiece, 1girl") },
                     minLines = 2,
                     maxLines = 4,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = negative,
                     onValueChange = { negative = it },
                     label = { Text("ネガティブ") },
-                    placeholder = { Text("例: lowres, bad anatomy, blurry") },
+                    placeholder = { Text("例: lowres, bad anatomy") },
                     minLines = 2,
                     maxLines = 4,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

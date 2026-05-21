@@ -40,15 +40,24 @@ fun MainScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    val hasItems = uiState.currentItems.isNotEmpty()
+    // 計算コストの高い処理を remember で保護 (Recomposition 最適化)
+    val hasItems = remember(uiState.currentItems) { uiState.currentItems.isNotEmpty() }
+
+    val selectedWordIds = remember(uiState.currentItems) {
+        uiState.currentItems.map { it.wordId }.toHashSet()
+    }
+
+    val uncategorizedIds = remember(uiState.positiveCategories, uiState.negativeCategories) {
+        (uiState.positiveCategories + uiState.negativeCategories)
+            .filter { it.nameEn == UNCATEGORIZED_POSITIVE_NAME || it.nameEn == UNCATEGORIZED_NEGATIVE_NAME }
+            .map { it.id }
+            .toSet()
+    }
 
     var showSaveDialog by rememberSaveable { mutableStateOf(false) }
 
     /**
      * ボトムシートのプレビューアイテムリスト。
-     * ClipboardImportItem は Parcelable 非対応のため rememberSaveable ではなく
-     * remember を使う。画面回転時はシートが閉じるが、
-     * 再度貼り付けボタンを押せばクリップボードから再読み込みされる。
      */
     var importItems by remember { mutableStateOf<List<ClipboardImportItem>?>(null) }
 
@@ -87,78 +96,16 @@ fun MainScreen(
         )
     }
 
-    val selectedWordIds = uiState.currentItems.map { it.wordId }.toHashSet()
-
-    val uncategorizedIds = (uiState.positiveCategories + uiState.negativeCategories)
-        .filter { it.nameEn == UNCATEGORIZED_POSITIVE_NAME || it.nameEn == UNCATEGORIZED_NEGATIVE_NAME }
-        .map { it.id }
-        .toSet()
-
     Column(modifier = Modifier.fillMaxSize()) {
 
-        TopAppBar(
-            title = {
-                Text(
-                    text = "PromptTile",
-                    style = MaterialTheme.typography.titleLarge,
-                )
+        MainTopAppBar(
+            hasItems = hasItems,
+            canSave = uiState.positiveItems.isNotEmpty() || uiState.negativeItems.isNotEmpty(),
+            onImportClick = {
+                handleClipboardImport(context) { items -> importItems = items }
             },
-            actions = {
-                /**
-                 * 貼り付けボタン。
-                 * クリップボードのテキストをカンマ分割して
-                 * ClipboardImportItem リストに変換し、ボトムシートを表示する。
-                 *
-                 * クリップボードが空または非テキストの場合はトーストで通知する。
-                 * getText() は deprecated だが API 30 未満では唯一の方法のため使用する。
-                 */
-                IconButton(
-                    onClick = {
-                        val text = getClipboardText(context)
-                        if (text.isNullOrBlank()) {
-                            Toast.makeText(context, "クリップボードにテキストがありません", Toast.LENGTH_SHORT).show()
-                            return@IconButton
-                        }
-                        val words = text.split(",")
-                            .map { it.trim().cleanForImport() }
-                            .filter { it.isNotBlank() }
-                            .distinct()
-                        if (words.isEmpty()) {
-                            Toast.makeText(context, "追加できる単語がありませんでした", Toast.LENGTH_SHORT).show()
-                            return@IconButton
-                        }
-                        importItems = words.mapIndexed { i, w ->
-                            ClipboardImportItem(id = i, wordEn = w)
-                        }
-                    },
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ContentPaste,
-                        contentDescription = "クリップボードから追加",
-                    )
-                }
-                IconButton(
-                    onClick = viewModel::clearAll,
-                    enabled = hasItems,
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ClearAll,
-                        contentDescription = "全クリア",
-                    )
-                }
-                IconButton(
-                    onClick = { showSaveDialog = true },
-                    enabled = uiState.positiveItems.isNotEmpty() || uiState.negativeItems.isNotEmpty(),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Save,
-                        contentDescription = "保存",
-                    )
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.surface,
-            ),
+            onClearClick = viewModel::clearAll,
+            onSaveClick = { showSaveDialog = true }
         )
 
         PreviewArea(
@@ -213,6 +160,76 @@ fun MainScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MainTopAppBar(
+    hasItems: Boolean,
+    canSave: Boolean,
+    onImportClick: () -> Unit,
+    onClearClick: () -> Unit,
+    onSaveClick: () -> Unit,
+) {
+    TopAppBar(
+        title = {
+            Text(
+                text = "PromptTile",
+                style = MaterialTheme.typography.titleLarge,
+            )
+        },
+        actions = {
+            IconButton(onClick = onImportClick) {
+                Icon(
+                    imageVector = Icons.Default.ContentPaste,
+                    contentDescription = "クリップボードから追加",
+                )
+            }
+            IconButton(
+                onClick = onClearClick,
+                enabled = hasItems,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ClearAll,
+                    contentDescription = "全クリア",
+                )
+            }
+            IconButton(
+                onClick = onSaveClick,
+                enabled = canSave,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Save,
+                    contentDescription = "保存",
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+        ),
+    )
+}
+
+private fun handleClipboardImport(context: Context, onImportReady: (List<ClipboardImportItem>) -> Unit) {
+    val text = getClipboardText(context)
+    if (text.isNullOrBlank()) {
+        Toast.makeText(context, "クリップボードにテキストがありません", Toast.LENGTH_SHORT).show()
+        return
+    }
+
+    val words = text.split(",")
+        .map { it.trim().cleanForImport() }
+        .filter { it.isNotBlank() }
+        .distinct()
+
+    if (words.isEmpty()) {
+        Toast.makeText(context, "追加できる単語がありませんでした", Toast.LENGTH_SHORT).show()
+        return
+    }
+
+    onImportReady(words.mapIndexed { i, w ->
+        ClipboardImportItem(id = i, wordEn = w)
+    })
+}
+
 private fun copyToClipboard(context: Context, text: String) {
     val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     cm.setPrimaryClip(ClipData.newPlainText("prompt", text))
@@ -225,8 +242,6 @@ private fun getClipboardText(context: Context): String? {
 
 /**
  * インポート時に重み記号を除去する。
- * PromptRepository.cleanWord() と同じロジックを UI 層でも使えるよう定義する。
- * Repository の private 関数をそのまま呼べないため、ここで重複定義している。
  */
 private fun String.cleanForImport(): String =
     this.replace(Regex("[()\\[\\]{}]"), "")

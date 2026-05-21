@@ -11,9 +11,11 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,7 +57,12 @@ fun EditScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("単語・カテゴリ編集") })
+            TopAppBar(
+                title = { Text("単語・カテゴリ編集", style = MaterialTheme.typography.titleLarge) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                )
+            )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddCategoryDialog = true }) {
@@ -67,40 +74,43 @@ fun EditScreen(
         },
     ) { innerPadding ->
         if (uiState.categories.isEmpty()) {
-            // ---- 空状態 ----
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("右下の＋ボタンでカテゴリを追加しましょう")
+                Text(
+                    text = "右下の＋ボタンでカテゴリを追加しましょう",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         } else {
-            // ---- カテゴリ一覧 ----
             LazyColumn(
                 contentPadding = PaddingValues(
                     start = 16.dp,
                     end = 16.dp,
                     top = innerPadding.calculateTopPadding() + 8.dp,
-                    bottom = innerPadding.calculateBottomPadding() + 8.dp,
+                    bottom = innerPadding.calculateBottomPadding() + 80.dp, // FABと被らないよう広めに
                 ),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 items(
                     items = uiState.categories,
                     key = { it.id },
+                    contentType = { "category_card" }
                 ) { category ->
                     val isExpanded = category.id == uiState.expandedCategoryId
                     CategoryEditCard(
                         category = category,
                         isExpanded = isExpanded,
                         words = if (isExpanded) uiState.wordsInExpanded else emptyList(),
-                        allCategories = uiState.categories,          // ← 追加
+                        allCategories = uiState.categories,
                         onToggleExpand = { viewModel.toggleExpand(category.id) },
                         onEditCategory = { ja, en -> viewModel.updateCategory(category, ja, en) },
                         onDeleteCategory = { viewModel.deleteCategory(category) },
                         onToggleCategoryVisibility = { viewModel.toggleCategoryVisibility(category) },
                         onAddWord = { en, ja -> viewModel.addWord(category.id, en, ja) },
-                        onEditWord = { word, en, ja, newCategoryId ->  // ← newCategoryId 追加
+                        onEditWord = { word, en, ja, newCategoryId ->
                             viewModel.updateWord(word, en, ja, newCategoryId)
                         },
                         onDeleteWord = { viewModel.deleteWord(it) },

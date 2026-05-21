@@ -19,16 +19,21 @@ class PromptRepository @Inject constructor(
     private val promptWordDao: PromptWordDao,
     private val savedPromptDao: SavedPromptDao,
 ) {
-    val visibleCategories: Flow<List<CategoryEntity>> = categoryDao.observeVisible()
-    val visibleNegativeCategories: Flow<List<CategoryEntity>> = categoryDao.observeVisibleNegative()
+    // カテゴリの取得（引数でポジティブ/ネガティブを分ける）
+    val visibleCategories: Flow<List<CategoryEntity>> = 
+        categoryDao.observeCategories(isNegative = false)
+    
+    val visibleNegativeCategories: Flow<List<CategoryEntity>> = 
+        categoryDao.observeCategories(isNegative = true)
 
+    // 単語の取得（引数で非表示を含めるかどうかを制御）
     fun visibleWordsByCategory(categoryId: Long): Flow<List<PromptWordEntity>> =
-        promptWordDao.observeVisibleByCategory(categoryId)
+        promptWordDao.observeByCategory(categoryId, includeHidden = false)
 
     val allCategories: Flow<List<CategoryEntity>> = categoryDao.observeAll()
 
     fun allWordsByCategory(categoryId: Long): Flow<List<PromptWordEntity>> =
-        promptWordDao.observeAllByCategory(categoryId)
+        promptWordDao.observeByCategory(categoryId, includeHidden = true)
 
     val savedPrompts: Flow<List<SavedPromptEntity>> = savedPromptDao.observeAll()
 

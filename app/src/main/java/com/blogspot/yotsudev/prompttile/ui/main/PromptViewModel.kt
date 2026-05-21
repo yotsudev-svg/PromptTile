@@ -47,13 +47,24 @@ class PromptViewModel @Inject constructor(
     )
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val _wordsInCategory = _mode.flatMapLatest { mode ->
-        val categoryIdFlow = if (mode == PromptMode.POSITIVE)
-            _selectedPositiveCategoryId else _selectedNegativeCategoryId
-        categoryIdFlow.flatMapLatest { id ->
-            if (id == null) flowOf(emptyList())
-            else repository.visibleWordsByCategory(id)
+    private val _resolvedSelectedCategoryId = combine(
+        _mode,
+        _selectedPositiveCategoryId,
+        _selectedNegativeCategoryId,
+        repository.visibleCategories,
+        repository.visibleNegativeCategories
+    ) { mode, posId, negId, posCats, negCats ->
+        if (mode == PromptMode.POSITIVE) {
+            posId ?: posCats.firstOrNull()?.id
+        } else {
+            negId ?: negCats.firstOrNull()?.id
         }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val _wordsInCategory = _resolvedSelectedCategoryId.flatMapLatest { id ->
+        if (id == null) flowOf(emptyList())
+        else repository.visibleWordsByCategory(id)
     }
 
     private data class HistoryState(val canUndo: Boolean, val canRedo: Boolean)
@@ -74,20 +85,18 @@ class PromptViewModel @Inject constructor(
     val uiState = combine(
         combine(_mode, _positiveItems, _negativeItems, ::Triple),
         combine(repository.visibleCategories, repository.visibleNegativeCategories, ::Pair),
-        combine(_selectedPositiveCategoryId, _selectedNegativeCategoryId, ::Pair),
+        _resolvedSelectedCategoryId,
         _wordsInCategory,
         combine(_prefs, _historyState, ::Pair),
-    ) { (mode, posItems, negItems), (posCats, negCats), (posCatId, negCatId), words, (prefs, history) ->
-        val resolvedPosCatId = posCatId ?: posCats.firstOrNull()?.id
-        val resolvedNegCatId = negCatId ?: negCats.firstOrNull()?.id
+    ) { (mode, posItems, negItems), (posCats, negCats), resolvedCatId, words, (prefs, history) ->
         PromptUiState(
             mode                       = mode,
             positiveItems              = posItems,
             positiveCategories         = posCats,
-            selectedPositiveCategoryId = resolvedPosCatId,
+            selectedPositiveCategoryId = if (mode == PromptMode.POSITIVE) resolvedCatId else (_selectedPositiveCategoryId.value ?: posCats.firstOrNull()?.id),
             negativeItems              = negItems,
             negativeCategories         = negCats,
-            selectedNegativeCategoryId = resolvedNegCatId,
+            selectedNegativeCategoryId = if (mode == PromptMode.NEGATIVE) resolvedCatId else (_selectedNegativeCategoryId.value ?: negCats.firstOrNull()?.id),
             wordsInCategory            = words,
             isLoading                  = false,
             moveToBackOnCopy           = prefs.moveToBackOnCopy,
@@ -135,6 +144,12 @@ class PromptViewModel @Inject constructor(
             if (next.size > HISTORY_LIMIT) next.drop(1) else next
         }
         redoStack.value = emptyList()
+    }
+
+    private fun getHistoryStacks() = if (_mode.value == PromptMode.POSITIVE) {
+        _positiveUndoStack to _positiveRedoStack
+    } else {
+        _negativeUndoStack to _negativeRedoStack
     }
 
     private val currentItems get() =
@@ -194,15 +209,14 @@ class PromptViewModel @Inject constructor(
 
     fun clearAll() {
         pushHistory(currentItems.value)
-        currentItems.value = emptyList()
+        currentItems.update { emptyList() }
         persistItems()
     }
 
     // ---- Undo / Redo -------------------------------------------
 
     fun undo() {
-        val undoStack = if (_mode.value == PromptMode.POSITIVE) _positiveUndoStack else _negativeUndoStack
-        val redoStack = if (_mode.value == PromptMode.POSITIVE) _positiveRedoStack else _negativeRedoStack
+        val (undoStack, redoStack) = getHistoryStacks()
         val prev = undoStack.value.lastOrNull() ?: return
         redoStack.update { it + listOf(currentItems.value) }
         undoStack.update { it.dropLast(1) }
@@ -211,8 +225,7 @@ class PromptViewModel @Inject constructor(
     }
 
     fun redo() {
-        val undoStack = if (_mode.value == PromptMode.POSITIVE) _positiveUndoStack else _negativeUndoStack
-        val redoStack = if (_mode.value == PromptMode.POSITIVE) _positiveRedoStack else _negativeRedoStack
+        val (undoStack, redoStack) = getHistoryStacks()
         val next = redoStack.value.lastOrNull() ?: return
         undoStack.update { stack ->
             val pushed = stack + listOf(currentItems.value)

@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -52,8 +53,9 @@ class EditViewModel @Inject constructor(
     )
 
     fun toggleExpand(categoryId: Long) {
-        _expandedCategoryId.value =
-            if (_expandedCategoryId.value == categoryId) null else categoryId
+        _expandedCategoryId.update { current ->
+            if (current == categoryId) null else categoryId
+        }
     }
 
     // ---- カテゴリ CRUD ----
@@ -99,18 +101,15 @@ class EditViewModel @Inject constructor(
 
     /**
      * 単語の内容を更新し、必要であればカテゴリも移動する。
-     *
-     * [newCategoryId] が null または現在と同じ場合はカテゴリ移動をスキップする。
-     * updateWord と moveWordToCategory を別々に呼ぶことで、
-     * 「内容だけ変更」「カテゴリだけ移動」「両方変更」の
-     * 3ケースをすべて同じメソッドで処理できる。
      */
     fun updateWord(entity: PromptWordEntity, wordEn: String, wordJa: String, newCategoryId: Long?) {
         viewModelScope.launch {
-            repository.updateWord(entity.copy(wordEn = wordEn, wordJa = wordJa))
-            if (newCategoryId != null && newCategoryId != entity.categoryId) {
-                repository.moveWordToCategory(entity.id, newCategoryId)
-            }
+            val updatedEntity = entity.copy(
+                wordEn = wordEn,
+                wordJa = wordJa,
+                categoryId = newCategoryId ?: entity.categoryId
+            )
+            repository.updateWord(updatedEntity)
         }
     }
 

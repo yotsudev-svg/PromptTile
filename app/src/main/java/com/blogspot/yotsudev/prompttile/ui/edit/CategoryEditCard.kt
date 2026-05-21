@@ -1,6 +1,7 @@
 package com.blogspot.yotsudev.prompttile.ui.edit
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -40,7 +41,7 @@ fun CategoryEditCard(
     category: CategoryEntity,
     isExpanded: Boolean,
     words: List<PromptWordEntity>,
-    allCategories: List<CategoryEntity>,      // カテゴリ移動ドロップダウン用
+    allCategories: List<CategoryEntity>,
     onToggleExpand: () -> Unit,
     onEditCategory: (nameJa: String, nameEn: String) -> Unit,
     onDeleteCategory: () -> Unit,
@@ -57,6 +58,10 @@ fun CategoryEditCard(
     var showDeleteCategoryDialog by remember { mutableStateOf(false) }
     var deletingWord by remember { mutableStateOf<PromptWordEntity?>(null) }
 
+    // 再描画を抑えるための色計算
+    val containerAlpha = if (category.isHidden) 0.5f else 1.0f
+    val contentAlpha = if (category.isHidden) 0.4f else 1.0f
+
     // ---- ダイアログ群 ----
     if (showEditCategoryDialog) {
         CategoryDialog(
@@ -72,10 +77,6 @@ fun CategoryEditCard(
         )
     }
     editingWord?.let { word ->
-        /**
-         * 編集ダイアログには allCategories を渡してカテゴリ移動を可能にする。
-         * 新規追加（showAddWordDialog）のときはカテゴリ選択不要なので渡さない。
-         */
         WordDialog(
             initial = word,
             allCategories = allCategories,
@@ -102,12 +103,11 @@ fun CategoryEditCard(
     }
 
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .animateContentSize(),
         colors = CardDefaults.cardColors(
-            containerColor = if (category.isHidden)
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            else
-                MaterialTheme.colorScheme.surfaceVariant,
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = containerAlpha),
         ),
     ) {
         // ---- ヘッダー行 ----
@@ -115,22 +115,19 @@ fun CategoryEditCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onToggleExpand() }
-                .padding(start = 16.dp, top = 4.dp, bottom = 4.dp, end = 4.dp),
+                .padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = category.nameJa,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = if (category.isHidden)
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                    else
-                        MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha),
                 )
                 Text(
-                    text = if (category.isHidden) "${category.nameEn}（非表示中）" else category.nameEn,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    text = if (category.isHidden) "${category.nameEn}（非表示）" else category.nameEn,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f * contentAlpha),
                 )
             }
 
@@ -166,20 +163,23 @@ fun CategoryEditCard(
             Icon(
                 imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
             )
         }
 
         // ---- 単語一覧（アコーディオン） ----
         AnimatedVisibility(visible = isExpanded) {
             Column {
-                HorizontalDivider()
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                )
                 if (words.isEmpty()) {
                     Text(
                         text = "単語がありません",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                     )
                 } else {
                     words.forEach { word ->
@@ -193,10 +193,15 @@ fun CategoryEditCard(
                 }
                 TextButton(
                     onClick = { showAddWordDialog = true },
-                    modifier = Modifier.padding(horizontal = 8.dp),
+                    modifier = Modifier
+                        .padding(start = 12.dp, bottom = 4.dp),
                 ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = null)
-                    Text("単語を追加", modifier = Modifier.padding(start = 4.dp))
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        modifier = Modifier.padding(end = 4.dp)
+                    )
+                    Text("単語を追加")
                 }
             }
         }
@@ -211,30 +216,31 @@ private fun WordEditRow(
     onToggleVisibility: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val alpha = if (word.isHidden) 0.4f else 1.0f
+
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = 24.dp, top = 2.dp, bottom = 2.dp, end = 4.dp),
+            .clickable(enabled = !word.isDefault) { onEdit() }
+            .padding(start = 24.dp, top = 4.dp, bottom = 4.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(
-            text = word.wordEn,
-            style = MaterialTheme.typography.bodyMedium,
-            color = if (word.isHidden)
-                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
-            else
-                MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            text = word.wordJa,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                alpha = if (word.isHidden) 0.35f else 0.7f
-            ),
-            modifier = Modifier.weight(1f),
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = word.wordEn,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = alpha),
+            )
+            if (word.wordJa.isNotBlank()) {
+                Text(
+                    text = word.wordJa,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f * alpha),
+                )
+            }
+        }
+
         if (!word.isDefault) {
             IconButton(onClick = onEdit) {
                 Icon(
@@ -244,6 +250,7 @@ private fun WordEditRow(
                 )
             }
         }
+
         if (word.isDefault) {
             IconButton(onClick = onToggleVisibility) {
                 Icon(
