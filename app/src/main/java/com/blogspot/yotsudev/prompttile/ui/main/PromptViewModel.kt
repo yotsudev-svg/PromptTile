@@ -8,6 +8,7 @@ import com.blogspot.yotsudev.prompttile.data.preferences.PersistedPromptItem
 import com.blogspot.yotsudev.prompttile.data.preferences.PreferencesDataSource
 import com.blogspot.yotsudev.prompttile.data.preferences.UserPreferences
 import com.blogspot.yotsudev.prompttile.data.repository.PromptRepository
+import com.blogspot.yotsudev.prompttile.util.PromptFormatter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -239,7 +240,7 @@ class PromptViewModel @Inject constructor(
     // ---- テンプレート ------------------------------------------
 
     fun addTemplateItems(templateText: String) {
-        val words = templateText.split(",").map { it.trim() }.filter { it.isNotBlank() }
+        val words = PromptFormatter.parsePromptText(templateText)
         if (words.isEmpty()) return
         pushHistory(_positiveItems.value)
         val baseId = -System.currentTimeMillis()
@@ -255,7 +256,7 @@ class PromptViewModel @Inject constructor(
     // ---- 保存済みプロンプトから読み込み ----------------------------------------
 
     fun loadFromSaved(text: String, targetMode: PromptMode) {
-        val words = text.split(",").map { it.trim() }.filter { it.isNotBlank() }
+        val words = PromptFormatter.parsePromptText(text)
         if (words.isEmpty()) return
         val targetItems = if (targetMode == PromptMode.POSITIVE) _positiveItems else _negativeItems
         pushHistoryFor(targetMode)
@@ -327,19 +328,15 @@ class PromptViewModel @Inject constructor(
     // ---- プロンプト生成 ----------------------------------------
 
     fun buildPromptText(): String =
-        buildTextFromItems(
+        PromptFormatter.formatPrompt(
             if (_mode.value == PromptMode.POSITIVE) _positiveItems.value else _negativeItems.value
         )
-
-    private fun buildTextFromItems(items: List<PromptItem>): String =
-        items.mapIndexed { i, item -> if (i == 0) item.formatted else ", ${item.formatted}" }
-            .joinToString("")
 
     // ---- 保存 --------------------------------------------------
 
     fun saveCurrentPrompt(title: String) {
-        val posText = buildTextFromItems(_positiveItems.value)
-        val negText = buildTextFromItems(_negativeItems.value)
+        val posText = PromptFormatter.formatPrompt(_positiveItems.value)
+        val negText = PromptFormatter.formatPrompt(_negativeItems.value)
         if (posText.isBlank() && negText.isBlank()) return
         viewModelScope.launch {
             repository.savePrompt(

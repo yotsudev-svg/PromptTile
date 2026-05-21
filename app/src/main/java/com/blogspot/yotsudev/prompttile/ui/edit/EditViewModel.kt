@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
 import com.blogspot.yotsudev.prompttile.data.repository.PromptRepository
+import com.blogspot.yotsudev.prompttile.util.PromptFormatter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -91,7 +92,7 @@ class EditViewModel @Inject constructor(
             repository.insertWord(
                 PromptWordEntity(
                     categoryId = categoryId,
-                    wordEn = wordEn,
+                    wordEn = PromptFormatter.cleanWord(wordEn),
                     wordJa = wordJa,
                     sortOrder = nextOrder,
                 )
@@ -105,7 +106,7 @@ class EditViewModel @Inject constructor(
     fun updateWord(entity: PromptWordEntity, wordEn: String, wordJa: String, newCategoryId: Long?) {
         viewModelScope.launch {
             val updatedEntity = entity.copy(
-                wordEn = wordEn,
+                wordEn = PromptFormatter.cleanWord(wordEn),
                 wordJa = wordJa,
                 categoryId = newCategoryId ?: entity.categoryId
             )

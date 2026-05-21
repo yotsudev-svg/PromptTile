@@ -10,6 +10,7 @@ import com.blogspot.yotsudev.prompttile.data.seed.PrefixTemplate
 import com.blogspot.yotsudev.prompttile.data.seed.parsePrefixTemplates
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -70,7 +72,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    private suspend fun loadDefaultTemplates() {
+    private suspend fun loadDefaultTemplates() = withContext(Dispatchers.IO) {
         val json = context.assets
             .open("seed_data.json")
             .bufferedReader()

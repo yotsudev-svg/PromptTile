@@ -37,6 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.blogspot.yotsudev.prompttile.R
 import com.blogspot.yotsudev.prompttile.data.repository.UNCATEGORIZED_NEGATIVE_NAME
 import com.blogspot.yotsudev.prompttile.data.repository.UNCATEGORIZED_POSITIVE_NAME
+import com.blogspot.yotsudev.prompttile.util.PromptFormatter
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -247,7 +248,7 @@ private fun handleClipboardImport(
     }
 
     val words = text.split(",")
-        .map { it.trim().cleanForImport() }
+        .map { PromptFormatter.cleanWord(it) }
         .filter { it.isNotBlank() }
         .distinct()
 
@@ -270,11 +271,3 @@ private fun getClipboardText(context: Context): String? {
     val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     return cm.primaryClip?.getItemAt(0)?.text?.toString()
 }
-
-/**
- * インポート時に重み記号を除去する。
- */
-private fun String.cleanForImport(): String =
-    this.replace(Regex("[()\\[\\]{}]"), "")
-        .split(":")[0]
-        .trim()

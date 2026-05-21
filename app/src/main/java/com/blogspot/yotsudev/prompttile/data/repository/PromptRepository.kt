@@ -6,7 +6,10 @@ import com.blogspot.yotsudev.prompttile.data.dao.SavedPromptDao
 import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
 import com.blogspot.yotsudev.prompttile.data.entity.SavedPromptEntity
+import com.blogspot.yotsudev.prompttile.util.PromptFormatter
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -37,22 +40,25 @@ class PromptRepository @Inject constructor(
 
     val savedPrompts: Flow<List<SavedPromptEntity>> = savedPromptDao.observeAll()
 
-    suspend fun insertCategories(list: List<CategoryEntity>) = categoryDao.insertAll(list)
-    suspend fun insertWords(list: List<PromptWordEntity>) = promptWordDao.insertAll(list)
-    suspend fun insertCategory(category: CategoryEntity) = categoryDao.insert(category)
-    suspend fun updateCategory(category: CategoryEntity) = categoryDao.update(category)
-    suspend fun deleteCategory(category: CategoryEntity) = categoryDao.delete(category)
-    suspend fun toggleCategoryVisibility(category: CategoryEntity) =
+    suspend fun insertCategories(list: List<CategoryEntity>) = withContext(Dispatchers.IO) { categoryDao.insertAll(list) }
+    suspend fun insertWords(list: List<PromptWordEntity>) = withContext(Dispatchers.IO) { promptWordDao.insertAll(list) }
+    suspend fun insertCategory(category: CategoryEntity) = withContext(Dispatchers.IO) { categoryDao.insert(category) }
+    suspend fun updateCategory(category: CategoryEntity) = withContext(Dispatchers.IO) { categoryDao.update(category) }
+    suspend fun deleteCategory(category: CategoryEntity) = withContext(Dispatchers.IO) { categoryDao.delete(category) }
+    suspend fun toggleCategoryVisibility(category: CategoryEntity) = withContext(Dispatchers.IO) {
         categoryDao.update(category.copy(isHidden = !category.isHidden))
+    }
 
-    suspend fun insertWord(word: PromptWordEntity) = promptWordDao.insert(word)
-    suspend fun updateWord(word: PromptWordEntity) = promptWordDao.update(word)
-    suspend fun deleteWord(word: PromptWordEntity) = promptWordDao.delete(word)
-    suspend fun toggleWordVisibility(word: PromptWordEntity) =
+    suspend fun insertWord(word: PromptWordEntity) = withContext(Dispatchers.IO) { promptWordDao.insert(word) }
+    suspend fun updateWord(word: PromptWordEntity) = withContext(Dispatchers.IO) { promptWordDao.update(word) }
+    suspend fun deleteWord(word: PromptWordEntity) = withContext(Dispatchers.IO) { promptWordDao.delete(word) }
+    suspend fun toggleWordVisibility(word: PromptWordEntity) = withContext(Dispatchers.IO) {
         promptWordDao.update(word.copy(isHidden = !word.isHidden))
+    }
 
-    suspend fun moveWordToCategory(wordId: Long, newCategoryId: Long) =
+    suspend fun moveWordToCategory(wordId: Long, newCategoryId: Long) = withContext(Dispatchers.IO) {
         promptWordDao.updateCategory(wordId, newCategoryId)
+    }
 
     /**
      * テキストに含まれる単語をDBに一括登録する。
@@ -61,12 +67,12 @@ class PromptRepository @Inject constructor(
      * ポジとネガに同じ単語が存在することを許容する。
      * （例: ポジの未分類に "blurry" があってもネガの未分類にも登録できる）
      */
-    suspend fun registerNewWordsFromText(text: String, isNegative: Boolean) {
-        if (text.isBlank()) return
+    suspend fun registerNewWordsFromText(text: String, isNegative: Boolean) = withContext(Dispatchers.IO) {
+        if (text.isBlank()) return@withContext
 
         val uncategorizedName = if (isNegative)
             UNCATEGORIZED_NEGATIVE_NAME else UNCATEGORIZED_POSITIVE_NAME
-        val uncategorizedCategory = categoryDao.getCategoryByNameEn(uncategorizedName) ?: return
+        val uncategorizedCategory = categoryDao.getCategoryByNameEn(uncategorizedName) ?: return@withContext
 
         // 全単語ではなく対象カテゴリ内のみで重複チェック
         val existingWords = promptWordDao
@@ -75,7 +81,7 @@ class PromptRepository @Inject constructor(
 
         val newWords = text
             .split(",")
-            .map { it.trim().cleanWord() }
+            .map { it.trim().let { w -> PromptFormatter.cleanWord(w) } }
             .filter { it.isNotBlank() && it !in existingWords }
             .distinct()
             .mapIndexed { index, word ->
@@ -93,11 +99,6 @@ class PromptRepository @Inject constructor(
         }
     }
 
-    suspend fun savePrompt(entity: SavedPromptEntity) = savedPromptDao.insert(entity)
-    suspend fun deletePrompt(entity: SavedPromptEntity) = savedPromptDao.delete(entity)
+    suspend fun savePrompt(entity: SavedPromptEntity) = withContext(Dispatchers.IO) { savedPromptDao.insert(entity) }
+    suspend fun deletePrompt(entity: SavedPromptEntity) = withContext(Dispatchers.IO) { savedPromptDao.delete(entity) }
 }
-
-private fun String.cleanWord(): String =
-    this.replace(Regex("[()\\[\\]{}]"), "")
-        .split(":")[0]
-        .trim()
