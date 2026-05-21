@@ -11,6 +11,12 @@
     <string name="settings_theme_dark">ダークモード</string>
     <string name="settings_theme_system_full">システム設定に従う</string>
 
+    <!-- Navigation -->
+    <string name="nav_main">メイン</string>
+    <string name="nav_saved">保存済み</string>
+    <string name="nav_edit">編集</string>
+    <string name="nav_settings">設定</string>
+
     <string name="settings_header_prompt">プロンプト</string>
     <string name="settings_template_title">クオリティテンプレート</string>
     <string name="settings_template_description">テンプレートの単語をメイン画面のプロンプトに追加します</string>
@@ -34,4 +40,95 @@
     <string name="dialog_add_template_text_placeholder">例: masterpiece, best quality</string>
     <string name="dialog_add_template_confirm">追加</string>
     <string name="dialog_cancel">キャンセル</string>
+
+    <!-- Delete Dialog -->
+    <string name="dialog_delete_confirm_title">削除の確認</string>
+    <string name="dialog_delete_confirm_msg">「%s」を削除しますか？\nこの操作は取り消せません。</string>
+    <string name="dialog_delete">削除</string>
+
+    <!-- Feedback Messages -->
+    <string name="msg_prompt_saved">保存しました</string>
+    <string name="msg_prompt_added">追加しました</string>
+    <string name="msg_prompt_copied">コピーしました</string>
+    <string name="msg_word_copied">「%s」をコピーしました</string>
+    <string name="msg_clipboard_empty">クリップボードにテキストがありません</string>
+    <string name="msg_no_words_to_add">追加できる単語がありませんでした</string>
+
+    <!-- Clipboard Import Sheet -->
+    <string name="import_sheet_title">クリップボードから追加</string>
+    <string name="import_sheet_target_positive">追加先: Positive</string>
+    <string name="import_sheet_target_negative">追加先: Negative</string>
+    <string name="import_sheet_count_msg">%1$d/%2$d 個を追加</string>
+    <string name="import_sheet_register_legend">未分類に登録</string>
+    <string name="import_sheet_exclude_legend">タップで除外/復活</string>
+    <string name="import_sheet_add_with_count">追加 (%d)</string>
+    <string name="import_sheet_register_on">DB登録しない</string>
+    <string name="import_sheet_register_off">DB登録する</string>
+    <string name="import_chip_exclude">除外する</string>
+    <string name="import_chip_restore">復活させる</string>
+
+    <string name="msg_deleted">削除しました</string>
+    <string name="msg_manual_added">手動追加しました</string>
+    <string name="msg_positive_added">Positiveに追加しました</string>
+    <string name="msg_negative_added">Negativeに追加しました</string>
+
+    <!-- Main Screen -->
+    <string name="main_import_from_clipboard">クリップボードから追加</string>
+    <string name="main_clear_all">全クリア</string>
+    <string name="main_save">保存</string>
+
+    <!-- Preview Area -->
+    <string name="preview_mode_positive">Positive</string>
+    <string name="preview_mode_negative">Negative</string>
+    <string name="preview_empty_msg">単語をタップして追加…</string>
+    <string name="preview_undo">元に戻す</string>
+    <string name="preview_redo">やり直す</string>
+    <string name="preview_delete_mode_on">削除モードON</string>
+    <string name="preview_delete_mode_off">削除モードOFF</string>
+    <string name="preview_copy">コピー</string>
+    <string name="preview_remove_word">「%s」を削除</string>
+
+    <!-- Word Pool -->
+    <string name="word_pool_no_label">（未設定）</string>
+
+    <!-- Save Dialog -->
+    <string name="dialog_save_prompt_title">プロンプトを保存</string>
+    <string name="dialog_save_prompt_label">タイトル</string>
+    <string name="dialog_save_prompt_placeholder">例: キャラクターA</string>
+
+    <!-- Saved Screen -->
+    <string name="saved_title">保存済み</string>
+    <string name="saved_add_prompt_desc">プロンプトを手動追加</string>
+    <string name="saved_empty_msg">保存済みのプロンプトはありません\nメイン画面でプロンプトを保存しましょう</string>
+    <string name="saved_copy">コピー</string>
+    <string name="saved_delete">削除</string>
+    <string name="saved_apply_positive">+ Positive</string>
+    <string name="saved_apply_negative">+ Negative</string>
+
+    <string name="dialog_add_prompt_title">プロンプトを追加</string>
+    <string name="dialog_add_prompt_positive">ポジティブ</string>
+    <string name="dialog_add_prompt_positive_placeholder">例: masterpiece, 1girl</string>
+    <string name="dialog_add_prompt_negative">ネガティブ</string>
+    <string name="dialog_add_prompt_negative_placeholder">例: lowres, bad anatomy</string>
+
+    <!-- Edit Screen -->
+    <string name="edit_title">単語・カテゴリ編集</string>
+    <string name="edit_add_category_desc">カテゴリを追加</string>
+    <string name="edit_empty_prompt">右下の＋ボタンでカテゴリを追加しましょう</string>
+    <string name="dialog_add_category_title">カテゴリを追加</string>
+    <string name="dialog_edit_category_title">カテゴリを編集</string>
+    <string name="dialog_category_name_ja">日本語名</string>
+    <string name="dialog_category_name_ja_placeholder">例: 人物</string>
+    <string name="dialog_category_name_en">英語名</string>
+    <string name="dialog_category_name_en_placeholder">例: Character</string>
+    <string name="dialog_add_word_title">単語を追加</string>
+    <string name="dialog_edit_word_title">単語を編集</string>
+    <string name="dialog_word_en">英語</string>
+    <string name="dialog_word_en_placeholder">例: blue hair</string>
+    <string name="dialog_word_ja">日本語（任意）</string>
+    <string name="dialog_word_ja_placeholder">例: 青髪</string>
+    <string name="dialog_word_category">カテゴリ</string>
+    <string name="dialog_word_category_select">カテゴリを選択</string>
+    <string name="dialog_add">追加</string>
+    <string name="dialog_save">保存</string>
 </resources>

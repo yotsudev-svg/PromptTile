@@ -9,6 +9,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
+import com.blogspot.yotsudev.prompttile.R
 
 /**
  * プロンプト保存時にタイトルを入力するダイアログ。
@@ -29,13 +31,13 @@ fun SavePromptDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("プロンプトを保存") },
+        title = { Text(stringResource(R.string.dialog_save_prompt_title)) },
         text = {
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
-                label = { Text("タイトル") },
-                placeholder = { Text("例: キャラクターA") },
+                label = { Text(stringResource(R.string.dialog_save_prompt_label)) },
+                placeholder = { Text(stringResource(R.string.dialog_save_prompt_placeholder)) },
                 singleLine = true,
             )
         },
@@ -48,12 +50,12 @@ fun SavePromptDialog(
                 },
                 enabled = canSave,
             ) {
-                Text("保存")
+                Text(stringResource(R.string.dialog_save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("キャンセル")
+                Text(stringResource(R.string.dialog_cancel))
             }
         },
     )

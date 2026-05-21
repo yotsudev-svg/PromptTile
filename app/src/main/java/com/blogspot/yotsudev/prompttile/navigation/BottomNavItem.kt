@@ -1,21 +1,22 @@
 package com.blogspot.yotsudev.prompttile.navigation
 
+import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.blogspot.yotsudev.prompttile.R
 
 /**
  * BottomNavigationBar の各タブに必要なメタデータをまとめたデータクラス。
  *
- * ルート・ラベル・アイコンを1つのオブジェクトで管理することで、
- * NavHost側とBottomBar側が同じリストを参照でき、定義の重複を防ぐ。
+ * ラベルはリソース ID を保持し、多言語対応と安全な解決を実現します。
  */
 data class BottomNavItem(
     val destination: AppDestination,
-    val label: String,
+    @StringRes val labelRes: Int,
     val icon: ImageVector,
 )
 
@@ -23,22 +24,22 @@ data class BottomNavItem(
 val bottomNavItems = listOf(
     BottomNavItem(
         destination = AppDestination.Main,
-        label = "メイン",
+        labelRes = R.string.nav_main,
         icon = Icons.Default.Home,
     ),
     BottomNavItem(
         destination = AppDestination.Saved,
-        label = "保存済み",
+        labelRes = R.string.nav_saved,
         icon = Icons.Default.Favorite,
     ),
     BottomNavItem(
         destination = AppDestination.Edit,
-        label = "編集",
+        labelRes = R.string.nav_edit,
         icon = Icons.Default.Build,
     ),
     BottomNavItem(
         destination = AppDestination.Settings,
-        label = "設定",
+        labelRes = R.string.nav_settings,
         icon = Icons.Default.Settings,
     ),
 )

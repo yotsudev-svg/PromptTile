@@ -25,82 +25,34 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
-import com.blogspot.yotsudev.prompttile.ui.components.ConfirmDeleteDialog
 
+/**
+ * カテゴリ編集カード。
+ * 内部状態（ダイアログフラグなど）を持たない Stateless なコンポーネントです。
+ * これにより再描画の最適化が容易になり、プレビューも容易になります。
+ */
 @Composable
 fun CategoryEditCard(
     category: CategoryEntity,
     isExpanded: Boolean,
     words: List<PromptWordEntity>,
-    allCategories: List<CategoryEntity>,
     onToggleExpand: () -> Unit,
-    onEditCategory: (nameJa: String, nameEn: String) -> Unit,
-    onDeleteCategory: () -> Unit,
+    onEditCategoryClick: () -> Unit,
+    onDeleteCategoryClick: () -> Unit,
     onToggleCategoryVisibility: () -> Unit,
-    onAddWord: (wordEn: String, wordJa: String) -> Unit,
-    onEditWord: (PromptWordEntity, wordEn: String, wordJa: String, newCategoryId: Long?) -> Unit,
-    onDeleteWord: (PromptWordEntity) -> Unit,
+    onAddWordClick: () -> Unit,
+    onEditWordClick: (PromptWordEntity) -> Unit,
+    onDeleteWordClick: (PromptWordEntity) -> Unit,
     onToggleWordVisibility: (PromptWordEntity) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var showEditCategoryDialog by remember { mutableStateOf(false) }
-    var showAddWordDialog by remember { mutableStateOf(false) }
-    var editingWord by remember { mutableStateOf<PromptWordEntity?>(null) }
-    var showDeleteCategoryDialog by remember { mutableStateOf(false) }
-    var deletingWord by remember { mutableStateOf<PromptWordEntity?>(null) }
-
-    // 再描画を抑えるための色計算
     val containerAlpha = if (category.isHidden) 0.5f else 1.0f
     val contentAlpha = if (category.isHidden) 0.4f else 1.0f
-
-    // ---- ダイアログ群 ----
-    if (showEditCategoryDialog) {
-        CategoryDialog(
-            initial = category,
-            onConfirm = { ja, en -> onEditCategory(ja, en); showEditCategoryDialog = false },
-            onDismiss = { showEditCategoryDialog = false },
-        )
-    }
-    if (showAddWordDialog) {
-        WordDialog(
-            onConfirm = { en, ja, _ -> onAddWord(en, ja); showAddWordDialog = false },
-            onDismiss = { showAddWordDialog = false },
-        )
-    }
-    editingWord?.let { word ->
-        WordDialog(
-            initial = word,
-            allCategories = allCategories,
-            onConfirm = { en, ja, newCategoryId ->
-                onEditWord(word, en, ja, newCategoryId)
-                editingWord = null
-            },
-            onDismiss = { editingWord = null },
-        )
-    }
-    if (showDeleteCategoryDialog) {
-        ConfirmDeleteDialog(
-            targetName = category.nameJa,
-            onConfirm = { onDeleteCategory(); showDeleteCategoryDialog = false },
-            onDismiss = { showDeleteCategoryDialog = false },
-        )
-    }
-    deletingWord?.let { word ->
-        ConfirmDeleteDialog(
-            targetName = word.wordEn,
-            onConfirm = { onDeleteWord(word); deletingWord = null },
-            onDismiss = { deletingWord = null },
-        )
-    }
 
     Card(
         modifier = modifier
@@ -131,49 +83,47 @@ fun CategoryEditCard(
                 )
             }
 
+            // 編集・表示切り替え・削除ボタン
             if (!category.isDefault) {
-                IconButton(onClick = { showEditCategoryDialog = true }) {
+                IconButton(onClick = onEditCategoryClick) {
                     Icon(
                         imageVector = Icons.Default.Edit,
-                        contentDescription = "カテゴリを編集",
-                        tint = MaterialTheme.colorScheme.primary,
+                        contentDescription = "編集",
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
-
-            if (category.isDefault) {
-                IconButton(onClick = onToggleCategoryVisibility) {
-                    Icon(
-                        imageVector = if (category.isHidden)
-                            Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                        contentDescription = if (category.isHidden) "表示する" else "非表示にする",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+            IconButton(
+                onClick = {
+                    if (category.isDefault) onToggleCategoryVisibility()
+                    else onDeleteCategoryClick()
                 }
-            } else {
-                IconButton(onClick = { showDeleteCategoryDialog = true }) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "カテゴリを削除",
-                        tint = MaterialTheme.colorScheme.error,
-                    )
-                }
+            ) {
+                Icon(
+                    imageVector = if (category.isDefault) {
+                        if (category.isHidden) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                    } else {
+                        Icons.Default.Delete
+                    },
+                    contentDescription = null,
+                    tint = if (category.isDefault) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error
+                )
             }
-
             Icon(
                 imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                modifier = Modifier.padding(start = 8.dp)
             )
         }
 
-        // ---- 単語一覧（アコーディオン） ----
+        // ---- 単語一覧 (AnimatedVisibility) ----
         AnimatedVisibility(visible = isExpanded) {
             Column {
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 16.dp),
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                 )
+                
                 if (words.isEmpty()) {
                     Text(
                         text = "単語がありません",
@@ -185,16 +135,16 @@ fun CategoryEditCard(
                     words.forEach { word ->
                         WordEditRow(
                             word = word,
-                            onEdit = { editingWord = word },
-                            onDelete = { deletingWord = word },
+                            onEdit = { onEditWordClick(word) },
+                            onDelete = { onDeleteWordClick(word) },
                             onToggleVisibility = { onToggleWordVisibility(word) },
                         )
                     }
                 }
+
                 TextButton(
-                    onClick = { showAddWordDialog = true },
-                    modifier = Modifier
-                        .padding(start = 12.dp, bottom = 4.dp),
+                    onClick = onAddWordClick,
+                    modifier = Modifier.padding(start = 12.dp, bottom = 4.dp),
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,

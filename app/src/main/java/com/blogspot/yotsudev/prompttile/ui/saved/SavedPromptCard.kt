@@ -23,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.blogspot.yotsudev.prompttile.R
 import com.blogspot.yotsudev.prompttile.data.entity.SavedPromptEntity
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -76,14 +78,14 @@ fun SavedPromptCard(
                 IconButton(onClick = { onCopy(entity) }) {
                     Icon(
                         imageVector = Icons.Default.ContentCopy,
-                        contentDescription = "コピー",
+                        contentDescription = stringResource(R.string.saved_copy),
                         tint = MaterialTheme.colorScheme.primary,
                     )
                 }
                 IconButton(onClick = { onDelete(entity) }) {
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "削除",
+                        contentDescription = stringResource(R.string.saved_delete),
                         tint = MaterialTheme.colorScheme.error,
                     )
                 }
@@ -92,14 +94,14 @@ fun SavedPromptCard(
             // ---- プロンプトプレビュー ----
             if (entity.promptText.isNotBlank()) {
                 PromptPreviewItem(
-                    label = "Positive",
+                    label = stringResource(R.string.preview_mode_positive),
                     text = entity.promptText,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
             if (entity.negativeText.isNotBlank()) {
                 PromptPreviewItem(
-                    label = "Negative",
+                    label = stringResource(R.string.preview_mode_negative),
                     text = entity.negativeText,
                     color = MaterialTheme.colorScheme.error
                 )
@@ -119,7 +121,7 @@ fun SavedPromptCard(
                                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         ) {
-                            Text("+ Positive", style = MaterialTheme.typography.labelLarge)
+                            Text(stringResource(R.string.saved_apply_positive), style = MaterialTheme.typography.labelLarge)
                         }
                     }
                     if (onLoadNegative != null && entity.negativeText.isNotBlank()) {
@@ -130,7 +132,7 @@ fun SavedPromptCard(
                                 contentColor = MaterialTheme.colorScheme.onErrorContainer
                             )
                         ) {
-                            Text("+ Negative", style = MaterialTheme.typography.labelLarge)
+                            Text(stringResource(R.string.saved_apply_negative), style = MaterialTheme.typography.labelLarge)
                         }
                     }
                 }

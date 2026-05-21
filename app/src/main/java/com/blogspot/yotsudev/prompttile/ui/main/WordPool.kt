@@ -20,6 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.blogspot.yotsudev.prompttile.R
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
 
 @Composable
@@ -100,7 +102,7 @@ private fun WordChip(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = word.wordJa.ifBlank { "（未設定）" },
+                text = word.wordJa.ifBlank { stringResource(R.string.word_pool_no_label) },
                 style = MaterialTheme.typography.labelSmall,
                 color = contentColor.copy(
                     alpha = if (isUncategorized && word.wordJa.isBlank()) 0.4f else 0.7f

@@ -4,10 +4,10 @@ import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.ContentPaste
@@ -17,6 +17,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -24,13 +27,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.blogspot.yotsudev.prompttile.R
 import com.blogspot.yotsudev.prompttile.data.repository.UNCATEGORIZED_NEGATIVE_NAME
 import com.blogspot.yotsudev.prompttile.data.repository.UNCATEGORIZED_POSITIVE_NAME
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,6 +46,8 @@ fun MainScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     // 計算コストの高い処理を remember で保護 (Recomposition 最適化)
     val hasItems = remember(uiState.currentItems) { uiState.currentItems.isNotEmpty() }
@@ -62,11 +71,12 @@ fun MainScreen(
     var importItems by remember { mutableStateOf<List<ClipboardImportItem>?>(null) }
 
     if (showSaveDialog) {
+        val msgSaved = stringResource(R.string.msg_prompt_saved)
         SavePromptDialog(
             onConfirm = { title ->
                 viewModel.saveCurrentPrompt(title)
                 showSaveDialog = false
-                Toast.makeText(context, "保存しました", Toast.LENGTH_SHORT).show()
+                scope.launch { snackbarHostState.showSnackbar(msgSaved) }
             },
             onDismiss = { showSaveDialog = false },
         )
@@ -74,6 +84,7 @@ fun MainScreen(
 
     // ---- ボトムシート ----
     importItems?.let { items ->
+        val msgAdded = stringResource(R.string.msg_prompt_added)
         ClipboardImportSheet(
             mode = uiState.mode,
             items = items,
@@ -90,73 +101,88 @@ fun MainScreen(
             onConfirm = {
                 viewModel.confirmClipboardImport(items)
                 importItems = null
-                Toast.makeText(context, "追加しました", Toast.LENGTH_SHORT).show()
+                scope.launch { snackbarHostState.showSnackbar(msgAdded) }
             },
             onDismiss = { importItems = null },
         )
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-
-        MainTopAppBar(
-            hasItems = hasItems,
-            canSave = uiState.positiveItems.isNotEmpty() || uiState.negativeItems.isNotEmpty(),
-            onImportClick = {
-                handleClipboardImport(context) { items -> importItems = items }
-            },
-            onClearClick = viewModel::clearAll,
-            onSaveClick = { showSaveDialog = true }
-        )
-
-        PreviewArea(
-            mode = uiState.mode,
-            items = uiState.currentItems,
-            canUndo = uiState.canUndo,
-            canRedo = uiState.canRedo,
-            onModeChange = viewModel::switchMode,
-            onRemove = viewModel::removeItem,
-            onWeightCycle = viewModel::cycleWeight,
-            onMove = viewModel::moveItem,
-            onCopyAll = {
-                val text = viewModel.buildPromptText()
-                copyToClipboard(context, text)
-                Toast.makeText(context, "コピーしました", Toast.LENGTH_SHORT).show()
-                if (uiState.moveToBackOnCopy) {
-                    (context as? Activity)?.moveTaskToBack(true)
-                }
-            },
-            onUndo = viewModel::undo,
-            onRedo = viewModel::redo,
-            modifier = Modifier.fillMaxWidth(),
-        )
-
-        HorizontalDivider()
-
-        CategoryBar(
-            categories = uiState.currentCategories,
-            selectedCategoryId = uiState.currentSelectedCategoryId,
-            onCategorySelected = viewModel::selectCategory,
-            modifier = Modifier.fillMaxWidth(),
-        )
-
-        HorizontalDivider()
-
-        WordPool(
-            words = uiState.wordsInCategory,
-            selectedWordIds = selectedWordIds,
-            uncategorizedIds = uncategorizedIds,
-            onWordTap = viewModel::toggleWord,
-            onWordLongPress = { word ->
-                copyToClipboard(context, word.wordEn)
-                Toast.makeText(context, "「${word.wordEn}」をコピーしました", Toast.LENGTH_SHORT).show()
-                if (uiState.moveToBackOnCopy) {
-                    (context as? Activity)?.moveTaskToBack(true)
-                }
-            },
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            MainTopAppBar(
+                hasItems = hasItems,
+                canSave = uiState.positiveItems.isNotEmpty() || uiState.negativeItems.isNotEmpty(),
+                onImportClick = {
+                    handleClipboardImport(context, snackbarHostState, scope) { items -> importItems = items }
+                },
+                onClearClick = viewModel::clearAll,
+                onSaveClick = { showSaveDialog = true }
+            )
+        }
+    ) { innerPadding ->
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-        )
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+
+            val msgCopied = stringResource(R.string.msg_prompt_copied)
+            PreviewArea(
+                mode = uiState.mode,
+                items = uiState.currentItems,
+                canUndo = uiState.canUndo,
+                canRedo = uiState.canRedo,
+                onModeChange = viewModel::switchMode,
+                onRemove = viewModel::removeItem,
+                onWeightCycle = viewModel::cycleWeight,
+                onMove = viewModel::moveItem,
+                onCopyAll = {
+                    val text = viewModel.buildPromptText()
+                    copyToClipboard(context, text)
+                    scope.launch { snackbarHostState.showSnackbar(msgCopied) }
+                    if (uiState.moveToBackOnCopy) {
+                        (context as? Activity)?.moveTaskToBack(true)
+                    }
+                },
+                onUndo = viewModel::undo,
+                onRedo = viewModel::redo,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            HorizontalDivider()
+
+            CategoryBar(
+                categories = uiState.currentCategories,
+                selectedCategoryId = uiState.currentSelectedCategoryId,
+                onCategorySelected = viewModel::selectCategory,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            HorizontalDivider()
+
+            val msgWordCopiedTemplate = stringResource(R.string.msg_word_copied)
+            WordPool(
+                words = uiState.wordsInCategory,
+                selectedWordIds = selectedWordIds,
+                uncategorizedIds = uncategorizedIds,
+                onWordTap = viewModel::toggleWord,
+                onWordLongPress = { word ->
+                    copyToClipboard(context, word.wordEn)
+                    scope.launch {
+                        snackbarHostState.showSnackbar(
+                            msgWordCopiedTemplate.format(word.wordEn)
+                        )
+                    }
+                    if (uiState.moveToBackOnCopy) {
+                        (context as? Activity)?.moveTaskToBack(true)
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+            )
+        }
     }
 }
 
@@ -180,7 +206,7 @@ private fun MainTopAppBar(
             IconButton(onClick = onImportClick) {
                 Icon(
                     imageVector = Icons.Default.ContentPaste,
-                    contentDescription = "クリップボードから追加",
+                    contentDescription = stringResource(R.string.main_import_from_clipboard),
                 )
             }
             IconButton(
@@ -189,7 +215,7 @@ private fun MainTopAppBar(
             ) {
                 Icon(
                     imageVector = Icons.Default.ClearAll,
-                    contentDescription = "全クリア",
+                    contentDescription = stringResource(R.string.main_clear_all),
                 )
             }
             IconButton(
@@ -198,7 +224,7 @@ private fun MainTopAppBar(
             ) {
                 Icon(
                     imageVector = Icons.Default.Save,
-                    contentDescription = "保存",
+                    contentDescription = stringResource(R.string.main_save),
                 )
             }
         },
@@ -208,10 +234,15 @@ private fun MainTopAppBar(
     )
 }
 
-private fun handleClipboardImport(context: Context, onImportReady: (List<ClipboardImportItem>) -> Unit) {
+private fun handleClipboardImport(
+    context: Context,
+    snackbarHostState: SnackbarHostState,
+    scope: kotlinx.coroutines.CoroutineScope,
+    onImportReady: (List<ClipboardImportItem>) -> Unit
+) {
     val text = getClipboardText(context)
     if (text.isNullOrBlank()) {
-        Toast.makeText(context, "クリップボードにテキストがありません", Toast.LENGTH_SHORT).show()
+        scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.msg_clipboard_empty)) }
         return
     }
 
@@ -221,7 +252,7 @@ private fun handleClipboardImport(context: Context, onImportReady: (List<Clipboa
         .distinct()
 
     if (words.isEmpty()) {
-        Toast.makeText(context, "追加できる単語がありませんでした", Toast.LENGTH_SHORT).show()
+        scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.msg_no_words_to_add)) }
         return
     }
 

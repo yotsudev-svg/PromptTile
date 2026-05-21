@@ -8,6 +8,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.blogspot.yotsudev.prompttile.R
 
 /**
  * 削除確認ダイアログ。
@@ -33,19 +35,19 @@ fun ConfirmDeleteDialog(
                 tint = MaterialTheme.colorScheme.error,
             )
         },
-        title = { Text("削除の確認") },
-        text = { Text("「$targetName」を削除しますか？\nこの操作は取り消せません。") },
+        title = { Text(stringResource(R.string.dialog_delete_confirm_title)) },
+        text = { Text(stringResource(R.string.dialog_delete_confirm_msg, targetName)) },
         confirmButton = {
             TextButton(onClick = onConfirm) {
                 Text(
-                    text = "削除",
+                    text = stringResource(R.string.dialog_delete),
                     color = MaterialTheme.colorScheme.error,
                 )
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("キャンセル")
+                Text(stringResource(R.string.dialog_cancel))
             }
         },
     )

@@ -34,6 +34,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.blogspot.yotsudev.prompttile.R
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
@@ -72,7 +74,7 @@ fun PreviewArea(
                 },
                 text = {
                     Text(
-                        text = "Positive",
+                        text = stringResource(R.string.preview_mode_positive),
                         style = MaterialTheme.typography.labelLarge,
                         color = if (mode == PromptMode.POSITIVE)
                             MaterialTheme.colorScheme.primary
@@ -89,7 +91,7 @@ fun PreviewArea(
                 },
                 text = {
                     Text(
-                        text = "Negative",
+                        text = stringResource(R.string.preview_mode_negative),
                         style = MaterialTheme.typography.labelLarge,
                         color = if (mode == PromptMode.NEGATIVE)
                             MaterialTheme.colorScheme.error
@@ -108,8 +110,13 @@ fun PreviewArea(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            val modeText = if (mode == PromptMode.POSITIVE) 
+                stringResource(R.string.preview_mode_positive) 
+            else 
+                stringResource(R.string.preview_mode_negative)
+
             Text(
-                text = "${if (mode == PromptMode.POSITIVE) "Positive" else "Negative"} (${items.size})",
+                text = "$modeText (${items.size})",
                 style = MaterialTheme.typography.labelMedium,
                 color = if (mode == PromptMode.NEGATIVE)
                     MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
@@ -129,7 +136,7 @@ fun PreviewArea(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Undo,
-                        contentDescription = "元に戻す",
+                        contentDescription = stringResource(R.string.preview_undo),
                         tint = if (canUndo)
                             MaterialTheme.colorScheme.onSurfaceVariant
                         else
@@ -146,7 +153,7 @@ fun PreviewArea(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Redo,
-                        contentDescription = "やり直す",
+                        contentDescription = stringResource(R.string.preview_redo),
                         tint = if (canRedo)
                             MaterialTheme.colorScheme.onSurfaceVariant
                         else
@@ -159,7 +166,10 @@ fun PreviewArea(
                 ) {
                     Icon(
                         imageVector = Icons.Default.DeleteSweep,
-                        contentDescription = if (isDeleteMode) "削除モードOFF" else "削除モードON",
+                        contentDescription = if (isDeleteMode) 
+                            stringResource(R.string.preview_delete_mode_off) 
+                        else 
+                            stringResource(R.string.preview_delete_mode_on),
                         tint = when {
                             items.isEmpty() -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                             isDeleteMode -> MaterialTheme.colorScheme.error
@@ -173,7 +183,7 @@ fun PreviewArea(
                 ) {
                     Icon(
                         imageVector = Icons.Default.ContentCopy,
-                        contentDescription = "コピー",
+                        contentDescription = stringResource(R.string.preview_copy),
                         tint = when {
                             items.isEmpty() -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                             mode == PromptMode.NEGATIVE -> MaterialTheme.colorScheme.error
@@ -222,7 +232,7 @@ private fun ChipList(
             contentAlignment = Alignment.CenterStart,
         ) {
             Text(
-                text = "単語をタップして追加…",
+                text = stringResource(R.string.preview_empty_msg),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
             )
@@ -294,7 +304,7 @@ private fun PromptChip(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "${item.wordEn}を削除",
+                        contentDescription = stringResource(R.string.preview_remove_word).format(item.wordEn),
                         modifier = Modifier.size(FilterChipDefaults.IconSize),
                     )
                 }

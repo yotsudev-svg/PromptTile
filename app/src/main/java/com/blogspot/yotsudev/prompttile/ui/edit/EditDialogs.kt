@@ -19,7 +19,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.blogspot.yotsudev.prompttile.R
 import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
 
@@ -35,21 +37,26 @@ fun CategoryDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (initial == null) "カテゴリを追加" else "カテゴリを編集") },
+        title = {
+            Text(
+                if (initial == null) stringResource(R.string.dialog_add_category_title)
+                else stringResource(R.string.dialog_edit_category_title)
+            )
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = nameJa,
                     onValueChange = { nameJa = it },
-                    label = { Text("日本語名") },
-                    placeholder = { Text("例: 人物") },
+                    label = { Text(stringResource(R.string.dialog_category_name_ja)) },
+                    placeholder = { Text(stringResource(R.string.dialog_category_name_ja_placeholder)) },
                     singleLine = true,
                 )
                 OutlinedTextField(
                     value = nameEn,
                     onValueChange = { nameEn = it },
-                    label = { Text("英語名") },
-                    placeholder = { Text("例: Character") },
+                    label = { Text(stringResource(R.string.dialog_category_name_en)) },
+                    placeholder = { Text(stringResource(R.string.dialog_category_name_en_placeholder)) },
                     singleLine = true,
                 )
             }
@@ -58,10 +65,15 @@ fun CategoryDialog(
             TextButton(
                 onClick = { if (canSave) onConfirm(nameJa.trim(), nameEn.trim()) },
                 enabled = canSave,
-            ) { Text(if (initial == null) "追加" else "保存") }
+            ) {
+                Text(
+                    if (initial == null) stringResource(R.string.dialog_add)
+                    else stringResource(R.string.dialog_save)
+                )
+            }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("キャンセル") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.dialog_cancel)) }
         },
     )
 }
@@ -92,21 +104,26 @@ fun WordDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (initial == null) "単語を追加" else "単語を編集") },
+        title = {
+            Text(
+                if (initial == null) stringResource(R.string.dialog_add_word_title)
+                else stringResource(R.string.dialog_edit_word_title)
+            )
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = wordEn,
                     onValueChange = { wordEn = it },
-                    label = { Text("英語") },
-                    placeholder = { Text("例: blue hair") },
+                    label = { Text(stringResource(R.string.dialog_word_en)) },
+                    placeholder = { Text(stringResource(R.string.dialog_word_en_placeholder)) },
                     singleLine = true,
                 )
                 OutlinedTextField(
                     value = wordJa,
                     onValueChange = { wordJa = it },
-                    label = { Text("日本語（任意）") },
-                    placeholder = { Text("例: 青髪") },
+                    label = { Text(stringResource(R.string.dialog_word_ja)) },
+                    placeholder = { Text(stringResource(R.string.dialog_word_ja_placeholder)) },
                     singleLine = true,
                 )
                 if (allCategories.isNotEmpty() && initial != null) {
@@ -115,10 +132,10 @@ fun WordDialog(
                         onExpandedChange = { dropdownExpanded = it },
                     ) {
                         OutlinedTextField(
-                            value = selectedCategory?.nameJa ?: "カテゴリを選択",
+                            value = selectedCategory?.nameJa ?: stringResource(R.string.dialog_word_category_select),
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("カテゴリ") },
+                            label = { Text(stringResource(R.string.dialog_word_category)) },
                             trailingIcon = {
                                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded)
                             },
@@ -154,10 +171,15 @@ fun WordDialog(
                     )
                 },
                 enabled = canSave,
-            ) { Text(if (initial == null) "追加" else "保存") }
+            ) {
+                Text(
+                    if (initial == null) stringResource(R.string.dialog_add)
+                    else stringResource(R.string.dialog_save)
+                )
+            }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("キャンセル") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.dialog_cancel)) }
         },
     )
 }

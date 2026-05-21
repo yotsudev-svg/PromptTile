@@ -1,6 +1,7 @@
 package com.blogspot.yotsudev.prompttile.ui.settings
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
@@ -16,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -28,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -46,6 +51,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.blogspot.yotsudev.prompttile.R
 import com.blogspot.yotsudev.prompttile.data.preferences.ThemeConfig
@@ -54,10 +60,16 @@ import com.blogspot.yotsudev.prompttile.ui.components.ConfirmDeleteDialog
 import com.blogspot.yotsudev.prompttile.ui.main.PromptViewModel
 import kotlinx.coroutines.launch
 
+/**
+ * 設定画面。
+ *
+ * パフォーマンス最適化（LazyColumn の採用）と
+ * UI ロジックの整理（BottomSheet のカプセル化）を行っています。
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    viewModel: SettingsViewModel,
+    viewModel: SettingsViewModel = hiltViewModel(),
     promptViewModel: PromptViewModel,
 ) {
     val prefs by viewModel.preferences.collectAsStateWithLifecycle()
@@ -68,7 +80,9 @@ fun SettingsScreen(
     var showSheet by rememberSaveable { mutableStateOf(false) }
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
     var deletingTemplate by rememberSaveable { mutableStateOf<PrefixTemplate?>(null) }
+    val isSystemDark = isSystemInDarkTheme()
 
+    // ---- 削除確認ダイアログ ----
     deletingTemplate?.let { template ->
         ConfirmDeleteDialog(
             targetName = template.name,
@@ -80,24 +94,25 @@ fun SettingsScreen(
         )
     }
 
+    // ---- テンプレート選択ボトムシート ----
     if (showSheet) {
         PrefixTemplateBottomSheet(
             templates = allTemplates,
+            sheetState = sheetState,
             onSelect = { template ->
                 promptViewModel.addTemplateItems(template.text)
+                // アニメーション完了後にフラグを下ろす
                 scope.launch { sheetState.hide() }.invokeOnCompletion {
-                    showSheet = false
+                    if (!sheetState.isVisible) showSheet = false
                 }
             },
-            onDelete = { template ->
-                deletingTemplate = template
-            },
+            onDelete = { deletingTemplate = it },
             onAddNew = { showAddDialog = true },
             onDismiss = { showSheet = false },
-            sheetState = sheetState,
         )
     }
 
+    // ---- テンプレート追加ダイアログ ----
     if (showAddDialog) {
         AddTemplateDialog(
             onConfirm = { name, text ->
@@ -108,9 +123,10 @@ fun SettingsScreen(
         )
     }
 
+
     Scaffold(
         topBar = {
-            key(prefs?.themeConfig) {
+            key(prefs?.themeConfig ?: ThemeConfig.FOLLOW_SYSTEM, isSystemDark) {
                 TopAppBar(title = { Text(stringResource(R.string.settings_title)) })
             }
         },
@@ -123,34 +139,32 @@ fun SettingsScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            key(prefs?.themeConfig) {
-                SettingsSectionHeader(title = stringResource(R.string.settings_header_appearance))
-                ThemeSelectionRow(
-                    currentTheme = prefs?.themeConfig ?: ThemeConfig.FOLLOW_SYSTEM,
-                    onThemeSelected = viewModel::updateThemeConfig
-                )
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            SettingsSectionHeader(title = stringResource(R.string.settings_header_appearance))
+            ThemeSelectionRow(
+                currentTheme = prefs?.themeConfig ?: ThemeConfig.FOLLOW_SYSTEM,
+                onThemeSelected = viewModel::updateThemeConfig
+            )
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                SettingsSectionHeader(title = stringResource(R.string.settings_header_prompt))
-                SettingsRow(
-                    title = stringResource(R.string.settings_template_title),
-                    description = stringResource(R.string.settings_template_description),
-                    trailingContent = {
-                        TextButton(onClick = { showSheet = true }) {
-                            Text(stringResource(R.string.settings_template_select))
-                        }
+            SettingsSectionHeader(title = stringResource(R.string.settings_header_prompt))
+            SettingsRow(
+                title = stringResource(R.string.settings_template_title),
+                description = stringResource(R.string.settings_template_description),
+                trailingContent = {
+                    TextButton(onClick = { showSheet = true }) {
+                        Text(stringResource(R.string.settings_template_select))
                     }
-                )
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                }
+            )
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                SettingsSectionHeader(title = stringResource(R.string.settings_header_operation))
-                SwitchSettingRow(
-                    title = stringResource(R.string.settings_move_to_back_title),
-                    description = stringResource(R.string.settings_move_to_back_description),
-                    checked = prefs?.moveToBackOnCopy ?: false,
-                    onCheckedChange = viewModel::updateMoveToBack,
-                )
-            }
+            SettingsSectionHeader(title = stringResource(R.string.settings_header_operation))
+            SwitchSettingRow(
+                title = stringResource(R.string.settings_move_to_back_title),
+                description = stringResource(R.string.settings_move_to_back_description),
+                checked = prefs?.moveToBackOnCopy ?: false,
+                onCheckedChange = viewModel::updateMoveToBack,
+            )
         }
     }
 }
@@ -244,81 +258,91 @@ private fun ThemeSelectionRow(
 @Composable
 private fun PrefixTemplateBottomSheet(
     templates: List<PrefixTemplate>,
+    sheetState: SheetState,
     onSelect: (PrefixTemplate) -> Unit,
     onDelete: (PrefixTemplate) -> Unit,
     onAddNew: () -> Unit,
     onDismiss: () -> Unit,
-    sheetState: androidx.compose.material3.SheetState,
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
+        dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
-        Column(modifier = Modifier.padding(bottom = 32.dp)) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(R.string.template_sheet_title),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                IconButton(onClick = onAddNew) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = stringResource(R.string.template_sheet_add_description),
-                        tint = MaterialTheme.colorScheme.primary,
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 32.dp)
+        ) {
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(R.string.template_sheet_title),
+                        style = MaterialTheme.typography.titleMedium,
                     )
+                    IconButton(onClick = onAddNew) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = stringResource(R.string.template_sheet_add_description),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                 }
-            }
-
-            HorizontalDivider()
-
-            if (templates.isEmpty()) {
-                Text(
-                    text = stringResource(R.string.template_sheet_empty),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(16.dp),
-                )
-            }
-
-            templates.forEach { template ->
-                ListItem(
-                    headlineContent = {
-                        Text(
-                            text = template.name,
-                            style = MaterialTheme.typography.bodyLarge,
-                        )
-                    },
-                    supportingContent = {
-                        Text(
-                            text = template.text,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    },
-                    trailingContent = {
-                        if (!template.isDefault) {
-                            IconButton(onClick = { onDelete(template) }) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = stringResource(R.string.template_delete_description),
-                                    tint = MaterialTheme.colorScheme.error,
-                                )
-                            }
-                        }
-                    },
-                    modifier = Modifier.clickable { onSelect(template) },
-                )
                 HorizontalDivider()
             }
-            Spacer(modifier = Modifier.height(8.dp))
+
+            if (templates.isEmpty()) {
+                item {
+                    Text(
+                        text = stringResource(R.string.template_sheet_empty),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(16.dp),
+                    )
+                }
+            } else {
+                items(
+                    items = templates,
+                    key = { "${it.name}_${it.text}" }
+                ) { template ->
+                    ListItem(
+                        headlineContent = {
+                            Text(text = template.name, style = MaterialTheme.typography.bodyLarge)
+                        },
+                        supportingContent = {
+                            Text(
+                                text = template.text,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        },
+                        trailingContent = {
+                            if (!template.isDefault) {
+                                IconButton(onClick = { onDelete(template) }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = stringResource(R.string.template_delete_description),
+                                        tint = MaterialTheme.colorScheme.error,
+                                    )
+                                }
+                            }
+                        },
+                        modifier = Modifier.clickable { onSelect(template) },
+                    )
+                    HorizontalDivider()
+                }
+            }
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
         }
     }
 }

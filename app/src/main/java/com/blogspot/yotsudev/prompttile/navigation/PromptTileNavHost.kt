@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.saveable.rememberSerializable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.entryProvider
@@ -29,10 +30,14 @@ fun rememberAppDestinationBackStack(vararg elements: AppDestination): NavBackSta
     }
 }
 
+/**
+ * アプリのメインナビゲーションホスト。
+ * Navigation 3 を使用し、各画面の遷移とバックスタックを管理します。
+ */
 @Composable
 fun PromptTileNavHost(
     settingsViewModel: SettingsViewModel,
-    promptViewModel: PromptViewModel,       // ← 追加
+    promptViewModel: PromptViewModel,
 ) {
     val backStack = rememberAppDestinationBackStack(AppDestination.Main)
     val currentDestination = backStack.lastOrNull()
@@ -44,14 +49,16 @@ fun PromptTileNavHost(
                 onItemSelected = { destination ->
                     if (destination == currentDestination) return@PromptTileBottomBar
 
-                    val existingIndex = backStack.indexOfLast { it == destination }
+                    // バックスタック管理の最適化 (minSdk 30 対応のため removeAt を使用)
+                    val existingIndex = backStack.indexOf(destination)
                     if (existingIndex >= 0) {
-                        while (backStack.last() != destination) {
-                            backStack.removeLastOrNull()
-                        }
+                        // 既にスタックにある場合は、その位置まで戻す
+                        val itemsToRemove = backStack.size - 1 - existingIndex
+                        repeat(itemsToRemove) { backStack.removeAt(backStack.lastIndex) }
                     } else {
+                        // メイン(root)以外をクリアして新しい画面を積む
                         while (backStack.size > 1) {
-                            backStack.removeLastOrNull()
+                            backStack.removeAt(backStack.lastIndex)
                         }
                         if (destination != AppDestination.Main) {
                             backStack.add(destination)
@@ -66,7 +73,7 @@ fun PromptTileNavHost(
             modifier = Modifier.padding(innerPadding),
             onBack = {
                 if (backStack.size > 1) {
-                    backStack.removeAt(backStack.size - 1)
+                    backStack.removeAt(backStack.lastIndex)
                 }
             },
             entryDecorators = listOf(
@@ -74,14 +81,17 @@ fun PromptTileNavHost(
                 rememberViewModelStoreNavEntryDecorator(),
             ),
             entryProvider = entryProvider {
+                // 画面ごとに必要な ViewModel を注入。
+                // 共有が必要な promptViewModel はそのまま渡し、
+                // 画面固有の ViewModel は各 Screen 内で hiltViewModel() を使って取得する。
                 entry<AppDestination.Main>     { MainScreen(viewModel = promptViewModel) }
                 entry<AppDestination.Saved>    { SavedScreen(promptViewModel = promptViewModel) }
                 entry<AppDestination.Edit>     { EditScreen() }
-                entry<AppDestination.Settings> {
+                entry<AppDestination.Settings> { 
                     SettingsScreen(
-                        viewModel       = settingsViewModel,
-                        promptViewModel = promptViewModel,  // ← 追加
-                    )
+                        viewModel = settingsViewModel,
+                        promptViewModel = promptViewModel
+                    ) 
                 }
             },
         )
@@ -95,16 +105,17 @@ private fun PromptTileBottomBar(
 ) {
     NavigationBar {
         bottomNavItems.forEach { item ->
+            val label = stringResource(item.labelRes)
             NavigationBarItem(
                 selected = currentDestination == item.destination,
                 onClick = { onItemSelected(item.destination) },
                 icon = {
                     Icon(
                         imageVector = item.icon,
-                        contentDescription = item.label,
+                        contentDescription = label,
                     )
                 },
-                label = { Text(item.label) },
+                label = { Text(label) },
             )
         }
     }

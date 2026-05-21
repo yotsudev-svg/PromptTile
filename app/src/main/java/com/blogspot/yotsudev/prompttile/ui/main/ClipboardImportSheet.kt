@@ -30,7 +30,9 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.blogspot.yotsudev.prompttile.R
 
 /**
  * クリップボードインポート用ボトムシート。
@@ -68,13 +70,19 @@ fun ClipboardImportSheet(
         ) {
             // ---- タイトル ----
             Text(
-                text = "クリップボードから追加",
+                text = stringResource(R.string.import_sheet_title),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
+            val targetModeStr = if (mode == PromptMode.POSITIVE)
+                stringResource(R.string.import_sheet_target_positive)
+            else
+                stringResource(R.string.import_sheet_target_negative)
+
+            val countStr = stringResource(R.string.import_sheet_count_msg, enabledCount, items.size)
+
             Text(
-                text = "追加先: ${if (mode == PromptMode.POSITIVE) "Positive" else "Negative"}" +
-                        "　${enabledCount}/${items.size} 個を追加",
+                text = "$targetModeStr　$countStr",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
@@ -129,7 +137,7 @@ fun ClipboardImportSheet(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "未分類に登録",
+                        text = stringResource(R.string.import_sheet_register_legend),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -143,7 +151,7 @@ fun ClipboardImportSheet(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "タップで除外/復活",
+                        text = stringResource(R.string.import_sheet_exclude_legend),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -159,14 +167,14 @@ fun ClipboardImportSheet(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 OutlinedButton(onClick = onDismiss) {
-                    Text("キャンセル")
+                    Text(stringResource(R.string.dialog_cancel))
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Button(
                     onClick = onConfirm,
                     enabled = enabledCount > 0,
                 ) {
-                    Text("追加 ($enabledCount)")
+                    Text(stringResource(R.string.import_sheet_add_with_count, enabledCount))
                 }
             }
         }
@@ -203,7 +211,10 @@ private fun ImportChip(
                 Icon(
                     imageVector = if (item.registerToDb)
                         Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
-                    contentDescription = if (item.registerToDb) "DB登録しない" else "DB登録する",
+                    contentDescription = if (item.registerToDb)
+                        stringResource(R.string.import_sheet_register_on)
+                    else
+                        stringResource(R.string.import_sheet_register_off),
                     modifier = Modifier.size(FilterChipDefaults.IconSize),
                 )
             }
@@ -215,7 +226,10 @@ private fun ImportChip(
             ) {
                 Icon(
                     imageVector = Icons.Default.Close,
-                    contentDescription = if (item.isEnabled) "除外する" else "復活させる",
+                    contentDescription = if (item.isEnabled)
+                        stringResource(R.string.import_chip_exclude)
+                    else
+                        stringResource(R.string.import_chip_restore),
                     modifier = Modifier.size(FilterChipDefaults.IconSize),
                 )
             }
