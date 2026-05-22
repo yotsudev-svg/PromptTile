@@ -29,7 +29,6 @@ import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
 fun WordPool(
     words: List<PromptWordEntity>,
     searchResults: List<PromptWordEntity>,
-    recentWords: List<PromptWordEntity>,
     searchQuery: String,
     selectedWordIds: Set<Long>,
     uncategorizedIds: Set<Long>,
@@ -69,22 +68,7 @@ fun WordPool(
                 }
             }
         } else {
-            // ---- 通常表示 (最近使った単語 + カテゴリ単語) ----
-            if (recentWords.isNotEmpty()) {
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    SectionHeader(stringResource(R.string.word_pool_recent))
-                }
-                items(items = recentWords, key = { "recent_${it.id}" }) { word ->
-                    WordChip(
-                        word = word,
-                        isSelected = word.id in selectedWordIds,
-                        isUncategorized = word.categoryId in uncategorizedIds,
-                        onTap = { onWordTap(word) },
-                        onLongPress = { onWordLongPress(word) },
-                    )
-                }
-            }
-
+            // ---- 通常表示 (カテゴリ単語) ----
             item(span = { GridItemSpan(maxLineSpan) }) {
                 SectionHeader(stringResource(R.string.word_pool_category_words))
             }

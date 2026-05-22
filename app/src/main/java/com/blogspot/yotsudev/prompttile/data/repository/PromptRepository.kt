@@ -42,8 +42,6 @@ class PromptRepository @Inject constructor(
     fun searchWords(query: String): Flow<List<PromptWordEntity>> =
         promptWordDao.searchWords(query).flowOn(Dispatchers.IO)
 
-    fun getWordsByIds(ids: List<Long>): Flow<List<PromptWordEntity>> =
-        promptWordDao.getWordsByIds(ids).flowOn(Dispatchers.IO)
 
     val savedPrompts: Flow<List<SavedPromptEntity>> = savedPromptDao.observeAll().flowOn(Dispatchers.IO)
 

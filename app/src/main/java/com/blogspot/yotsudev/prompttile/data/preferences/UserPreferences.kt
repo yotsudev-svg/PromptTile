@@ -17,11 +17,6 @@ data class UserPreferences(
      */
     val persistedPositiveItems: List<PersistedPromptItem> = emptyList(),
     val persistedNegativeItems: List<PersistedPromptItem> = emptyList(),
-
-    /**
-     * 最近使った単語のIDリスト。
-     */
-    val recentWordIds: List<Long> = emptyList(),
 )
 
 /**

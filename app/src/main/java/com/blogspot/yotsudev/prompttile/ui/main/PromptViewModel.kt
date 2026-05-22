@@ -77,12 +77,6 @@ class PromptViewModel @Inject constructor(
         else repository.searchWords(query)
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private val _recentWords = _prefs.flatMapLatest { prefs ->
-        if (prefs.recentWordIds.isEmpty()) flowOf(emptyList())
-        else repository.getWordsByIds(prefs.recentWordIds)
-    }
-
     private data class HistoryState(val canUndo: Boolean, val canRedo: Boolean)
 
     private val _historyState = combine(
@@ -107,7 +101,6 @@ class PromptViewModel @Inject constructor(
         _resolvedSelectedCategoryId,
         _wordsInCategory,
         _searchResults,
-        _recentWords,
         _prefs,
         _historyState,
         _searchQuery,
@@ -120,10 +113,9 @@ class PromptViewModel @Inject constructor(
         val resolvedCatId = args[5] as Long?
         val words = args[6] as List<PromptWordEntity>
         val searchResults = args[7] as List<PromptWordEntity>
-        val recentWords = args[8] as List<PromptWordEntity>
-        val prefs = args[9] as UserPreferences
-        val history = args[10] as HistoryState
-        val query = args[11] as String
+        val prefs = args[8] as UserPreferences
+        val history = args[9] as HistoryState
+        val query = args[10] as String
 
         PromptUiState(
             mode                       = mode,
@@ -142,7 +134,6 @@ class PromptViewModel @Inject constructor(
             negativePromptText         = PromptFormatter.formatPrompt(negItems),
             searchQuery                = query,
             searchResults              = searchResults,
-            recentWords                = recentWords,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -215,21 +206,10 @@ class PromptViewModel @Inject constructor(
             if (current.any { it.wordId == word.id }) {
                 current.filter { it.wordId != word.id }
             } else {
-                updateRecentWords(word.id)
                 current + PromptItem(wordId = word.id, wordEn = word.wordEn, wordJa = word.wordJa)
             }
         }
         persistItems()
-    }
-
-    private fun updateRecentWords(wordId: Long) {
-        viewModelScope.launch {
-            val currentRecent = _prefs.value.recentWordIds.toMutableList()
-            currentRecent.remove(wordId)
-            currentRecent.add(0, wordId)
-            val updated = currentRecent.take(20)
-            dataSource.updateRecentWordIds(updated)
-        }
     }
 
     fun setSearchQuery(query: String) {

@@ -32,10 +32,9 @@ data class PromptUiState(
     val positivePromptText: String = "",
     val negativePromptText: String = "",
 
-    // ---- 検索と最近使った単語 ----
+    // ---- 検索 ----
     val searchQuery: String = "",
     val searchResults: List<PromptWordEntity> = emptyList(),
-    val recentWords: List<PromptWordEntity> = emptyList(),
 ) {
     val currentItems: List<PromptItem>
         get() = if (mode == PromptMode.POSITIVE) positiveItems else negativeItems

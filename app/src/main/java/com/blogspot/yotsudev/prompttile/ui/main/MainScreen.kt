@@ -144,7 +144,6 @@ fun MainScreen(
                         WordPool(
                             words = uiState.wordsInCategory,
                             searchResults = uiState.searchResults,
-                            recentWords = uiState.recentWords,
                             searchQuery = uiState.searchQuery,
                             selectedWordIds = selectedWordIds,
                             uncategorizedIds = uncategorizedIds,
@@ -205,7 +204,6 @@ fun MainScreen(
                         WordPool(
                             words = uiState.wordsInCategory,
                             searchResults = uiState.searchResults,
-                            recentWords = uiState.recentWords,
                             searchQuery = uiState.searchQuery,
                             selectedWordIds = selectedWordIds,
                             uncategorizedIds = uncategorizedIds,
@@ -292,7 +290,6 @@ fun MainScreen(
                     WordPool(
                         words = uiState.wordsInCategory,
                         searchResults = uiState.searchResults,
-                        recentWords = uiState.recentWords,
                         searchQuery = uiState.searchQuery,
                         selectedWordIds = selectedWordIds,
                         uncategorizedIds = uncategorizedIds,

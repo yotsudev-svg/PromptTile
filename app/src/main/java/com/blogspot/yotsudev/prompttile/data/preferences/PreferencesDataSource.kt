@@ -27,7 +27,6 @@ class PreferencesDataSource @Inject constructor(
         val USER_TEMPLATES = stringPreferencesKey("user_templates")
         val POSITIVE_ITEMS = stringPreferencesKey("positive_items")
         val NEGATIVE_ITEMS = stringPreferencesKey("negative_items")
-        val RECENT_WORD_IDS = stringPreferencesKey("recent_word_ids")
     }
 
     val userPreferences: Flow<UserPreferences> = context.dataStore.data.map { prefs ->
@@ -41,7 +40,6 @@ class PreferencesDataSource @Inject constructor(
             userTemplates = decodeTemplates(prefs[Keys.USER_TEMPLATES] ?: ""),
             persistedPositiveItems = decodeItems(prefs[Keys.POSITIVE_ITEMS] ?: ""),
             persistedNegativeItems = decodeItems(prefs[Keys.NEGATIVE_ITEMS] ?: ""),
-            recentWordIds = decodeLongList(prefs[Keys.RECENT_WORD_IDS] ?: ""),
         )
     }
 
@@ -80,12 +78,6 @@ class PreferencesDataSource @Inject constructor(
         context.dataStore.edit { prefs ->
             prefs[Keys.POSITIVE_ITEMS] = encodeItems(positiveItems)
             prefs[Keys.NEGATIVE_ITEMS] = encodeItems(negativeItems)
-        }
-    }
-
-    suspend fun updateRecentWordIds(ids: List<Long>) {
-        context.dataStore.edit { prefs ->
-            prefs[Keys.RECENT_WORD_IDS] = encodeLongList(ids)
         }
     }
 
@@ -130,12 +122,5 @@ class PreferencesDataSource @Inject constructor(
                 weight = parts[3].toFloatOrNull(),
             )
         }
-    }
-
-    private fun encodeLongList(list: List<Long>): String = list.joinToString(",")
-
-    private fun decodeLongList(encoded: String): List<Long> {
-        if (encoded.isBlank()) return emptyList()
-        return encoded.split(",").mapNotNull { it.toLongOrNull() }
     }
 }

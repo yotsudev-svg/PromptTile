@@ -47,9 +47,4 @@ interface PromptWordDao : BaseDao<PromptWordEntity> {
     """)
     fun searchWords(query: String): Flow<List<PromptWordEntity>>
 
-    /**
-     * IDリストに基づいて単語を取得する。
-     */
-    @Query("SELECT * FROM prompt_words WHERE id IN (:ids)")
-    fun getWordsByIds(ids: List<Long>): Flow<List<PromptWordEntity>>
 }

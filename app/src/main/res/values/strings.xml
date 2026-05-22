@@ -92,7 +92,6 @@
     <string name="word_pool_no_label">（未設定）</string>
     <string name="word_pool_search_results">検索結果</string>
     <string name="word_pool_no_results">見つかりませんでした</string>
-    <string name="word_pool_recent">最近使った単語</string>
     <string name="word_pool_category_words">カテゴリの単語</string>
     <string name="word_pool_search_placeholder">単語を検索…</string>
 
