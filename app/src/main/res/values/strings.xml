@@ -90,6 +90,11 @@
 
     <!-- Word Pool -->
     <string name="word_pool_no_label">（未設定）</string>
+    <string name="word_pool_search_results">検索結果</string>
+    <string name="word_pool_no_results">見つかりませんでした</string>
+    <string name="word_pool_recent">最近使った単語</string>
+    <string name="word_pool_category_words">カテゴリの単語</string>
+    <string name="word_pool_search_placeholder">単語を検索…</string>
 
     <!-- Save Dialog -->
     <string name="dialog_save_prompt_title">プロンプトを保存</string>
@@ -102,8 +107,10 @@
     <string name="saved_empty_msg">保存済みのプロンプトはありません\nメイン画面でプロンプトを保存しましょう</string>
     <string name="saved_copy">コピー</string>
     <string name="saved_delete">削除</string>
-    <string name="saved_apply_positive">+ Positive</string>
-    <string name="saved_apply_negative">+ Negative</string>
+    <string name="saved_apply_positive">Posへ</string>
+    <string name="saved_apply_negative">Negへ</string>
+    <string name="saved_apply_all">両方適用</string>
+    <string name="msg_full_applied">ポジ・ネガ両方を適用しました</string>
 
     <string name="dialog_add_prompt_title">プロンプトを追加</string>
     <string name="dialog_add_prompt_positive">ポジティブ</string>

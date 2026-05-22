@@ -67,6 +67,7 @@ fun SavedScreen(
     val msgCopied = stringResource(R.string.msg_prompt_copied)
     val msgPositiveAdded = stringResource(R.string.msg_positive_added)
     val msgNegativeAdded = stringResource(R.string.msg_negative_added)
+    val msgFullApplied = stringResource(R.string.msg_full_applied)
     val msgDeleted = stringResource(R.string.msg_deleted)
     val msgManualAdded = stringResource(R.string.msg_manual_added)
 
@@ -91,6 +92,14 @@ fun SavedScreen(
         { entity: SavedPromptEntity ->
             promptViewModel.loadFromSaved(entity.negativeText, PromptMode.NEGATIVE)
             scope.launch { snackbarHostState.showSnackbar(msgNegativeAdded) }
+            Unit
+        }
+    }
+
+    val onLoadFull = remember(promptViewModel) {
+        { entity: SavedPromptEntity ->
+            promptViewModel.loadPromptSet(entity)
+            scope.launch { snackbarHostState.showSnackbar(msgFullApplied) }
             Unit
         }
     }
@@ -170,8 +179,9 @@ fun SavedScreen(
                         entity = entity,
                         onCopy = onCopy,
                         onDelete = { deletingPrompt = it },
-                        onLoadPositive = onLoadPositive,
-                        onLoadNegative = onLoadNegative,
+                        onLoadPositive = if (entity.promptText.isNotBlank()) onLoadPositive else null,
+                        onLoadNegative = if (entity.negativeText.isNotBlank()) onLoadNegative else null,
+                        onLoadFull = if (entity.promptText.isNotBlank() && entity.negativeText.isNotBlank()) onLoadFull else null,
                     )
                 }
             }

@@ -1,10 +1,13 @@
 package com.blogspot.yotsudev.prompttile.ui.main
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -12,6 +15,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
@@ -23,6 +28,7 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -43,6 +49,7 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 fun PreviewArea(
     mode: PromptMode,
     items: List<PromptItem>,
+    promptText: String, // 追加: 生成されたプロンプト文字列
     canUndo: Boolean,
     canRedo: Boolean,
     onModeChange: (PromptMode) -> Unit,
@@ -53,6 +60,7 @@ fun PreviewArea(
     onUndo: () -> Unit,
     onRedo: () -> Unit,
     modifier: Modifier = Modifier,
+    isVertical: Boolean = false,
 ) {
     var isDeleteMode by remember { mutableStateOf(false) }
 
@@ -125,11 +133,6 @@ fun PreviewArea(
             )
 
             Row {
-                /**
-                 * Undo ボタン。
-                 * canUndo = false のとき非活性にすることで、
-                 * 「これ以上戻れない」ことをユーザーに伝える。
-                 */
                 IconButton(
                     onClick = onUndo,
                     enabled = canUndo,
@@ -143,10 +146,6 @@ fun PreviewArea(
                             MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                     )
                 }
-                /**
-                 * Redo ボタン。
-                 * 新しい操作をした後は canRedo = false になるため自動で非活性になる。
-                 */
                 IconButton(
                     onClick = onRedo,
                     enabled = canRedo,
@@ -202,14 +201,43 @@ fun PreviewArea(
             onRemove = onRemove,
             onWeightCycle = onWeightCycle,
             onMove = onMove,
+            isVertical = isVertical,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp)
-                .padding(bottom = 8.dp),
+                .padding(bottom = 8.dp)
+                .then(if (isVertical) Modifier.weight(1f) else Modifier),
         )
+
+        // ---- 最終プロンプト表示エリア (Reactive) ----
+        if (items.isNotEmpty()) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (isVertical) Modifier.heightIn(max = 200.dp) else Modifier),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                tonalElevation = 2.dp
+            ) {
+                val scrollState = rememberScrollState()
+                Text(
+                    text = promptText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .padding(12.dp)
+                        .then(
+                            if (isVertical) 
+                                Modifier.verticalScroll(scrollState) 
+                            else 
+                                Modifier.horizontalScroll(scrollState)
+                        ),
+                )
+            }
+        }
     }
 }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun ChipList(
     items: List<PromptItem>,
@@ -218,6 +246,7 @@ private fun ChipList(
     onRemove: (PromptItem) -> Unit,
     onWeightCycle: (PromptItem) -> Unit,
     onMove: (from: Int, to: Int) -> Unit,
+    isVertical: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val lazyListState = rememberLazyListState()
@@ -237,7 +266,34 @@ private fun ChipList(
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
             )
         }
+    } else if (isVertical) {
+        // 縦型表示（3ペイン時）: 縦に並べる
+        androidx.compose.foundation.lazy.LazyColumn(
+            state = lazyListState,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            contentPadding = PaddingValues(vertical = 8.dp),
+            modifier = modifier.fillMaxSize(),
+        ) {
+            itemsIndexed(
+                items = items,
+                key = { _, item -> item.wordId },
+            ) { _, item ->
+                ReorderableItem(state = reorderState, key = item.wordId) { isDragging ->
+                    PromptChip(
+                        item = item,
+                        mode = mode,
+                        isDeleteMode = isDeleteMode,
+                        isDragging = isDragging,
+                        onWeightCycle = { onWeightCycle(item) },
+                        onRemove = { onRemove(item) },
+                        dragModifier = Modifier.longPressDraggableHandle(),
+                        modifier = Modifier.fillMaxWidth() // 縦並びなので幅いっぱいに
+                    )
+                }
+            }
+        }
     } else {
+        // 横型表示（モバイル時）: 従来通り
         LazyRow(
             state = lazyListState,
             horizontalArrangement = Arrangement.spacedBy(6.dp),

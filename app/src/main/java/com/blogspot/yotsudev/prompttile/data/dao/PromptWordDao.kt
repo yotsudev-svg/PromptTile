@@ -35,4 +35,21 @@ interface PromptWordDao : BaseDao<PromptWordEntity> {
      */
     @Query("UPDATE prompt_words SET categoryId = :newCategoryId WHERE id = :wordId")
     suspend fun updateCategory(wordId: Long, newCategoryId: Long)
+
+    /**
+     * 単語名（日英）で検索する。
+     */
+    @Query("""
+        SELECT * FROM prompt_words 
+        WHERE (wordEn LIKE '%' || :query || '%' OR wordJa LIKE '%' || :query || '%')
+        AND isHidden = 0
+        LIMIT 100
+    """)
+    fun searchWords(query: String): Flow<List<PromptWordEntity>>
+
+    /**
+     * IDリストに基づいて単語を取得する。
+     */
+    @Query("SELECT * FROM prompt_words WHERE id IN (:ids)")
+    fun getWordsByIds(ids: List<Long>): Flow<List<PromptWordEntity>>
 }

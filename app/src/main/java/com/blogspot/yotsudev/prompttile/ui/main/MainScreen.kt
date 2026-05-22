@@ -4,35 +4,21 @@ import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.blogspot.yotsudev.prompttile.R
 import com.blogspot.yotsudev.prompttile.data.repository.UNCATEGORIZED_NEGATIVE_NAME
@@ -49,6 +35,12 @@ fun MainScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // 常利用する文字列リソース
+    val msgPromptCopied = stringResource(R.string.msg_prompt_copied)
+    val msgWordCopiedTemplate = stringResource(R.string.msg_word_copied)
+    val msgPromptSaved = stringResource(R.string.msg_prompt_saved)
+    val msgPromptAdded = stringResource(R.string.msg_prompt_added)
 
     // 計算コストの高い処理を remember で保護 (Recomposition 最適化)
     val hasItems = remember(uiState.currentItems) { uiState.currentItems.isNotEmpty() }
@@ -72,12 +64,11 @@ fun MainScreen(
     var importItems by remember { mutableStateOf<List<ClipboardImportItem>?>(null) }
 
     if (showSaveDialog) {
-        val msgSaved = stringResource(R.string.msg_prompt_saved)
         SavePromptDialog(
             onConfirm = { title ->
                 viewModel.saveCurrentPrompt(title)
                 showSaveDialog = false
-                scope.launch { snackbarHostState.showSnackbar(msgSaved) }
+                scope.launch { snackbarHostState.showSnackbar(msgPromptSaved) }
             },
             onDismiss = { showSaveDialog = false },
         )
@@ -85,7 +76,6 @@ fun MainScreen(
 
     // ---- ボトムシート ----
     importItems?.let { items ->
-        val msgAdded = stringResource(R.string.msg_prompt_added)
         ClipboardImportSheet(
             mode = uiState.mode,
             items = items,
@@ -102,7 +92,7 @@ fun MainScreen(
             onConfirm = {
                 viewModel.confirmClipboardImport(items)
                 importItems = null
-                scope.launch { snackbarHostState.showSnackbar(msgAdded) }
+                scope.launch { snackbarHostState.showSnackbar(msgPromptAdded) }
             },
             onDismiss = { importItems = null },
         )
@@ -122,70 +112,212 @@ fun MainScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+            val isWideScreen = maxWidth >= 840.dp
+            val isMediumScreen = maxWidth >= 600.dp && maxWidth < 840.dp
 
-            val msgCopied = stringResource(R.string.msg_prompt_copied)
-            PreviewArea(
-                mode = uiState.mode,
-                items = uiState.currentItems,
-                canUndo = uiState.canUndo,
-                canRedo = uiState.canRedo,
-                onModeChange = viewModel::switchMode,
-                onRemove = viewModel::removeItem,
-                onWeightCycle = viewModel::cycleWeight,
-                onMove = viewModel::moveItem,
-                onCopyAll = {
-                    val text = viewModel.buildPromptText()
-                    copyToClipboard(context, text)
-                    scope.launch { snackbarHostState.showSnackbar(msgCopied) }
-                    if (uiState.moveToBackOnCopy) {
-                        (context as? Activity)?.moveTaskToBack(true)
-                    }
-                },
-                onUndo = viewModel::undo,
-                onRedo = viewModel::redo,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            if (isWideScreen) {
+                // ---- 3ペイン構成 (Expanded) ----
+                Row(modifier = Modifier.fillMaxSize()) {
+                    // 左ペイン: カテゴリ (固定幅)
+                    CategorySidebar(
+                        categories = uiState.currentCategories,
+                        selectedCategoryId = uiState.currentSelectedCategoryId,
+                        onCategorySelected = viewModel::selectCategory,
+                        modifier = Modifier.width(200.dp)
+                    )
 
-            HorizontalDivider()
+                    VerticalDivider()
 
-            CategoryBar(
-                categories = uiState.currentCategories,
-                selectedCategoryId = uiState.currentSelectedCategoryId,
-                onCategorySelected = viewModel::selectCategory,
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            HorizontalDivider()
-
-            val msgWordCopiedTemplate = stringResource(R.string.msg_word_copied)
-            WordPool(
-                words = uiState.wordsInCategory,
-                selectedWordIds = selectedWordIds,
-                uncategorizedIds = uncategorizedIds,
-                onWordTap = viewModel::toggleWord,
-                onWordLongPress = { word ->
-                    copyToClipboard(context, word.wordEn)
-                    scope.launch {
-                        snackbarHostState.showSnackbar(
-                            msgWordCopiedTemplate.format(word.wordEn)
+                    // 中央ペイン: 単語プール (可変)
+                    Column(modifier = Modifier.weight(1f)) {
+                        SearchBar(
+                            query = uiState.searchQuery,
+                            onQueryChange = viewModel::setSearchQuery,
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)
+                        )
+                        HorizontalDivider()
+                        WordPool(
+                            words = uiState.wordsInCategory,
+                            searchResults = uiState.searchResults,
+                            recentWords = uiState.recentWords,
+                            searchQuery = uiState.searchQuery,
+                            selectedWordIds = selectedWordIds,
+                            uncategorizedIds = uncategorizedIds,
+                            onWordTap = viewModel::toggleWord,
+                            onWordLongPress = { word ->
+                                copyToClipboard(context, word.wordEn)
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        msgWordCopiedTemplate.format(word.wordEn)
+                                    )
+                                }
+                            },
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
-                    if (uiState.moveToBackOnCopy) {
-                        (context as? Activity)?.moveTaskToBack(true)
+
+                    VerticalDivider()
+
+                    // 右ペイン: ワークスペース (プレビュー)
+                    PreviewArea(
+                        mode = uiState.mode,
+                        items = uiState.currentItems,
+                        promptText = uiState.currentPromptText,
+                        canUndo = uiState.canUndo,
+                        canRedo = uiState.canRedo,
+                        onModeChange = viewModel::switchMode,
+                        onRemove = viewModel::removeItem,
+                        onWeightCycle = viewModel::cycleWeight,
+                        onMove = viewModel::moveItem,
+                        onCopyAll = {
+                            val text = viewModel.buildPromptText()
+                            copyToClipboard(context, text)
+                            scope.launch { snackbarHostState.showSnackbar(msgPromptCopied) }
+                        },
+                        onUndo = viewModel::undo,
+                        onRedo = viewModel::redo,
+                        modifier = Modifier.width(300.dp),
+                        isVertical = true
+                    )
+                }
+            } else if (isMediumScreen) {
+                // ---- 2ペイン構成 (Medium) ----
+                Row(modifier = Modifier.fillMaxSize()) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        CategoryBar(
+                            categories = uiState.currentCategories,
+                            selectedCategoryId = uiState.currentSelectedCategoryId,
+                            onCategorySelected = viewModel::selectCategory,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        HorizontalDivider()
+                        SearchBar(
+                            query = uiState.searchQuery,
+                            onQueryChange = viewModel::setSearchQuery,
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)
+                        )
+                        HorizontalDivider()
+                        WordPool(
+                            words = uiState.wordsInCategory,
+                            searchResults = uiState.searchResults,
+                            recentWords = uiState.recentWords,
+                            searchQuery = uiState.searchQuery,
+                            selectedWordIds = selectedWordIds,
+                            uncategorizedIds = uncategorizedIds,
+                            onWordTap = viewModel::toggleWord,
+                            onWordLongPress = { word ->
+                                copyToClipboard(context, word.wordEn)
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        msgWordCopiedTemplate.format(word.wordEn)
+                                    )
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth().weight(1f)
+                        )
                     }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-            )
+                    VerticalDivider()
+                    PreviewArea(
+                        mode = uiState.mode,
+                        items = uiState.currentItems,
+                        promptText = uiState.currentPromptText,
+                        canUndo = uiState.canUndo,
+                        canRedo = uiState.canRedo,
+                        onModeChange = viewModel::switchMode,
+                        onRemove = viewModel::removeItem,
+                        onWeightCycle = viewModel::cycleWeight,
+                        onMove = viewModel::moveItem,
+                        onCopyAll = {
+                            val text = viewModel.buildPromptText()
+                            copyToClipboard(context, text)
+                            scope.launch { snackbarHostState.showSnackbar(msgPromptCopied) }
+                        },
+                        onUndo = viewModel::undo,
+                        onRedo = viewModel::redo,
+                        modifier = Modifier.width(280.dp),
+                        isVertical = true
+                    )
+                }
+            } else {
+                // ---- 1列構成 (Compact): 従来のモバイルレイアウト ----
+                Column(modifier = Modifier.fillMaxSize()) {
+                    PreviewArea(
+                        mode = uiState.mode,
+                        items = uiState.currentItems,
+                        promptText = uiState.currentPromptText,
+                        canUndo = uiState.canUndo,
+                        canRedo = uiState.canRedo,
+                        onModeChange = viewModel::switchMode,
+                        onRemove = viewModel::removeItem,
+                        onWeightCycle = viewModel::cycleWeight,
+                        onMove = viewModel::moveItem,
+                        onCopyAll = {
+                            val text = viewModel.buildPromptText()
+                            copyToClipboard(context, text)
+                            scope.launch { snackbarHostState.showSnackbar(msgPromptCopied) }
+                            if (uiState.moveToBackOnCopy) {
+                                (context as? Activity)?.moveTaskToBack(true)
+                            }
+                        },
+                        onUndo = viewModel::undo,
+                        onRedo = viewModel::redo,
+                        modifier = Modifier.fillMaxWidth(),
+                        isVertical = false
+                    )
+
+                    HorizontalDivider()
+
+                    CategoryBar(
+                        categories = uiState.currentCategories,
+                        selectedCategoryId = uiState.currentSelectedCategoryId,
+                        onCategorySelected = viewModel::selectCategory,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    HorizontalDivider()
+
+                    SearchBar(
+                        query = uiState.searchQuery,
+                        onQueryChange = viewModel::setSearchQuery,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)
+                    )
+
+                    HorizontalDivider()
+
+                    WordPool(
+                        words = uiState.wordsInCategory,
+                        searchResults = uiState.searchResults,
+                        recentWords = uiState.recentWords,
+                        searchQuery = uiState.searchQuery,
+                        selectedWordIds = selectedWordIds,
+                        uncategorizedIds = uncategorizedIds,
+                        onWordTap = viewModel::toggleWord,
+                        onWordLongPress = { word ->
+                            copyToClipboard(context, word.wordEn)
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    msgWordCopiedTemplate.format(word.wordEn)
+                                )
+                            }
+                            if (uiState.moveToBackOnCopy) {
+                                (context as? Activity)?.moveTaskToBack(true)
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                    )
+                }
+            }
         }
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -270,4 +402,32 @@ private fun copyToClipboard(context: Context, text: String) {
 private fun getClipboardText(context: Context): String? {
     val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     return cm.primaryClip?.getItemAt(0)?.text?.toString()
+}
+
+@Composable
+private fun SearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    TextField(
+        value = query,
+        onValueChange = onQueryChange,
+        modifier = modifier,
+        placeholder = { Text(stringResource(R.string.word_pool_search_placeholder)) },
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                IconButton(onClick = { onQueryChange("") }) {
+                    Icon(Icons.Default.Clear, contentDescription = "Clear")
+                }
+            }
+        },
+        singleLine = true,
+        colors = TextFieldDefaults.colors(
+            focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+            unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+        ),
+        shape = RoundedCornerShape(24.dp)
+    )
 }

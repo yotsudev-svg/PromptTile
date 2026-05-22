@@ -2,6 +2,7 @@ package com.blogspot.yotsudev.prompttile.ui.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
 import com.blogspot.yotsudev.prompttile.data.entity.SavedPromptEntity
 import com.blogspot.yotsudev.prompttile.data.preferences.PersistedPromptItem
@@ -36,6 +37,8 @@ class PromptViewModel @Inject constructor(
     private val _selectedPositiveCategoryId = MutableStateFlow<Long?>(null)
     private val _selectedNegativeCategoryId = MutableStateFlow<Long?>(null)
 
+    private val _searchQuery = MutableStateFlow("")
+
     private val _positiveUndoStack = MutableStateFlow<List<List<PromptItem>>>(emptyList())
     private val _positiveRedoStack = MutableStateFlow<List<List<PromptItem>>>(emptyList())
     private val _negativeUndoStack = MutableStateFlow<List<List<PromptItem>>>(emptyList())
@@ -68,6 +71,18 @@ class PromptViewModel @Inject constructor(
         else repository.visibleWordsByCategory(id)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val _searchResults = _searchQuery.flatMapLatest { query ->
+        if (query.isBlank()) flowOf(emptyList())
+        else repository.searchWords(query)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val _recentWords = _prefs.flatMapLatest { prefs ->
+        if (prefs.recentWordIds.isEmpty()) flowOf(emptyList())
+        else repository.getWordsByIds(prefs.recentWordIds)
+    }
+
     private data class HistoryState(val canUndo: Boolean, val canRedo: Boolean)
 
     private val _historyState = combine(
@@ -84,12 +99,32 @@ class PromptViewModel @Inject constructor(
     }
 
     val uiState = combine(
-        combine(_mode, _positiveItems, _negativeItems, ::Triple),
-        combine(repository.visibleCategories, repository.visibleNegativeCategories, ::Pair),
+        _mode,
+        _positiveItems,
+        _negativeItems,
+        repository.visibleCategories,
+        repository.visibleNegativeCategories,
         _resolvedSelectedCategoryId,
         _wordsInCategory,
-        combine(_prefs, _historyState, ::Pair),
-    ) { (mode, posItems, negItems), (posCats, negCats), resolvedCatId, words, (prefs, history) ->
+        _searchResults,
+        _recentWords,
+        _prefs,
+        _historyState,
+        _searchQuery,
+    ) { args ->
+        val mode = args[0] as PromptMode
+        val posItems = args[1] as List<PromptItem>
+        val negItems = args[2] as List<PromptItem>
+        val posCats = args[3] as List<CategoryEntity>
+        val negCats = args[4] as List<CategoryEntity>
+        val resolvedCatId = args[5] as Long?
+        val words = args[6] as List<PromptWordEntity>
+        val searchResults = args[7] as List<PromptWordEntity>
+        val recentWords = args[8] as List<PromptWordEntity>
+        val prefs = args[9] as UserPreferences
+        val history = args[10] as HistoryState
+        val query = args[11] as String
+
         PromptUiState(
             mode                       = mode,
             positiveItems              = posItems,
@@ -103,6 +138,11 @@ class PromptViewModel @Inject constructor(
             moveToBackOnCopy           = prefs.moveToBackOnCopy,
             canUndo                    = history.canUndo,
             canRedo                    = history.canRedo,
+            positivePromptText         = PromptFormatter.formatPrompt(posItems),
+            negativePromptText         = PromptFormatter.formatPrompt(negItems),
+            searchQuery                = query,
+            searchResults              = searchResults,
+            recentWords                = recentWords,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -175,10 +215,25 @@ class PromptViewModel @Inject constructor(
             if (current.any { it.wordId == word.id }) {
                 current.filter { it.wordId != word.id }
             } else {
+                updateRecentWords(word.id)
                 current + PromptItem(wordId = word.id, wordEn = word.wordEn, wordJa = word.wordJa)
             }
         }
         persistItems()
+    }
+
+    private fun updateRecentWords(wordId: Long) {
+        viewModelScope.launch {
+            val currentRecent = _prefs.value.recentWordIds.toMutableList()
+            currentRecent.remove(wordId)
+            currentRecent.add(0, wordId)
+            val updated = currentRecent.take(20)
+            dataSource.updateRecentWordIds(updated)
+        }
+    }
+
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
     }
 
     fun removeItem(item: PromptItem) {
@@ -254,6 +309,18 @@ class PromptViewModel @Inject constructor(
     }
 
     // ---- 保存済みプロンプトから読み込み ----------------------------------------
+
+    /**
+     * 保存済みプロンプトからポジティブ・ネガティブ両方を一括で読み込む。
+     */
+    fun loadPromptSet(entity: SavedPromptEntity) {
+        if (entity.promptText.isNotBlank()) {
+            loadFromSaved(entity.promptText, PromptMode.POSITIVE)
+        }
+        if (entity.negativeText.isNotBlank()) {
+            loadFromSaved(entity.negativeText, PromptMode.NEGATIVE)
+        }
+    }
 
     fun loadFromSaved(text: String, targetMode: PromptMode) {
         val words = PromptFormatter.parsePromptText(text)

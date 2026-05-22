@@ -9,6 +9,7 @@ import com.blogspot.yotsudev.prompttile.data.entity.SavedPromptEntity
 import com.blogspot.yotsudev.prompttile.util.PromptFormatter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -31,14 +32,20 @@ class PromptRepository @Inject constructor(
 
     // 単語の取得（引数で非表示を含めるかどうかを制御）
     fun visibleWordsByCategory(categoryId: Long): Flow<List<PromptWordEntity>> =
-        promptWordDao.observeByCategory(categoryId, includeHidden = false)
+        promptWordDao.observeByCategory(categoryId, includeHidden = false).flowOn(Dispatchers.IO)
 
-    val allCategories: Flow<List<CategoryEntity>> = categoryDao.observeAll()
+    val allCategories: Flow<List<CategoryEntity>> = categoryDao.observeAll().flowOn(Dispatchers.IO)
 
     fun allWordsByCategory(categoryId: Long): Flow<List<PromptWordEntity>> =
-        promptWordDao.observeByCategory(categoryId, includeHidden = true)
+        promptWordDao.observeByCategory(categoryId, includeHidden = true).flowOn(Dispatchers.IO)
 
-    val savedPrompts: Flow<List<SavedPromptEntity>> = savedPromptDao.observeAll()
+    fun searchWords(query: String): Flow<List<PromptWordEntity>> =
+        promptWordDao.searchWords(query).flowOn(Dispatchers.IO)
+
+    fun getWordsByIds(ids: List<Long>): Flow<List<PromptWordEntity>> =
+        promptWordDao.getWordsByIds(ids).flowOn(Dispatchers.IO)
+
+    val savedPrompts: Flow<List<SavedPromptEntity>> = savedPromptDao.observeAll().flowOn(Dispatchers.IO)
 
     suspend fun insertCategories(list: List<CategoryEntity>) = withContext(Dispatchers.IO) { categoryDao.insertAll(list) }
     suspend fun insertWords(list: List<PromptWordEntity>) = withContext(Dispatchers.IO) { promptWordDao.insertAll(list) }

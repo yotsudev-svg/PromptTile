@@ -27,9 +27,21 @@ data class PromptUiState(
     // ---- Undo / Redo ----
     val canUndo: Boolean = false,
     val canRedo: Boolean = false,
+
+    // ---- 最終プロンプト文字列（リアクティブ表示用） ----
+    val positivePromptText: String = "",
+    val negativePromptText: String = "",
+
+    // ---- 検索と最近使った単語 ----
+    val searchQuery: String = "",
+    val searchResults: List<PromptWordEntity> = emptyList(),
+    val recentWords: List<PromptWordEntity> = emptyList(),
 ) {
     val currentItems: List<PromptItem>
         get() = if (mode == PromptMode.POSITIVE) positiveItems else negativeItems
+
+    val currentPromptText: String
+        get() = if (mode == PromptMode.POSITIVE) positivePromptText else negativePromptText
 
     val currentCategories: List<CategoryEntity>
         get() = if (mode == PromptMode.POSITIVE) positiveCategories else negativeCategories

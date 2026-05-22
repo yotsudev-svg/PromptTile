@@ -37,6 +37,7 @@ fun SavedPromptCard(
     onDelete: (SavedPromptEntity) -> Unit,
     onLoadPositive: ((SavedPromptEntity) -> Unit)? = null,
     onLoadNegative: ((SavedPromptEntity) -> Unit)? = null,
+    onLoadFull: ((SavedPromptEntity) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     // 日付文字列を remember で保持
@@ -113,6 +114,19 @@ fun SavedPromptCard(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                 ) {
+                    // 両方適用ボタン（両方のテキストがある場合のみ）
+                    if (onLoadFull != null) {
+                        FilledTonalButton(
+                            onClick = { onLoadFull(entity) },
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        ) {
+                            Text(stringResource(R.string.saved_apply_all), style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
+
                     if (onLoadPositive != null && entity.promptText.isNotBlank()) {
                         FilledTonalButton(
                             onClick = { onLoadPositive(entity) },

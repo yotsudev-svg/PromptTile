@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,8 +28,11 @@ import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
 @Composable
 fun WordPool(
     words: List<PromptWordEntity>,
+    searchResults: List<PromptWordEntity>,
+    recentWords: List<PromptWordEntity>,
+    searchQuery: String,
     selectedWordIds: Set<Long>,
-    uncategorizedIds: Set<Long>,          // 追加: MainScreenから渡される
+    uncategorizedIds: Set<Long>,
     onWordTap: (PromptWordEntity) -> Unit,
     onWordLongPress: (PromptWordEntity) -> Unit,
     modifier: Modifier = Modifier,
@@ -40,20 +44,75 @@ fun WordPool(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        items(
-            items = words,
-            key = { it.id },
-        ) { word ->
-            WordChip(
-                word = word,
-                isSelected = word.id in selectedWordIds,
-                isUncategorized = word.categoryId in uncategorizedIds,
-                onTap = { onWordTap(word) },
-                onLongPress = { onWordLongPress(word) },
-            )
+        if (searchQuery.isNotBlank()) {
+            // ---- 検索結果セクション ----
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                SectionHeader(stringResource(R.string.word_pool_search_results))
+            }
+            if (searchResults.isEmpty()) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Text(
+                        text = stringResource(R.string.word_pool_no_results),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            } else {
+                items(items = searchResults, key = { "search_${it.id}" }) { word ->
+                    WordChip(
+                        word = word,
+                        isSelected = word.id in selectedWordIds,
+                        isUncategorized = word.categoryId in uncategorizedIds,
+                        onTap = { onWordTap(word) },
+                        onLongPress = { onWordLongPress(word) },
+                    )
+                }
+            }
+        } else {
+            // ---- 通常表示 (最近使った単語 + カテゴリ単語) ----
+            if (recentWords.isNotEmpty()) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    SectionHeader(stringResource(R.string.word_pool_recent))
+                }
+                items(items = recentWords, key = { "recent_${it.id}" }) { word ->
+                    WordChip(
+                        word = word,
+                        isSelected = word.id in selectedWordIds,
+                        isUncategorized = word.categoryId in uncategorizedIds,
+                        onTap = { onWordTap(word) },
+                        onLongPress = { onWordLongPress(word) },
+                    )
+                }
+            }
+
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                SectionHeader(stringResource(R.string.word_pool_category_words))
+            }
+            items(items = words, key = { "cat_${it.id}" }) { word ->
+                WordChip(
+                    word = word,
+                    isSelected = word.id in selectedWordIds,
+                    isUncategorized = word.categoryId in uncategorizedIds,
+                    onTap = { onWordTap(word) },
+                    onLongPress = { onWordLongPress(word) },
+                )
+            }
         }
     }
 }
+
+@Composable
+private fun SectionHeader(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp, bottom = 8.dp)
+    )
+}
+
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
