@@ -34,18 +34,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.blogspot.yotsudev.prompttile.R
 
-/**
- * クリップボードインポート用ボトムシート。
- *
- * チップの状態は3パターン:
- *   isEnabled=true,  registerToDb=false → 通常（エリアAに追加のみ）
- *   isEnabled=true,  registerToDb=true  → 📌付き（エリアA追加 + DB登録）
- *   isEnabled=false, registerToDb=any   → 半透明（追加しない）
- *
- * [onToggleEnabled] と [onToggleRegister] を分離することで、
- * シート内の状態管理をシンプルに保つ。
- * 状態は ClipboardImportItem のリストとして親（MainScreen）が持つ。
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClipboardImportSheet(
@@ -68,7 +56,6 @@ fun ClipboardImportSheet(
                 .fillMaxWidth()
                 .padding(bottom = 32.dp),
         ) {
-            // ---- タイトル ----
             Text(
                 text = stringResource(R.string.import_sheet_title),
                 style = MaterialTheme.typography.titleMedium,
@@ -90,18 +77,6 @@ fun ClipboardImportSheet(
                     .padding(bottom = 8.dp),
             )
 
-            // ---- チップ一覧 ----
-            /**
-             * LazyRow で横スクロール表示する。
-             * 単語が多い場合でも縦に伸びずコンパクトに収まる。
-             *
-             * 各チップに2つのアイコンボタンを配置:
-             *   📌(Bookmark) → DB登録トグル
-             *   ✕(Close)    → 有効/無効トグル
-             *
-             * isEnabled=false のチップは alpha で半透明にして
-             * 「追加されない」ことを視覚的に伝える。
-             */
             LazyRow(
                 contentPadding = PaddingValues(horizontal = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -121,7 +96,6 @@ fun ClipboardImportSheet(
                 }
             }
 
-            // ---- 凡例 ----
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -158,7 +132,6 @@ fun ClipboardImportSheet(
                 }
             }
 
-            // ---- アクションボタン ----
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -197,13 +170,6 @@ private fun ImportChip(
             )
         },
         leadingIcon = {
-            /**
-             * leadingIcon を📌トグルに使う。
-             * selected = registerToDb のとき Bookmark（塗り）、
-             * そうでないとき BookmarkBorder（枠のみ）を表示する。
-             * FilterChip の selected 色変化と組み合わせて
-             * 「DB登録するかどうか」を視覚的に表現する。
-             */
             IconButton(
                 onClick = onToggleRegister,
                 modifier = Modifier.size(FilterChipDefaults.IconSize),
@@ -211,6 +177,8 @@ private fun ImportChip(
                 Icon(
                     imageVector = if (item.registerToDb)
                         Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                    // 修正: registerToDb=true のとき「登録済み（タップで解除）」
+                    //       registerToDb=false のとき「タップでDB登録」と正しく読み上げる
                     contentDescription = if (item.registerToDb)
                         stringResource(R.string.import_sheet_register_on)
                     else
@@ -226,6 +194,8 @@ private fun ImportChip(
             ) {
                 Icon(
                     imageVector = Icons.Default.Close,
+                    // isEnabled=true のとき「タップで除外」
+                    // isEnabled=false のとき「タップで復活」— こちらは元から正しい
                     contentDescription = if (item.isEnabled)
                         stringResource(R.string.import_chip_exclude)
                     else
@@ -238,8 +208,7 @@ private fun ImportChip(
             selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
             selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
         ),
-        // isEnabled=false のとき半透明で「追加しない」を表現
         modifier = Modifier.alpha(if (item.isEnabled) 1f else 0.35f),
-        enabled = true, // タップは常に受け付け（再有効化のため）
+        enabled = true,
     )
 }

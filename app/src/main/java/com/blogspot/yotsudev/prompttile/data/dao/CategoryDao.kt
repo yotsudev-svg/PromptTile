@@ -34,4 +34,8 @@ interface CategoryDao : BaseDao<CategoryEntity> {
      */
     @Query("SELECT * FROM categories WHERE nameEn = :nameEn LIMIT 1")
     suspend fun getCategoryByNameEn(nameEn: String): CategoryEntity?
+
+    /** カテゴリの並び順をID順（登録順）にリセットする */
+    @Query("UPDATE categories SET sortOrder = id")
+    suspend fun resetOrderToId()
 }

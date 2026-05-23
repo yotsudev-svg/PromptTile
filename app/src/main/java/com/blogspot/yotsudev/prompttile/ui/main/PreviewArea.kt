@@ -1,7 +1,11 @@
 package com.blogspot.yotsudev.prompttile.ui.main
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +27,9 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Redo
 import androidx.compose.material.icons.filled.Undo
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -41,7 +48,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.graphicsLayer
 import com.blogspot.yotsudev.prompttile.R
+import com.blogspot.yotsudev.prompttile.data.seed.PrefixTemplate
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
@@ -49,7 +58,8 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 fun PreviewArea(
     mode: PromptMode,
     items: List<PromptItem>,
-    promptText: String, // 追加: 生成されたプロンプト文字列
+    promptText: String,
+    allTemplates: List<PrefixTemplate>,
     canUndo: Boolean,
     canRedo: Boolean,
     onModeChange: (PromptMode) -> Unit,
@@ -59,20 +69,22 @@ fun PreviewArea(
     onCopyAll: () -> Unit,
     onUndo: () -> Unit,
     onRedo: () -> Unit,
+    onAddTemplate: (String) -> Unit,
     modifier: Modifier = Modifier,
     isVertical: Boolean = false,
 ) {
     var isDeleteMode by remember { mutableStateOf(false) }
+    var showTemplateMenu by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+            .background(MaterialTheme.colorScheme.background), // surfaceVariantからbackgroundに変更
     ) {
         // ---- ポジティブ／ネガティブ タブ ----
         TabRow(
             selectedTabIndex = if (mode == PromptMode.POSITIVE) 0 else 1,
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            containerColor = MaterialTheme.colorScheme.background, // 同上
         ) {
             Tab(
                 selected = mode == PromptMode.POSITIVE,
@@ -176,6 +188,48 @@ fun PreviewArea(
                         },
                     )
                 }
+
+                // ---- テンプレート追加ボタン (AutoAwesome) ----
+                Box {
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val isPressed by interactionSource.collectIsPressedAsState()
+                    val scale by animateFloatAsState(
+                        targetValue = if (isPressed) 0.92f else 1.0f,
+                        animationSpec = spring(dampingRatio = 0.5f, stiffness = 300f),
+                        label = "scale"
+                    )
+
+                    IconButton(
+                        onClick = { showTemplateMenu = true },
+                        interactionSource = interactionSource,
+                        modifier = Modifier.graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = "Quality Template",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = showTemplateMenu,
+                        onDismissRequest = { showTemplateMenu = false }
+                    ) {
+                        allTemplates.forEach { template ->
+                            DropdownMenuItem(
+                                text = { Text(template.name) },
+                                onClick = {
+                                    onAddTemplate(template.text)
+                                    showTemplateMenu = false
+                                }
+                            )
+                        }
+                    }
+                }
+
                 IconButton(
                     onClick = onCopyAll,
                     enabled = items.isNotEmpty(),
@@ -330,25 +384,34 @@ private fun PromptChip(
     dragModifier: Modifier,
     modifier: Modifier = Modifier,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
     val hasWeight = item.weight != null && item.weight != 1.0f
+
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.92f else 1.0f,
+        animationSpec = spring(dampingRatio = 0.5f, stiffness = 300f),
+        label = "scale"
+    )
 
     val chipColors = if (mode == PromptMode.NEGATIVE) {
         FilterChipDefaults.filterChipColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f),
+            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f),
             labelColor = MaterialTheme.colorScheme.onErrorContainer,
-            selectedContainerColor = MaterialTheme.colorScheme.errorContainer,
+            selectedContainerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
             selectedLabelColor = MaterialTheme.colorScheme.onErrorContainer,
         )
     } else {
         FilterChipDefaults.filterChipColors(
-            selectedContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
-            selectedLabelColor = MaterialTheme.colorScheme.onTertiaryContainer,
+            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
         )
     }
 
     FilterChip(
         selected = hasWeight,
         onClick = { if (!isDeleteMode) onWeightCycle() },
+        interactionSource = interactionSource,
         label = {
             Text(text = item.formatted, style = MaterialTheme.typography.bodySmall)
         },
@@ -369,6 +432,10 @@ private fun PromptChip(
         colors = chipColors,
         modifier = modifier
             .then(dragModifier)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
             .then(
                 if (isDragging) Modifier.background(
                     color = MaterialTheme.colorScheme.surfaceVariant,

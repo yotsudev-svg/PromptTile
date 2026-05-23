@@ -3,7 +3,6 @@ package com.blogspot.yotsudev.prompttile.ui.edit
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +13,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Reorder
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Card
@@ -30,11 +30,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
+import sh.calvin.reorderable.ReorderableColumn
+import sh.calvin.reorderable.ReorderableItem
 
 /**
  * カテゴリ編集カード。
- * 内部状態（ダイアログフラグなど）を持たない Stateless なコンポーネントです。
- * これにより再描画の最適化が容易になり、プレビューも容易になります。
+ * ドラッグ＆ドロップによる単語の並び替え機能を内包しています。
  */
 @Composable
 fun CategoryEditCard(
@@ -49,6 +50,8 @@ fun CategoryEditCard(
     onEditWordClick: (PromptWordEntity) -> Unit,
     onDeleteWordClick: (PromptWordEntity) -> Unit,
     onToggleWordVisibility: (PromptWordEntity) -> Unit,
+    onReorderWords: (Int, Int) -> Unit,
+    dragHandle: @Composable () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val containerAlpha = if (category.isHidden) 0.5f else 1.0f
@@ -67,10 +70,13 @@ fun CategoryEditCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onToggleExpand() }
-                .padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 8.dp),
+                .padding(start = 8.dp, top = 8.dp, bottom = 8.dp, end = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            // カテゴリ用ドラッグハンドル
+            dragHandle()
+
+            Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
                 Text(
                     text = category.nameJa,
                     style = MaterialTheme.typography.titleMedium,
@@ -83,7 +89,6 @@ fun CategoryEditCard(
                 )
             }
 
-            // 編集・表示切り替え・削除ボタン
             if (!category.isDefault) {
                 IconButton(onClick = onEditCategoryClick) {
                     Icon(
@@ -111,35 +116,48 @@ fun CategoryEditCard(
             }
             Icon(
                 imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                contentDescription = null,
-                modifier = Modifier.padding(start = 8.dp)
+                contentDescription = null
             )
         }
 
-        // ---- 単語一覧 (AnimatedVisibility) ----
+        // ---- 単語一覧 ----
         AnimatedVisibility(visible = isExpanded) {
             Column {
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 16.dp),
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
                 )
-                
-                if (words.isEmpty()) {
+
+                if (words.isNotEmpty()) {
+                    // ReorderableColumn (sh.calvin.reorderable 3.1.0)
+                    ReorderableColumn(
+                        list = words,
+                        onSettle = { from, to -> onReorderWords(from, to) }
+                    ) { index, word, isDragging ->
+                        ReorderableItem {
+                            WordEditRow(
+                                word = word,
+                                onEdit = { onEditWordClick(word) },
+                                onDelete = { onDeleteWordClick(word) },
+                                onToggleVisibility = { onToggleWordVisibility(word) },
+                                dragHandle = {
+                                    Icon(
+                                        imageVector = Icons.Default.Reorder,
+                                        contentDescription = "並び替え",
+                                        modifier = Modifier.draggableHandle().padding(horizontal = 12.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                    )
+                                }
+                            )
+                        }
+                    }
+                } else {
                     Text(
                         text = "単語がありません",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                     )
-                } else {
-                    words.forEach { word ->
-                        WordEditRow(
-                            word = word,
-                            onEdit = { onEditWordClick(word) },
-                            onDelete = { onDeleteWordClick(word) },
-                            onToggleVisibility = { onToggleWordVisibility(word) },
-                        )
-                    }
                 }
 
                 TextButton(
@@ -164,6 +182,7 @@ private fun WordEditRow(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onToggleVisibility: () -> Unit,
+    dragHandle: @Composable () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val alpha = if (word.isHidden) 0.4f else 1.0f
@@ -172,10 +191,10 @@ private fun WordEditRow(
         modifier = modifier
             .fillMaxWidth()
             .clickable(enabled = !word.isDefault) { onEdit() }
-            .padding(start = 24.dp, top = 4.dp, bottom = 4.dp, end = 8.dp),
+            .padding(top = 4.dp, bottom = 4.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        dragHandle()
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = word.wordEn,
@@ -193,30 +212,14 @@ private fun WordEditRow(
 
         if (!word.isDefault) {
             IconButton(onClick = onEdit) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "単語を編集",
-                    tint = MaterialTheme.colorScheme.primary,
-                )
+                Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.primary)
             }
-        }
-
-        if (word.isDefault) {
-            IconButton(onClick = onToggleVisibility) {
-                Icon(
-                    imageVector = if (word.isHidden)
-                        Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                    contentDescription = if (word.isHidden) "表示する" else "非表示にする",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error)
             }
         } else {
-            IconButton(onClick = onDelete) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "単語を削除",
-                    tint = MaterialTheme.colorScheme.error,
-                )
+            IconButton(onClick = onToggleVisibility) {
+                Icon(if (word.isHidden) Icons.Default.Visibility else Icons.Default.VisibilityOff, null)
             }
         }
     }

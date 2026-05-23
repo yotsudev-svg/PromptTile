@@ -100,6 +100,7 @@ fun MainScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = MaterialTheme.colorScheme.background, // 明示的にテーマの背景色を使用
         topBar = {
             MainTopAppBar(
                 hasItems = hasItems,
@@ -167,6 +168,7 @@ fun MainScreen(
                         mode = uiState.mode,
                         items = uiState.currentItems,
                         promptText = uiState.currentPromptText,
+                        allTemplates = uiState.allTemplates,
                         canUndo = uiState.canUndo,
                         canRedo = uiState.canRedo,
                         onModeChange = viewModel::switchMode,
@@ -180,6 +182,7 @@ fun MainScreen(
                         },
                         onUndo = viewModel::undo,
                         onRedo = viewModel::redo,
+                        onAddTemplate = viewModel::addTemplateItems,
                         modifier = Modifier.width(300.dp),
                         isVertical = true
                     )
@@ -224,6 +227,7 @@ fun MainScreen(
                         mode = uiState.mode,
                         items = uiState.currentItems,
                         promptText = uiState.currentPromptText,
+                        allTemplates = uiState.allTemplates,
                         canUndo = uiState.canUndo,
                         canRedo = uiState.canRedo,
                         onModeChange = viewModel::switchMode,
@@ -237,6 +241,7 @@ fun MainScreen(
                         },
                         onUndo = viewModel::undo,
                         onRedo = viewModel::redo,
+                        onAddTemplate = viewModel::addTemplateItems,
                         modifier = Modifier.width(280.dp),
                         isVertical = true
                     )
@@ -248,6 +253,7 @@ fun MainScreen(
                         mode = uiState.mode,
                         items = uiState.currentItems,
                         promptText = uiState.currentPromptText,
+                        allTemplates = uiState.allTemplates,
                         canUndo = uiState.canUndo,
                         canRedo = uiState.canRedo,
                         onModeChange = viewModel::switchMode,
@@ -264,6 +270,7 @@ fun MainScreen(
                         },
                         onUndo = viewModel::undo,
                         onRedo = viewModel::redo,
+                        onAddTemplate = viewModel::addTemplateItems,
                         modifier = Modifier.fillMaxWidth(),
                         isVertical = false
                     )
@@ -359,7 +366,10 @@ private fun MainTopAppBar(
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = MaterialTheme.colorScheme.background, // 背景色と統一感を出す
+            titleContentColor = MaterialTheme.colorScheme.primary,
+            actionIconContentColor = MaterialTheme.colorScheme.onBackground,
+            navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
         ),
     )
 }
@@ -424,6 +434,8 @@ private fun SearchBar(
         colors = TextFieldDefaults.colors(
             focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
             unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         ),
         shape = RoundedCornerShape(24.dp)
     )

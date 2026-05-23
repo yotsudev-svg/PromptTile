@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.blogspot.yotsudev.prompttile.data.preferences.PreferencesDataSource
 import com.blogspot.yotsudev.prompttile.data.preferences.ThemeConfig
-import com.blogspot.yotsudev.prompttile.data.preferences.UserPreferences
 import com.blogspot.yotsudev.prompttile.data.seed.PrefixTemplate
 import com.blogspot.yotsudev.prompttile.data.seed.parsePrefixTemplates
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,7 +27,6 @@ class SettingsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
-    // 1. スプラッシュ画面を終了して良いかを判定するフラグ
     private val _isReady = MutableStateFlow(false)
     val isReady = _isReady.asStateFlow()
 
@@ -44,11 +42,16 @@ class SettingsViewModel @Inject constructor(
         _defaultTemplates,
         preferences,
     ) { defaults, prefs ->
-        val userTemplates = prefs?.userTemplates?.map { (name, text) ->
-            PrefixTemplate(name = name, text = text, isDefault = false)
-        } ?: emptyList()
+        if (prefs == null) return@combine emptyList()
 
-        defaults + userTemplates
+        val mappedDefaults = defaults.map { d ->
+            d.copy(isEnabled = !prefs.disabledDefaultTemplateNames.contains(d.name))
+        }
+        val userTemplates = prefs.userTemplates.map { ut ->
+            PrefixTemplate(name = ut.name, text = ut.text, isDefault = false, isEnabled = ut.isEnabled)
+        }
+
+        mappedDefaults + userTemplates
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -56,18 +59,10 @@ class SettingsViewModel @Inject constructor(
     )
 
     init {
-        // 全ての初期化処理を並列で実行し、完了を待つ
         viewModelScope.launch {
-            // A. デフォルトテンプレートのロード
             val loadTemplatesJob = launch { loadDefaultTemplates() }
-
-            // B. DataStore（preferences）が non-null になるまで待機
             preferences.filterNotNull().first()
-
-            // 両方が終わるのを待つ（Aは内部で処理が終わるのを待つ）
             loadTemplatesJob.join()
-
-            // 2. 全ての準備が整ったらフラグを true にする
             _isReady.value = true
         }
     }
@@ -92,7 +87,17 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { dataSource.addUserTemplate(name, text) }
     }
 
-    fun removeUserTemplate(name: String, text: String) {
-        viewModelScope.launch { dataSource.removeUserTemplate(name, text) }
+    fun removeUserTemplate(template: PrefixTemplate) {
+        viewModelScope.launch { dataSource.removeUserTemplate(template.name, template.text) }
+    }
+
+    fun toggleTemplateEnabled(template: PrefixTemplate) {
+        viewModelScope.launch {
+            if (template.isDefault) {
+                dataSource.toggleDefaultTemplateEnabled(template.name)
+            } else {
+                dataSource.toggleUserTemplateEnabled(template.name, template.text)
+            }
+        }
     }
 }

@@ -16,6 +16,9 @@ interface BaseDao<T> {
     @Update
     suspend fun update(entity: T)
 
+    @Update
+    suspend fun updateAll(entities: List<T>)
+
     @Upsert
     suspend fun upsert(entity: T)
 

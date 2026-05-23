@@ -19,18 +19,19 @@
 
     <string name="settings_header_prompt">プロンプト</string>
     <string name="settings_template_title">クオリティテンプレート</string>
-    <string name="settings_template_description">テンプレートの単語をメイン画面のプロンプトに追加します</string>
-    <string name="settings_template_select">選ぶ</string>
+    <string name="settings_template_description">プロンプトテンプレートの管理・追加を行います</string>
+    <string name="settings_template_manage">管理</string>
 
     <string name="settings_header_operation">操作</string>
     <string name="settings_move_to_back_title">コピー後にバックグラウンドへ</string>
     <string name="settings_move_to_back_description">コピーボタンを押したあと自動でアプリを背面に移動します</string>
 
-    <!-- Template Bottom Sheet -->
-    <string name="template_sheet_title">テンプレートを選ぶ</string>
+    <!-- Template Management Sheet -->
+    <string name="template_sheet_manage_title">テンプレートの管理</string>
     <string name="template_sheet_add_description">テンプレートを追加</string>
     <string name="template_sheet_empty">テンプレートがありません</string>
     <string name="template_delete_description">削除</string>
+    <string name="template_toggle_description">有効/無効の切り替え</string>
 
     <!-- Add Template Dialog -->
     <string name="dialog_add_template_title">テンプレートを追加</string>
@@ -62,8 +63,8 @@
     <string name="import_sheet_register_legend">未分類に登録</string>
     <string name="import_sheet_exclude_legend">タップで除外/復活</string>
     <string name="import_sheet_add_with_count">追加 (%d)</string>
-    <string name="import_sheet_register_on">DB登録しない</string>
-    <string name="import_sheet_register_off">DB登録する</string>
+    <string name="import_sheet_register_on">DB登録中（タップで解除）</string>
+    <string name="import_sheet_register_off">タップでDB登録</string>
     <string name="import_chip_exclude">除外する</string>
     <string name="import_chip_restore">復活させる</string>
 

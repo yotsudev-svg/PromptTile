@@ -49,6 +49,12 @@ class PromptRepository @Inject constructor(
     suspend fun insertWords(list: List<PromptWordEntity>) = withContext(Dispatchers.IO) { promptWordDao.insertAll(list) }
     suspend fun insertCategory(category: CategoryEntity) = withContext(Dispatchers.IO) { categoryDao.insert(category) }
     suspend fun updateCategory(category: CategoryEntity) = withContext(Dispatchers.IO) { categoryDao.update(category) }
+    suspend fun updateCategories(categories: List<CategoryEntity>) = withContext(Dispatchers.IO) {
+        categoryDao.updateAll(categories)
+    }
+    suspend fun resetCategoryOrder() = withContext(Dispatchers.IO) {
+        categoryDao.resetOrderToId()
+    }
     suspend fun deleteCategory(category: CategoryEntity) = withContext(Dispatchers.IO) { categoryDao.delete(category) }
     suspend fun toggleCategoryVisibility(category: CategoryEntity) = withContext(Dispatchers.IO) {
         categoryDao.update(category.copy(isHidden = !category.isHidden))
@@ -56,6 +62,12 @@ class PromptRepository @Inject constructor(
 
     suspend fun insertWord(word: PromptWordEntity) = withContext(Dispatchers.IO) { promptWordDao.insert(word) }
     suspend fun updateWord(word: PromptWordEntity) = withContext(Dispatchers.IO) { promptWordDao.update(word) }
+    suspend fun updateWords(words: List<PromptWordEntity>) = withContext(Dispatchers.IO) {
+        promptWordDao.updateAll(words)
+    }
+    suspend fun resetWordOrder(categoryId: Long) = withContext(Dispatchers.IO) {
+        promptWordDao.resetOrderToId(categoryId)
+    }
     suspend fun deleteWord(word: PromptWordEntity) = withContext(Dispatchers.IO) { promptWordDao.delete(word) }
     suspend fun toggleWordVisibility(word: PromptWordEntity) = withContext(Dispatchers.IO) {
         promptWordDao.update(word.copy(isHidden = !word.isHidden))

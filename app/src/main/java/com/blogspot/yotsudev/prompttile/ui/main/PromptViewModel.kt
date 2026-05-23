@@ -1,5 +1,6 @@
 package com.blogspot.yotsudev.prompttile.ui.main
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
@@ -9,8 +10,12 @@ import com.blogspot.yotsudev.prompttile.data.preferences.PersistedPromptItem
 import com.blogspot.yotsudev.prompttile.data.preferences.PreferencesDataSource
 import com.blogspot.yotsudev.prompttile.data.preferences.UserPreferences
 import com.blogspot.yotsudev.prompttile.data.repository.PromptRepository
+import com.blogspot.yotsudev.prompttile.data.seed.PrefixTemplate
+import com.blogspot.yotsudev.prompttile.data.seed.parsePrefixTemplates
 import com.blogspot.yotsudev.prompttile.util.PromptFormatter
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -21,6 +26,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 private const val HISTORY_LIMIT = 10
@@ -29,6 +35,7 @@ private const val HISTORY_LIMIT = 10
 class PromptViewModel @Inject constructor(
     private val repository: PromptRepository,
     private val dataSource: PreferencesDataSource,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _mode = MutableStateFlow(PromptMode.POSITIVE)
@@ -38,6 +45,8 @@ class PromptViewModel @Inject constructor(
     private val _selectedNegativeCategoryId = MutableStateFlow<Long?>(null)
 
     private val _searchQuery = MutableStateFlow("")
+
+    private val _defaultTemplates = MutableStateFlow<List<PrefixTemplate>>(emptyList())
 
     private val _positiveUndoStack = MutableStateFlow<List<List<PromptItem>>>(emptyList())
     private val _positiveRedoStack = MutableStateFlow<List<List<PromptItem>>>(emptyList())
@@ -92,6 +101,19 @@ class PromptViewModel @Inject constructor(
         )
     }
 
+    private val _allTemplates = combine(
+        _defaultTemplates,
+        _prefs,
+    ) { defaults, prefs ->
+        val mappedDefaults = defaults.map { d ->
+            d.copy(isEnabled = !prefs.disabledDefaultTemplateNames.contains(d.name))
+        }
+        val userTemplates = prefs.userTemplates.map { ut ->
+            PrefixTemplate(name = ut.name, text = ut.text, isDefault = false, isEnabled = ut.isEnabled)
+        }
+        (mappedDefaults + userTemplates).filter { it.isEnabled }
+    }
+
     val uiState = combine(
         _mode,
         _positiveItems,
@@ -104,6 +126,7 @@ class PromptViewModel @Inject constructor(
         _prefs,
         _historyState,
         _searchQuery,
+        _allTemplates,
     ) { args ->
         val mode = args[0] as PromptMode
         val posItems = args[1] as List<PromptItem>
@@ -116,6 +139,7 @@ class PromptViewModel @Inject constructor(
         val prefs = args[8] as UserPreferences
         val history = args[9] as HistoryState
         val query = args[10] as String
+        val templates = args[11] as List<PrefixTemplate>
 
         PromptUiState(
             mode                       = mode,
@@ -128,6 +152,7 @@ class PromptViewModel @Inject constructor(
             wordsInCategory            = words,
             isLoading                  = false,
             moveToBackOnCopy           = prefs.moveToBackOnCopy,
+            allTemplates               = templates,
             canUndo                    = history.canUndo,
             canRedo                    = history.canRedo,
             positivePromptText         = PromptFormatter.formatPrompt(posItems),
@@ -145,6 +170,7 @@ class PromptViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            launch { loadDefaultTemplates() }
             val prefs = dataSource.userPreferences.first()
             if (prefs.persistedPositiveItems.isNotEmpty()) {
                 _positiveItems.value = prefs.persistedPositiveItems.map { it.toPromptItem() }
@@ -152,6 +178,18 @@ class PromptViewModel @Inject constructor(
             if (prefs.persistedNegativeItems.isNotEmpty()) {
                 _negativeItems.value = prefs.persistedNegativeItems.map { it.toPromptItem() }
             }
+        }
+    }
+
+    private suspend fun loadDefaultTemplates() = withContext(Dispatchers.IO) {
+        try {
+            val json = context.assets
+                .open("seed_data.json")
+                .bufferedReader()
+                .use { it.readText() }
+            _defaultTemplates.value = parsePrefixTemplates(json)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
@@ -236,7 +274,10 @@ class PromptViewModel @Inject constructor(
         persistItems()
     }
 
+    // 修正 #3: ドラッグ並び替えも Undo 対象に含める。
+    // 変更前は pushHistory() の呼び出しがなく、並び替えだけ Undo できない状態だった。
     fun moveItem(from: Int, to: Int) {
+        pushHistory(currentItems.value)
         currentItems.update { current ->
             current.toMutableList().apply { add(to, removeAt(from)) }
         }
@@ -274,12 +315,15 @@ class PromptViewModel @Inject constructor(
 
     // ---- テンプレート ------------------------------------------
 
+    // 修正 #2: 現在のモード（ポジ／ネガ）に応じた対象リストにテンプレートを追加する。
+    // 変更前は _positiveItems に固定されており、ネガティブモード中に追加すると
+    // ネガティブではなくポジティブに入るバグがあった。
     fun addTemplateItems(templateText: String) {
         val words = PromptFormatter.parsePromptText(templateText)
         if (words.isEmpty()) return
-        pushHistory(_positiveItems.value)
+        pushHistory(currentItems.value)
         val baseId = -System.currentTimeMillis()
-        _positiveItems.update { current ->
+        currentItems.update { current ->
             val existing = current.map { it.wordEn }.toSet()
             val newItems = words.filterNot { it in existing }
                 .mapIndexed { i, w -> PromptItem(wordId = baseId - i, wordEn = w, wordJa = "") }
@@ -290,9 +334,6 @@ class PromptViewModel @Inject constructor(
 
     // ---- 保存済みプロンプトから読み込み ----------------------------------------
 
-    /**
-     * 保存済みプロンプトからポジティブ・ネガティブ両方を一括で読み込む。
-     */
     fun loadPromptSet(entity: SavedPromptEntity) {
         if (entity.promptText.isNotBlank()) {
             loadFromSaved(entity.promptText, PromptMode.POSITIVE)
@@ -330,17 +371,6 @@ class PromptViewModel @Inject constructor(
 
     // ---- クリップボードインポート ----------------------------------------
 
-    /**
-     * ボトムシートで確定したアイテムをエリアAに追加し、
-     * 必要に応じて未分類カテゴリにも登録する。
-     *
-     * [items] はプレビューシートで編集済みのリスト。
-     * isEnabled = false のアイテムはスキップする。
-     * registerToDb = true のアイテムのみ未分類カテゴリに登録する。
-     *
-     * DB登録はポジ・ネガの現在モードで分岐する。
-     * isNegative = true のとき UNCATEGORIZED_NEGATIVE に登録される。
-     */
     fun confirmClipboardImport(items: List<ClipboardImportItem>) {
         val enabledItems = items.filter { it.isEnabled }
         if (enabledItems.isEmpty()) return
@@ -360,7 +390,6 @@ class PromptViewModel @Inject constructor(
         }
         persistItems()
 
-        // DB登録対象があれば未分類カテゴリに登録
         val wordsToRegister = enabledItems
             .filter { it.registerToDb }
             .joinToString(",") { it.wordEn }

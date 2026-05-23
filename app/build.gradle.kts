@@ -63,6 +63,7 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.reorderable)
     implementation(libs.androidx.core.splashscreen)
+    implementation(libs.kotlinx.serialization.json)
     ksp(libs.androidx.room.compiler)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

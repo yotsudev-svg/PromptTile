@@ -121,4 +121,62 @@ class EditViewModel @Inject constructor(
     fun toggleWordVisibility(entity: PromptWordEntity) {
         viewModelScope.launch { repository.toggleWordVisibility(entity) }
     }
+
+    // ---- 並び替えロジック ----
+
+    /**
+     * カテゴリの順序を入れ替えてDBに保存する。
+     */
+    fun reorderCategories(fromIndex: Int, toIndex: Int) {
+        val list = uiState.value.categories.toMutableList()
+        if (fromIndex !in list.indices || toIndex !in list.indices) return
+
+        val item = list.removeAt(fromIndex)
+        list.add(toIndex, item)
+
+        val updatedList = list.mapIndexed { index, category ->
+            category.copy(sortOrder = index)
+        }
+
+        viewModelScope.launch {
+            repository.updateCategories(updatedList)
+        }
+    }
+
+    /**
+     * 現在展開中のカテゴリ内の単語の順序を入れ替えてDBに保存する。
+     */
+    fun reorderWords(fromIndex: Int, toIndex: Int) {
+        val list = uiState.value.wordsInExpanded.toMutableList()
+        if (fromIndex !in list.indices || toIndex !in list.indices) return
+
+        val item = list.removeAt(fromIndex)
+        list.add(toIndex, item)
+
+        val updatedList = list.mapIndexed { index, word ->
+            word.copy(sortOrder = index)
+        }
+
+        viewModelScope.launch {
+            repository.updateWords(updatedList)
+        }
+    }
+
+    /**
+     * カテゴリの並び順を登録順（ID順）にリセットする。
+     */
+    fun resetCategoryOrder() {
+        viewModelScope.launch {
+            repository.resetCategoryOrder()
+        }
+    }
+
+    /**
+     * 指定したカテゴリ内の単語の並び順を登録順（ID順）にリセットする。
+     */
+    fun resetWordOrder(categoryId: Long) {
+        viewModelScope.launch {
+            repository.resetWordOrder(categoryId)
+        }
+    }
 }

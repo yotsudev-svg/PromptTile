@@ -89,16 +89,21 @@ fun WordDialog(
     var wordEn by rememberSaveable { mutableStateOf(initial?.wordEn ?: "") }
     var wordJa by rememberSaveable { mutableStateOf(initial?.wordJa ?: "") }
 
-    /**
-     * CategoryEntity は Parcelable 非対応のため rememberSaveable ではなく
-     * remember を使う。
-     * ダイアログは画面回転で再生成されるが、その際は onDismiss が呼ばれて
-     * 閉じられるため、saveable にする必要はない。
-     */
-    var selectedCategory by remember {
-        mutableStateOf(allCategories.find { it.id == initial?.categoryId })
+    // 修正 #4: selectedCategoryId を Long? として rememberSaveable で保持する。
+    //
+    // 変更前は CategoryEntity をそのまま remember していたため、
+    // rememberSaveableStateHolderNavEntryDecorator による状態保持が
+    // 働いていても構成変更（画面回転など）でリセットされる可能性があった。
+    //
+    // CategoryEntity は Parcelable 非対応のため直接は saveable にできないが、
+    // id（Long）は saveable なのでそちらを保持し、表示時に allCategories から
+    // 逆引きする方式に変更した。これにより構成変更後も選択状態が正しく復元される。
+    var selectedCategoryId by rememberSaveable {
+        mutableStateOf(initial?.categoryId)
     }
-    var dropdownExpanded by remember { mutableStateOf(false) }
+    val selectedCategory = allCategories.find { it.id == selectedCategoryId }
+
+    var dropdownExpanded by rememberSaveable { mutableStateOf(false) }
 
     val canSave = wordEn.isNotBlank()
 
@@ -132,7 +137,8 @@ fun WordDialog(
                         onExpandedChange = { dropdownExpanded = it },
                     ) {
                         OutlinedTextField(
-                            value = selectedCategory?.nameJa ?: stringResource(R.string.dialog_word_category_select),
+                            value = selectedCategory?.nameJa
+                                ?: stringResource(R.string.dialog_word_category_select),
                             onValueChange = {},
                             readOnly = true,
                             label = { Text(stringResource(R.string.dialog_word_category)) },
@@ -151,7 +157,7 @@ fun WordDialog(
                                 DropdownMenuItem(
                                     text = { Text("${category.nameJa}  ${category.nameEn}") },
                                     onClick = {
-                                        selectedCategory = category
+                                        selectedCategoryId = category.id  // id のみ保存
                                         dropdownExpanded = false
                                     },
                                 )
@@ -167,7 +173,7 @@ fun WordDialog(
                     if (canSave) onConfirm(
                         wordEn.trim(),
                         wordJa.trim(),
-                        selectedCategory?.id,
+                        selectedCategoryId,
                     )
                 },
                 enabled = canSave,

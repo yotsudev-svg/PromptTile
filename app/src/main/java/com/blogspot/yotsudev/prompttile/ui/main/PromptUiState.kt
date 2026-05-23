@@ -2,6 +2,7 @@ package com.blogspot.yotsudev.prompttile.ui.main
 
 import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
+import com.blogspot.yotsudev.prompttile.data.seed.PrefixTemplate
 
 enum class PromptMode { POSITIVE, NEGATIVE }
 
@@ -23,6 +24,9 @@ data class PromptUiState(
 
     val isLoading: Boolean = true,
     val moveToBackOnCopy: Boolean = false,
+
+    // ---- テンプレート ----
+    val allTemplates: List<PrefixTemplate> = emptyList(),
 
     // ---- Undo / Redo ----
     val canUndo: Boolean = false,

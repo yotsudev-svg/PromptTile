@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.coroutineScope
 import javax.inject.Inject
 
 @HiltViewModel
@@ -28,11 +29,17 @@ class SavedViewModel @Inject constructor(
     /**
      * 手動入力したプロンプトを保存し、未登録単語を自動登録する。
      *
-     * savePrompt と registerNewWordsFromText を並列で実行せず
-     * 順番に実行している理由:
-     * どちらも独立したDB操作なので並列でも問題ないが、
-     * シンプルさを優先して直列にしている。
-     * 単語数が多い場合でも数十ms程度なのでUXへの影響はない。
+     * savePrompt と registerNewWordsFromText は互いに依存しないため
+     * coroutineScope 内で並列実行する。
+     *
+     * 直列実行との違い:
+     *   直列: savePrompt → registerPos → registerNeg（最大3往復）
+     *   並列: savePrompt と register 系を同時に実行（1往復分の時間に短縮）
+     *
+     * coroutineScope を使う理由:
+     *   launch { launch{} launch{} } ではなく coroutineScope { launch{} launch{} } にすることで、
+     *   内側の全 launch が完了するまで外側のコルーチンが終了しない（構造化並行性）。
+     *   いずれかの処理が例外を投げた場合も全体がキャンセルされ、中途半端な状態にならない。
      */
     fun addManualPrompt(title: String, positiveText: String, negativeText: String) {
         val pos = positiveText.trim()
@@ -45,20 +52,23 @@ class SavedViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            // 1. プロンプトを保存
-            repository.savePrompt(
-                SavedPromptEntity(
-                    title        = resolvedTitle,
-                    promptText   = pos,
-                    negativeText = neg,
-                )
-            )
-            // 2. 未登録単語を未分類カテゴリに自動登録
-            if (pos.isNotBlank()) {
-                repository.registerNewWordsFromText(pos, isNegative = false)
-            }
-            if (neg.isNotBlank()) {
-                repository.registerNewWordsFromText(neg, isNegative = true)
+            coroutineScope {
+                // savePrompt と単語登録を並列で実行
+                launch {
+                    repository.savePrompt(
+                        SavedPromptEntity(
+                            title        = resolvedTitle,
+                            promptText   = pos,
+                            negativeText = neg,
+                        )
+                    )
+                }
+                if (pos.isNotBlank()) {
+                    launch { repository.registerNewWordsFromText(pos, isNegative = false) }
+                }
+                if (neg.isNotBlank()) {
+                    launch { repository.registerNewWordsFromText(neg, isNegative = true) }
+                }
             }
         }
     }

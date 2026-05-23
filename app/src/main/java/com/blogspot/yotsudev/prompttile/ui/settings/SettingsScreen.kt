@@ -1,6 +1,5 @@
 package com.blogspot.yotsudev.prompttile.ui.settings
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -37,12 +36,12 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -58,14 +57,7 @@ import com.blogspot.yotsudev.prompttile.data.preferences.ThemeConfig
 import com.blogspot.yotsudev.prompttile.data.seed.PrefixTemplate
 import com.blogspot.yotsudev.prompttile.ui.components.ConfirmDeleteDialog
 import com.blogspot.yotsudev.prompttile.ui.main.PromptViewModel
-import kotlinx.coroutines.launch
 
-/**
- * 設定画面。
- *
- * パフォーマンス最適化（LazyColumn の採用）と
- * UI ロジックの整理（BottomSheet のカプセル化）を行っています。
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
@@ -76,7 +68,6 @@ fun SettingsScreen(
     val allTemplates by viewModel.allTemplates.collectAsStateWithLifecycle()
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val scope = rememberCoroutineScope()
     var showSheet by rememberSaveable { mutableStateOf(false) }
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
     var deletingTemplate by rememberSaveable { mutableStateOf<PrefixTemplate?>(null) }
@@ -87,25 +78,19 @@ fun SettingsScreen(
         ConfirmDeleteDialog(
             targetName = template.name,
             onConfirm = {
-                viewModel.removeUserTemplate(template.name, template.text)
+                viewModel.removeUserTemplate(template)
                 deletingTemplate = null
             },
             onDismiss = { deletingTemplate = null },
         )
     }
 
-    // ---- テンプレート選択ボトムシート ----
+    // ---- テンプレート管理ボトムシート ----
     if (showSheet) {
         PrefixTemplateBottomSheet(
             templates = allTemplates,
             sheetState = sheetState,
-            onSelect = { template ->
-                promptViewModel.addTemplateItems(template.text)
-                // アニメーション完了後にフラグを下ろす
-                scope.launch { sheetState.hide() }.invokeOnCompletion {
-                    if (!sheetState.isVisible) showSheet = false
-                }
-            },
+            onToggleEnabled = { viewModel.toggleTemplateEnabled(it) },
             onDelete = { deletingTemplate = it },
             onAddNew = { showAddDialog = true },
             onDismiss = { showSheet = false },
@@ -125,9 +110,16 @@ fun SettingsScreen(
 
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             key(prefs?.themeConfig ?: ThemeConfig.FOLLOW_SYSTEM, isSystemDark) {
-                TopAppBar(title = { Text(stringResource(R.string.settings_title)) })
+                TopAppBar(
+                    title = { Text(stringResource(R.string.settings_title)) },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                        titleContentColor = MaterialTheme.colorScheme.primary,
+                    )
+                )
             }
         },
     ) { innerPadding ->
@@ -152,7 +144,7 @@ fun SettingsScreen(
                 description = stringResource(R.string.settings_template_description),
                 trailingContent = {
                     TextButton(onClick = { showSheet = true }) {
-                        Text(stringResource(R.string.settings_template_select))
+                        Text(stringResource(R.string.settings_template_manage))
                     }
                 }
             )
@@ -259,7 +251,7 @@ private fun ThemeSelectionRow(
 private fun PrefixTemplateBottomSheet(
     templates: List<PrefixTemplate>,
     sheetState: SheetState,
-    onSelect: (PrefixTemplate) -> Unit,
+    onToggleEnabled: (PrefixTemplate) -> Unit,
     onDelete: (PrefixTemplate) -> Unit,
     onAddNew: () -> Unit,
     onDismiss: () -> Unit,
@@ -283,7 +275,7 @@ private fun PrefixTemplateBottomSheet(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = stringResource(R.string.template_sheet_title),
+                        text = stringResource(R.string.template_sheet_manage_title),
                         style = MaterialTheme.typography.titleMedium,
                     )
                     IconButton(onClick = onAddNew) {
@@ -325,17 +317,22 @@ private fun PrefixTemplateBottomSheet(
                             )
                         },
                         trailingContent = {
-                            if (!template.isDefault) {
-                                IconButton(onClick = { onDelete(template) }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = stringResource(R.string.template_delete_description),
-                                        tint = MaterialTheme.colorScheme.error,
-                                    )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (!template.isDefault) {
+                                    IconButton(onClick = { onDelete(template) }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = stringResource(R.string.template_delete_description),
+                                            tint = MaterialTheme.colorScheme.error,
+                                        )
+                                    }
                                 }
+                                Switch(
+                                    checked = template.isEnabled,
+                                    onCheckedChange = { onToggleEnabled(template) }
+                                )
                             }
-                        },
-                        modifier = Modifier.clickable { onSelect(template) },
+                        }
                     )
                     HorizontalDivider()
                 }
@@ -419,7 +416,7 @@ private fun SwitchSettingRow(
         trailingContent = {
             Switch(
                 checked = checked,
-                onCheckedChange = null, // toggleable側でハンドリング
+                onCheckedChange = null,
             )
         }
     )

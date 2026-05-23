@@ -18,7 +18,7 @@ import com.blogspot.yotsudev.prompttile.data.entity.SavedPromptEntity
         PromptWordEntity::class,
         SavedPromptEntity::class,
     ],
-    version = 5, // 3 → 4,5: 未分類カテゴリ（id:23,24）をseedに追加。スキーマ変更なし、DB再作成で反映
+    version = 6, // 5 → 6: sortOrderの初期化と管理機能の追加
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -27,6 +27,14 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun savedPromptDao(): SavedPromptDao
 
     companion object {
+        val MIGRATION_5_6 = object : androidx.room.migration.Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // 初期状態を ID 順に整える
+                db.execSQL("UPDATE categories SET sortOrder = id")
+                db.execSQL("UPDATE prompt_words SET sortOrder = id")
+            }
+        }
+
         fun seedCallback(context: Context) = object : Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
                 super.onCreate(db)

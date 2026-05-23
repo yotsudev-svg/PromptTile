@@ -1,7 +1,11 @@
 package com.blogspot.yotsudev.prompttile.ui.main
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -17,11 +21,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
 import com.blogspot.yotsudev.prompttile.R
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
 
@@ -103,16 +110,29 @@ private fun SectionHeader(text: String) {
 private fun WordChip(
     word: PromptWordEntity,
     isSelected: Boolean,
-    isUncategorized: Boolean,             // 追加: 呼び出し元で解決済みのフラグを受け取る
+    isUncategorized: Boolean,
     onTap: () -> Unit,
     onLongPress: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    // 押した時に少し小さくなるアニメーション（「ぷにっ」とした弾力感）
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.92f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = 0.5f, // 低めに設定して弾力感を出す
+            stiffness = 300f     // ややゆったりとした動き
+        ),
+        label = "scale"
+    )
+
     val containerColor = when {
         isSelected && isUncategorized -> MaterialTheme.colorScheme.tertiaryContainer
-        isUncategorized               -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f)
+        isUncategorized               -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
         isSelected                    -> MaterialTheme.colorScheme.primaryContainer
-        else                          -> MaterialTheme.colorScheme.surface
+        else                          -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
     }
 
     val contentColor = when {
@@ -124,12 +144,19 @@ private fun WordChip(
 
     Surface(
         color = containerColor,
-        tonalElevation = if (isSelected) 0.dp else 1.dp,
-        shape = RoundedCornerShape(8.dp),
+        tonalElevation = if (isSelected) 4.dp else 1.dp, // 選択時は少し浮かす
+        shadowElevation = if (isSelected) 2.dp else 0.dp,
+        shape = RoundedCornerShape(12.dp), // 少し丸みを強くしてモダンに
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clip(RoundedCornerShape(12.dp))
             .combinedClickable(
+                interactionSource = interactionSource,
+                indication = null, // デフォルトの波紋を消してスケールアニメを主役にする
                 onClick = onTap,
                 onLongClick = onLongPress,
             ),

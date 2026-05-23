@@ -1,21 +1,28 @@
 package com.blogspot.yotsudev.prompttile.ui.edit
 
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Reorder
+import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -26,7 +33,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -36,14 +42,9 @@ import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
 import com.blogspot.yotsudev.prompttile.ui.components.ConfirmDeleteDialog
 import kotlinx.coroutines.launch
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
-/**
- * 単語・カテゴリ編集画面。
- *
- * ダイアログの状態管理をこの Screen レベルに集約することで、
- * CategoryEditCard を Stateless (状態を持たない) にし、
- * リスト全体の描画パフォーマンスと保守性を向上させています。
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditScreen(
@@ -60,12 +61,32 @@ fun EditScreen(
     var editingWord by remember { mutableStateOf<PromptWordEntity?>(null) }
     var deletingCategory by remember { mutableStateOf<CategoryEntity?>(null) }
     var deletingWord by remember { mutableStateOf<PromptWordEntity?>(null) }
+    var showResetOrderDialog by remember { mutableStateOf(false) }
 
     val msgAdded = stringResource(R.string.msg_prompt_added)
     val msgSaved = stringResource(R.string.msg_prompt_saved)
     val msgDeleted = stringResource(R.string.msg_deleted)
 
-    // ---- ダイアログ群 ----
+    // リセット確認ダイアログ
+    if (showResetOrderDialog) {
+        AlertDialog(
+            onDismissRequest = { showResetOrderDialog = false },
+            title = { Text("並び順のリセット") },
+            text = { Text("カテゴリの並び順をデフォルト（登録順）に戻しますか？") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.resetCategoryOrder()
+                    showResetOrderDialog = false
+                    scope.launch { snackbarHostState.showSnackbar("並び順をリセットしました") }
+                }) { Text("リセット") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetOrderDialog = false }) { Text("キャンセル") }
+            }
+        )
+    }
+
+    // ---- 各種編集/削除ダイアログ ----
     if (showAddCategoryDialog) {
         CategoryDialog(
             onConfirm = { ja, en ->
@@ -141,7 +162,12 @@ fun EditScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.edit_title), style = MaterialTheme.typography.titleLarge) },
+                title = { Text(stringResource(R.string.edit_title)) },
+                actions = {
+                    IconButton(onClick = { showResetOrderDialog = true }) {
+                        Icon(Icons.Default.RestartAlt, contentDescription = "並び順をリセット")
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface,
                 )
@@ -149,18 +175,12 @@ fun EditScreen(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddCategoryDialog = true }) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = stringResource(R.string.edit_add_category_desc),
-                )
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.edit_add_category_desc))
             }
         },
     ) { innerPadding ->
         if (uiState.categories.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
                     text = stringResource(R.string.edit_empty_prompt),
                     style = MaterialTheme.typography.bodyMedium,
@@ -168,7 +188,13 @@ fun EditScreen(
                 )
             }
         } else {
+            val lazyListState = rememberLazyListState()
+            val reorderableLazyColumnState = rememberReorderableLazyListState(lazyListState) { from, to ->
+                viewModel.reorderCategories(from.index, to.index)
+            }
+
             LazyColumn(
+                state = lazyListState,
                 contentPadding = PaddingValues(
                     start = 16.dp,
                     end = 16.dp,
@@ -176,26 +202,34 @@ fun EditScreen(
                     bottom = innerPadding.calculateBottomPadding() + 80.dp,
                 ),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxSize()
             ) {
-                items(
-                    items = uiState.categories,
-                    key = { it.id },
-                    contentType = { "category_card" }
-                ) { category ->
-                    val isExpanded = category.id == uiState.expandedCategoryId
-                    CategoryEditCard(
-                        category = category,
-                        isExpanded = isExpanded,
-                        words = if (isExpanded) uiState.wordsInExpanded else emptyList(),
-                        onToggleExpand = { viewModel.toggleExpand(category.id) },
-                        onEditCategoryClick = { editingCategory = category },
-                        onDeleteCategoryClick = { deletingCategory = category },
-                        onToggleCategoryVisibility = { viewModel.toggleCategoryVisibility(category) },
-                        onAddWordClick = { addingWordToCategoryId = category.id },
-                        onEditWordClick = { word -> editingWord = word },
-                        onDeleteWordClick = { word -> deletingWord = word },
-                        onToggleWordVisibility = { word -> viewModel.toggleWordVisibility(word) },
-                    )
+                itemsIndexed(uiState.categories, key = { _, category -> category.id }) { _, category ->
+                    ReorderableItem(reorderableLazyColumnState, key = category.id) {
+                        val isExpanded = category.id == uiState.expandedCategoryId
+                        CategoryEditCard(
+                            category = category,
+                            isExpanded = isExpanded,
+                            words = if (isExpanded) uiState.wordsInExpanded else emptyList(),
+                            onToggleExpand = { viewModel.toggleExpand(category.id) },
+                            onEditCategoryClick = { editingCategory = category },
+                            onDeleteCategoryClick = { deletingCategory = category },
+                            onToggleCategoryVisibility = { viewModel.toggleCategoryVisibility(category) },
+                            onAddWordClick = { addingWordToCategoryId = category.id },
+                            onEditWordClick = { word -> editingWord = word },
+                            onDeleteWordClick = { word -> deletingWord = word },
+                            onToggleWordVisibility = { word -> viewModel.toggleWordVisibility(word) },
+                            onReorderWords = { from, to -> viewModel.reorderWords(from, to) },
+                            dragHandle = {
+                                Icon(
+                                    imageVector = Icons.Default.Reorder,
+                                    contentDescription = "ドラッグして移動",
+                                    modifier = Modifier.draggableHandle().padding(horizontal = 8.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                )
+                            }
+                        )
+                    }
                 }
             }
         }

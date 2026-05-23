@@ -12,6 +12,7 @@ data class PrefixTemplate(
     val name: String,
     val text: String,
     val isDefault: Boolean = false,
+    val isEnabled: Boolean = true,
 )
 
 /** seed_data.json の prefix_templates セクションをパースする */

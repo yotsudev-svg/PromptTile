@@ -8,11 +8,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface PromptWordDao : BaseDao<PromptWordEntity> {
 
-    /**
-     * 指定カテゴリ内の単語を表示順に監視する。
-     *
-     * @param includeHidden 非表示設定の単語も含める場合は true
-     */
+    /** 指定カテゴリ内の単語を表示順（sortOrder）に監視する */
     @Query("""
         SELECT * FROM prompt_words 
         WHERE categoryId = :categoryId 
@@ -24,21 +20,12 @@ interface PromptWordDao : BaseDao<PromptWordEntity> {
         includeHidden: Boolean = false
     ): Flow<List<PromptWordEntity>>
 
-    /**
-     * 指定カテゴリ内の単語英語名リストを取得する。
-     */
     @Query("SELECT wordEn FROM prompt_words WHERE categoryId = :categoryId")
     suspend fun getWordEnsByCategory(categoryId: Long): List<String>
 
-    /**
-     * 単語の所属カテゴリを変更する。
-     */
     @Query("UPDATE prompt_words SET categoryId = :newCategoryId WHERE id = :wordId")
     suspend fun updateCategory(wordId: Long, newCategoryId: Long)
 
-    /**
-     * 単語名（日英）で検索する。
-     */
     @Query("""
         SELECT * FROM prompt_words 
         WHERE (wordEn LIKE '%' || :query || '%' OR wordJa LIKE '%' || :query || '%')
@@ -47,4 +34,7 @@ interface PromptWordDao : BaseDao<PromptWordEntity> {
     """)
     fun searchWords(query: String): Flow<List<PromptWordEntity>>
 
+    /** 指定カテゴリ内の単語の並び順をID順（登録順）に一括リセットする */
+    @Query("UPDATE prompt_words SET sortOrder = id WHERE categoryId = :categoryId")
+    suspend fun resetOrderToId(categoryId: Long)
 }
