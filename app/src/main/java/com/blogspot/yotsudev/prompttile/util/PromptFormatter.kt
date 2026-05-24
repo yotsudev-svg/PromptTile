@@ -10,8 +10,8 @@ object PromptFormatter {
      */
     fun formatItem(item: PromptItem): String {
         return when {
-            item.weight == null || item.weight == 1.0f -> item.wordEn
-            else -> "(${item.wordEn}:${String.format(Locale.US, "%.1f", item.weight)})"
+            item.weight == null || item.weight == 1.0f -> item.baseText
+            else -> "(${item.baseText}:${String.format(Locale.US, "%.1f", item.weight)})"
         }
     }
 

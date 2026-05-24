@@ -26,6 +26,8 @@ data class PersistedPromptItem(
     val wordEn: String,
     val wordJa: String,
     val weight: Float?,
+    val toppingGroupId: Long? = null,
+    val selectedTopping: String? = null,
 )
 
 data class UserTemplate(

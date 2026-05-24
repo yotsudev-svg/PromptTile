@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
 import com.blogspot.yotsudev.prompttile.data.entity.SavedPromptEntity
+import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
 import com.blogspot.yotsudev.prompttile.data.preferences.PersistedPromptItem
 import com.blogspot.yotsudev.prompttile.data.preferences.PreferencesDataSource
 import com.blogspot.yotsudev.prompttile.data.preferences.UserPreferences
@@ -43,15 +44,19 @@ class PromptViewModel @Inject constructor(
     private val _negativeItems = MutableStateFlow<List<PromptItem>>(emptyList())
     private val _selectedPositiveCategoryId = MutableStateFlow<Long?>(null)
     private val _selectedNegativeCategoryId = MutableStateFlow<Long?>(null)
-
     private val _searchQuery = MutableStateFlow("")
-
     private val _defaultTemplates = MutableStateFlow<List<PrefixTemplate>>(emptyList())
 
     private val _positiveUndoStack = MutableStateFlow<List<List<PromptItem>>>(emptyList())
     private val _positiveRedoStack = MutableStateFlow<List<List<PromptItem>>>(emptyList())
     private val _negativeUndoStack = MutableStateFlow<List<List<PromptItem>>>(emptyList())
     private val _negativeRedoStack = MutableStateFlow<List<List<PromptItem>>>(emptyList())
+
+    // ---- マルチ調整シート用 ----
+    /** 現在シートで編集中のアイテム（null = シート非表示） */
+    private val _adjustingItem = MutableStateFlow<PromptItem?>(null)
+    /** 編集中アイテムのトッピング選択肢（DB から非同期取得） */
+    private val _adjustingToppingItems = MutableStateFlow<List<ToppingItemEntity>>(emptyList())
 
     private val _prefs = dataSource.userPreferences.stateIn(
         scope = viewModelScope,
@@ -67,33 +72,24 @@ class PromptViewModel @Inject constructor(
         repository.visibleCategories,
         repository.visibleNegativeCategories
     ) { mode, posId, negId, posCats, negCats ->
-        if (mode == PromptMode.POSITIVE) {
-            posId ?: posCats.firstOrNull()?.id
-        } else {
-            negId ?: negCats.firstOrNull()?.id
-        }
+        if (mode == PromptMode.POSITIVE) posId ?: posCats.firstOrNull()?.id
+        else negId ?: negCats.firstOrNull()?.id
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val _wordsInCategory = _resolvedSelectedCategoryId.flatMapLatest { id ->
-        if (id == null) flowOf(emptyList())
-        else repository.visibleWordsByCategory(id)
+        if (id == null) flowOf(emptyList()) else repository.visibleWordsByCategory(id)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val _searchResults = _searchQuery.flatMapLatest { query ->
-        if (query.isBlank()) flowOf(emptyList())
-        else repository.searchWords(query)
+    private val _searchResults = _searchQuery.flatMapLatest { q ->
+        if (q.isBlank()) flowOf(emptyList()) else repository.searchWords(q)
     }
 
     private data class HistoryState(val canUndo: Boolean, val canRedo: Boolean)
 
     private val _historyState = combine(
-        _mode,
-        _positiveUndoStack,
-        _positiveRedoStack,
-        _negativeUndoStack,
-        _negativeRedoStack,
+        _mode, _positiveUndoStack, _positiveRedoStack, _negativeUndoStack, _negativeRedoStack,
     ) { mode, posUndo, posRedo, negUndo, negRedo ->
         HistoryState(
             canUndo = if (mode == PromptMode.POSITIVE) posUndo.isNotEmpty() else negUndo.isNotEmpty(),
@@ -101,54 +97,48 @@ class PromptViewModel @Inject constructor(
         )
     }
 
-    private val _allTemplates = combine(
-        _defaultTemplates,
-        _prefs,
-    ) { defaults, prefs ->
-        val mappedDefaults = defaults.map { d ->
+    private val _allTemplates = combine(_defaultTemplates, _prefs) { defaults, prefs ->
+        val mapped = defaults.map { d ->
             d.copy(isEnabled = !prefs.disabledDefaultTemplateNames.contains(d.name))
         }
-        val userTemplates = prefs.userTemplates.map { ut ->
-            PrefixTemplate(name = ut.name, text = ut.text, isDefault = false, isEnabled = ut.isEnabled)
+        val user = prefs.userTemplates.map {
+            PrefixTemplate(name = it.name, text = it.text, isDefault = false, isEnabled = it.isEnabled)
         }
-        (mappedDefaults + userTemplates).filter { it.isEnabled }
+        (mapped + user).filter { it.isEnabled }
     }
 
     val uiState = combine(
-        _mode,
-        _positiveItems,
-        _negativeItems,
-        repository.visibleCategories,
-        repository.visibleNegativeCategories,
-        _resolvedSelectedCategoryId,
-        _wordsInCategory,
-        _searchResults,
-        _prefs,
-        _historyState,
-        _searchQuery,
-        _allTemplates,
+        _mode, _positiveItems, _negativeItems,
+        repository.visibleCategories, repository.visibleNegativeCategories,
+        _resolvedSelectedCategoryId, _wordsInCategory, _searchResults,
+        _prefs, _historyState, _searchQuery, _allTemplates,
+        _adjustingItem, _adjustingToppingItems,
     ) { args ->
-        val mode = args[0] as PromptMode
-        val posItems = args[1] as List<PromptItem>
-        val negItems = args[2] as List<PromptItem>
-        val posCats = args[3] as List<CategoryEntity>
-        val negCats = args[4] as List<CategoryEntity>
-        val resolvedCatId = args[5] as Long?
-        val words = args[6] as List<PromptWordEntity>
-        val searchResults = args[7] as List<PromptWordEntity>
-        val prefs = args[8] as UserPreferences
-        val history = args[9] as HistoryState
-        val query = args[10] as String
-        val templates = args[11] as List<PrefixTemplate>
+        val mode           = args[0] as PromptMode
+        val posItems       = args[1] as List<PromptItem>
+        val negItems       = args[2] as List<PromptItem>
+        val posCats        = args[3] as List<CategoryEntity>
+        val negCats        = args[4] as List<CategoryEntity>
+        val resolvedCatId  = args[5] as Long?
+        val words          = args[6] as List<PromptWordEntity>
+        val searchResults  = args[7] as List<PromptWordEntity>
+        val prefs          = args[8] as UserPreferences
+        val history        = args[9] as HistoryState
+        val query          = args[10] as String
+        val templates      = args[11] as List<PrefixTemplate>
+        val adjItem        = args[12] as PromptItem?
+        val adjToppings    = args[13] as List<ToppingItemEntity>
 
         PromptUiState(
             mode                       = mode,
             positiveItems              = posItems,
             positiveCategories         = posCats,
-            selectedPositiveCategoryId = if (mode == PromptMode.POSITIVE) resolvedCatId else (_selectedPositiveCategoryId.value ?: posCats.firstOrNull()?.id),
+            selectedPositiveCategoryId = if (mode == PromptMode.POSITIVE) resolvedCatId
+            else (_selectedPositiveCategoryId.value ?: posCats.firstOrNull()?.id),
             negativeItems              = negItems,
             negativeCategories         = negCats,
-            selectedNegativeCategoryId = if (mode == PromptMode.NEGATIVE) resolvedCatId else (_selectedNegativeCategoryId.value ?: negCats.firstOrNull()?.id),
+            selectedNegativeCategoryId = if (mode == PromptMode.NEGATIVE) resolvedCatId
+            else (_selectedNegativeCategoryId.value ?: negCats.firstOrNull()?.id),
             wordsInCategory            = words,
             isLoading                  = false,
             moveToBackOnCopy           = prefs.moveToBackOnCopy,
@@ -159,6 +149,8 @@ class PromptViewModel @Inject constructor(
             negativePromptText         = PromptFormatter.formatPrompt(negItems),
             searchQuery                = query,
             searchResults              = searchResults,
+            adjustingItem              = adjItem,
+            adjustingToppingItems      = adjToppings,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -172,28 +164,21 @@ class PromptViewModel @Inject constructor(
         viewModelScope.launch {
             launch { loadDefaultTemplates() }
             val prefs = dataSource.userPreferences.first()
-            if (prefs.persistedPositiveItems.isNotEmpty()) {
+            if (prefs.persistedPositiveItems.isNotEmpty())
                 _positiveItems.value = prefs.persistedPositiveItems.map { it.toPromptItem() }
-            }
-            if (prefs.persistedNegativeItems.isNotEmpty()) {
+            if (prefs.persistedNegativeItems.isNotEmpty())
                 _negativeItems.value = prefs.persistedNegativeItems.map { it.toPromptItem() }
-            }
         }
     }
 
     private suspend fun loadDefaultTemplates() = withContext(Dispatchers.IO) {
         try {
-            val json = context.assets
-                .open("seed_data.json")
-                .bufferedReader()
-                .use { it.readText() }
+            val json = context.assets.open("seed_data.json").bufferedReader().use { it.readText() }
             _defaultTemplates.value = parsePrefixTemplates(json)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        } catch (e: Exception) { e.printStackTrace() }
     }
 
-    // ---- 自動保存ヘルパー ----------------------------------------
+    // ---- 自動保存 ----------------------------------------
 
     private fun persistItems() {
         viewModelScope.launch {
@@ -204,55 +189,86 @@ class PromptViewModel @Inject constructor(
         }
     }
 
-    // ---- 履歴ヘルパー -----------------------------------------------
+    // ---- 履歴ヘルパー ----------------------------------------
 
     private fun pushHistory(current: List<PromptItem>) {
         val undoStack = if (_mode.value == PromptMode.POSITIVE) _positiveUndoStack else _negativeUndoStack
         val redoStack = if (_mode.value == PromptMode.POSITIVE) _positiveRedoStack else _negativeRedoStack
         undoStack.update { stack ->
-            val next = stack + listOf(current)
-            if (next.size > HISTORY_LIMIT) next.drop(1) else next
+            (stack + listOf(current)).let { if (it.size > HISTORY_LIMIT) it.drop(1) else it }
         }
         redoStack.value = emptyList()
     }
 
-    private fun getHistoryStacks() = if (_mode.value == PromptMode.POSITIVE) {
-        _positiveUndoStack to _positiveRedoStack
-    } else {
-        _negativeUndoStack to _negativeRedoStack
-    }
+    private fun getHistoryStacks() =
+        if (_mode.value == PromptMode.POSITIVE) _positiveUndoStack to _positiveRedoStack
+        else _negativeUndoStack to _negativeRedoStack
 
-    private val currentItems get() =
-        if (_mode.value == PromptMode.POSITIVE) _positiveItems else _negativeItems
+    private val currentItems
+        get() = if (_mode.value == PromptMode.POSITIVE) _positiveItems else _negativeItems
 
     // ---- モード切り替え ----------------------------------------
 
     fun switchMode(mode: PromptMode) { _mode.value = mode }
 
-    // ---- カテゴリ選択 ------------------------------------------
+    // ---- カテゴリ選択 ----------------------------------------
 
-    fun selectCategory(categoryId: Long) {
-        if (_mode.value == PromptMode.POSITIVE) _selectedPositiveCategoryId.value = categoryId
-        else _selectedNegativeCategoryId.value = categoryId
+    fun selectCategory(id: Long) {
+        if (_mode.value == PromptMode.POSITIVE) _selectedPositiveCategoryId.value = id
+        else _selectedNegativeCategoryId.value = id
     }
 
-    // ---- 単語操作 ------------------------------------------------
+    // ---- 単語操作 ----------------------------------------
 
+    /**
+     * WordPool の通常タップ（左エリア）。
+     * トッピング情報を PromptItem に引き継ぐため toppingGroupId を渡す。
+     */
     fun toggleWord(word: PromptWordEntity) {
         pushHistory(currentItems.value)
         currentItems.update { current ->
             if (current.any { it.wordId == word.id }) {
                 current.filter { it.wordId != word.id }
             } else {
-                current + PromptItem(wordId = word.id, wordEn = word.wordEn, wordJa = word.wordJa)
+                current + PromptItem(
+                    wordId        = word.id,
+                    wordEn        = word.wordEn,
+                    wordJa        = word.wordJa,
+                    toppingGroupId = word.toppingGroupId,
+                )
             }
         }
         persistItems()
     }
 
-    fun setSearchQuery(query: String) {
-        _searchQuery.value = query
+    /**
+     * WordPool の分割チップ右エリア（🎨）タップ。
+     * トッピング選択シートを経由して単語を追加する。
+     * selectedTopping を指定して直接 PromptItem を追加する。
+     */
+    fun addWordWithTopping(word: PromptWordEntity, topping: String?) {
+        pushHistory(currentItems.value)
+        // 既存アイテムがあれば topping だけ上書き、なければ新規追加
+        currentItems.update { current ->
+            val existing = current.firstOrNull { it.wordId == word.id }
+            if (existing != null) {
+                current.map {
+                    if (it.wordId == word.id) it.copy(selectedTopping = topping) else it
+                }
+            } else {
+                current + PromptItem(
+                    wordId         = word.id,
+                    wordEn         = word.wordEn,
+                    wordJa         = word.wordJa,
+                    toppingGroupId = word.toppingGroupId,
+                    selectedTopping = topping,
+                )
+            }
+        }
+        persistItems()
     }
+
+    fun setSearchQuery(query: String) { _searchQuery.value = query }
 
     fun removeItem(item: PromptItem) {
         pushHistory(currentItems.value)
@@ -260,22 +276,6 @@ class PromptViewModel @Inject constructor(
         persistItems()
     }
 
-    fun cycleWeight(item: PromptItem) {
-        pushHistory(currentItems.value)
-        val nextWeight = when (item.weight) {
-            null -> 1.2f
-            1.2f -> 1.5f
-            1.5f -> 0.8f
-            else -> null
-        }
-        currentItems.update { current ->
-            current.map { if (it.wordId == item.wordId) it.copy(weight = nextWeight) else it }
-        }
-        persistItems()
-    }
-
-    // 修正 #3: ドラッグ並び替えも Undo 対象に含める。
-    // 変更前は pushHistory() の呼び出しがなく、並び替えだけ Undo できない状態だった。
     fun moveItem(from: Int, to: Int) {
         pushHistory(currentItems.value)
         currentItems.update { current ->
@@ -290,7 +290,7 @@ class PromptViewModel @Inject constructor(
         persistItems()
     }
 
-    // ---- Undo / Redo -------------------------------------------
+    // ---- Undo / Redo ----------------------------------------
 
     fun undo() {
         val (undoStack, redoStack) = getHistoryStacks()
@@ -305,19 +305,68 @@ class PromptViewModel @Inject constructor(
         val (undoStack, redoStack) = getHistoryStacks()
         val next = redoStack.value.lastOrNull() ?: return
         undoStack.update { stack ->
-            val pushed = stack + listOf(currentItems.value)
-            if (pushed.size > HISTORY_LIMIT) pushed.drop(1) else pushed
+            (stack + listOf(currentItems.value)).let { if (it.size > HISTORY_LIMIT) it.drop(1) else it }
         }
         redoStack.update { it.dropLast(1) }
         currentItems.value = next
         persistItems()
     }
 
-    // ---- テンプレート ------------------------------------------
+    // ---- マルチ調整ボトムシート ----------------------------------------
 
-    // 修正 #2: 現在のモード（ポジ／ネガ）に応じた対象リストにテンプレートを追加する。
-    // 変更前は _positiveItems に固定されており、ネガティブモード中に追加すると
-    // ネガティブではなくポジティブに入るバグがあった。
+    /**
+     * プロンプトエリアのチップをタップしたとき呼び出す。
+     * 対象アイテムをシートにセットし、トッピング選択肢を非同期で取得する。
+     */
+    fun openAdjustSheet(item: PromptItem) {
+        _adjustingItem.value = item
+        _adjustingToppingItems.value = emptyList()
+        item.toppingGroupId?.let { groupId ->
+            viewModelScope.launch {
+                _adjustingToppingItems.value = repository.getToppingItems(groupId)
+            }
+        }
+    }
+
+    /** シートを閉じる */
+    fun closeAdjustSheet() {
+        _adjustingItem.value = null
+        _adjustingToppingItems.value = emptyList()
+    }
+
+    suspend fun getToppingItems(groupId: Long) = repository.getToppingItems(groupId)
+
+    /**
+     * シート内で重みを変更する。
+     * null = なし（1.0扱い）、それ以外は数値をそのまま設定。
+     */
+    fun setWeight(item: PromptItem, weight: Float?) {
+        currentItems.update { current ->
+            current.map { if (it.wordId == item.wordId) it.copy(weight = weight) else it }
+        }
+        // _adjustingItem も同期して更新（シートのUI反映のため）
+        _adjustingItem.update { it?.takeIf { a -> a.wordId == item.wordId }?.copy(weight = weight) ?: it }
+        persistItems()
+    }
+
+    /**
+     * シート内でトッピングを変更する。
+     * null を渡すとトッピングなし（wordEn のみ）に戻る。
+     */
+    fun setTopping(item: PromptItem, topping: String?) {
+        currentItems.update { current ->
+            current.map {
+                if (it.wordId == item.wordId) it.copy(selectedTopping = topping) else it
+            }
+        }
+        _adjustingItem.update {
+            it?.takeIf { a -> a.wordId == item.wordId }?.copy(selectedTopping = topping) ?: it
+        }
+        persistItems()
+    }
+
+    // ---- テンプレート ----------------------------------------
+
     fun addTemplateItems(templateText: String) {
         val words = PromptFormatter.parsePromptText(templateText)
         if (words.isEmpty()) return
@@ -332,15 +381,11 @@ class PromptViewModel @Inject constructor(
         persistItems()
     }
 
-    // ---- 保存済みプロンプトから読み込み ----------------------------------------
+    // ---- 保存済みプロンプト読み込み ----------------------------------------
 
     fun loadPromptSet(entity: SavedPromptEntity) {
-        if (entity.promptText.isNotBlank()) {
-            loadFromSaved(entity.promptText, PromptMode.POSITIVE)
-        }
-        if (entity.negativeText.isNotBlank()) {
-            loadFromSaved(entity.negativeText, PromptMode.NEGATIVE)
-        }
+        if (entity.promptText.isNotBlank()) loadFromSaved(entity.promptText, PromptMode.POSITIVE)
+        if (entity.negativeText.isNotBlank()) loadFromSaved(entity.negativeText, PromptMode.NEGATIVE)
     }
 
     fun loadFromSaved(text: String, targetMode: PromptMode) {
@@ -360,11 +405,10 @@ class PromptViewModel @Inject constructor(
 
     private fun pushHistoryFor(mode: PromptMode) {
         val targetItems = if (mode == PromptMode.POSITIVE) _positiveItems else _negativeItems
-        val undoStack = if (mode == PromptMode.POSITIVE) _positiveUndoStack else _negativeUndoStack
-        val redoStack = if (mode == PromptMode.POSITIVE) _positiveRedoStack else _negativeRedoStack
+        val undoStack   = if (mode == PromptMode.POSITIVE) _positiveUndoStack else _negativeUndoStack
+        val redoStack   = if (mode == PromptMode.POSITIVE) _positiveRedoStack else _negativeRedoStack
         undoStack.update { stack ->
-            val next = stack + listOf(targetItems.value)
-            if (next.size > HISTORY_LIMIT) next.drop(1) else next
+            (stack + listOf(targetItems.value)).let { if (it.size > HISTORY_LIMIT) it.drop(1) else it }
         }
         redoStack.value = emptyList()
     }
@@ -372,56 +416,36 @@ class PromptViewModel @Inject constructor(
     // ---- クリップボードインポート ----------------------------------------
 
     fun confirmClipboardImport(items: List<ClipboardImportItem>) {
-        val enabledItems = items.filter { it.isEnabled }
-        if (enabledItems.isEmpty()) return
-
-        val isNegative = _mode.value == PromptMode.NEGATIVE
+        val enabled = items.filter { it.isEnabled }
+        if (enabled.isEmpty()) return
+        val isNeg = _mode.value == PromptMode.NEGATIVE
         pushHistory(currentItems.value)
         val baseId = -System.currentTimeMillis()
-
         currentItems.update { current ->
             val existing = current.map { it.wordEn }.toSet()
-            val newItems = enabledItems
-                .filterNot { it.wordEn in existing }
-                .mapIndexed { i, item ->
-                    PromptItem(wordId = baseId - i, wordEn = item.wordEn, wordJa = "")
-                }
-            current + newItems
+            val new = enabled.filterNot { it.wordEn in existing }
+                .mapIndexed { i, item -> PromptItem(wordId = baseId - i, wordEn = item.wordEn, wordJa = "") }
+            current + new
         }
         persistItems()
-
-        val wordsToRegister = enabledItems
-            .filter { it.registerToDb }
-            .joinToString(",") { it.wordEn }
-
-        if (wordsToRegister.isNotBlank()) {
-            viewModelScope.launch {
-                repository.registerNewWordsFromText(wordsToRegister, isNegative)
-            }
+        val toRegister = enabled.filter { it.registerToDb }.joinToString(",") { it.wordEn }
+        if (toRegister.isNotBlank()) {
+            viewModelScope.launch { repository.registerNewWordsFromText(toRegister, isNeg) }
         }
     }
 
-    // ---- プロンプト生成 ----------------------------------------
+    // ---- プロンプト生成 / 保存 ----------------------------------------
 
-    fun buildPromptText(): String =
-        PromptFormatter.formatPrompt(
-            if (_mode.value == PromptMode.POSITIVE) _positiveItems.value else _negativeItems.value
-        )
-
-    // ---- 保存 --------------------------------------------------
+    fun buildPromptText(): String = PromptFormatter.formatPrompt(
+        if (_mode.value == PromptMode.POSITIVE) _positiveItems.value else _negativeItems.value
+    )
 
     fun saveCurrentPrompt(title: String) {
-        val posText = PromptFormatter.formatPrompt(_positiveItems.value)
-        val negText = PromptFormatter.formatPrompt(_negativeItems.value)
-        if (posText.isBlank() && negText.isBlank()) return
+        val pos = PromptFormatter.formatPrompt(_positiveItems.value)
+        val neg = PromptFormatter.formatPrompt(_negativeItems.value)
+        if (pos.isBlank() && neg.isBlank()) return
         viewModelScope.launch {
-            repository.savePrompt(
-                SavedPromptEntity(
-                    title        = title,
-                    promptText   = posText,
-                    negativeText = negText,
-                )
-            )
+            repository.savePrompt(SavedPromptEntity(title = title, promptText = pos, negativeText = neg))
         }
     }
 }
@@ -433,6 +457,8 @@ private fun PromptItem.toPersistedItem() = PersistedPromptItem(
     wordEn = wordEn,
     wordJa = wordJa,
     weight = weight,
+    toppingGroupId = toppingGroupId,
+    selectedTopping = selectedTopping,
 )
 
 private fun PersistedPromptItem.toPromptItem() = PromptItem(
@@ -440,4 +466,6 @@ private fun PersistedPromptItem.toPromptItem() = PromptItem(
     wordEn = wordEn,
     wordJa = wordJa,
     weight = weight,
+    toppingGroupId = toppingGroupId,
+    selectedTopping = selectedTopping,
 )

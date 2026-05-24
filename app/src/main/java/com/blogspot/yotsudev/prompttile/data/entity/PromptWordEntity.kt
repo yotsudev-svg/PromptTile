@@ -5,14 +5,6 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-/**
- * 単語テーブル。カテゴリと1対多の関係を持つ。
- *
- * [ForeignKey] で参照整合性を保証し、親カテゴリ削除時に
- * CASCADE で子単語も自動削除されるようにする。
- *
- * [Index] を categoryId に張ることで、カテゴリ別の単語取得クエリが高速になる。
- */
 @Entity(
     tableName = "prompt_words",
     foreignKeys = [
@@ -32,8 +24,15 @@ data class PromptWordEntity(
     val wordEn: String,
     val wordJa: String,
     val sortOrder: Int = 0,
-    /** trueのとき初期シードデータ。削除不可・非表示トグルのみ許可 */
     val isDefault: Boolean = false,
-    /** trueのとき単語プールから非表示（シードデータのみ使用） */
     val isHidden: Boolean = false,
+    /**
+     * 紐づくトッピンググループのID。null の場合はトッピング非対応の通常単語。
+     *
+     * ToppingGroupEntity への外部キーは張らない（Step1参照）。
+     * WordPool での表示分岐キーとして使用する:
+     *   null     → 通常チップ（従来デザイン）
+     *   non-null → 分割スマート・アシストチップ（🎨アイコン付き）
+     */
+    val toppingGroupId: Long? = null,
 )

@@ -2,6 +2,7 @@ package com.blogspot.yotsudev.prompttile.ui.main
 
 import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
+import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
 import com.blogspot.yotsudev.prompttile.data.seed.PrefixTemplate
 
 enum class PromptMode { POSITIVE, NEGATIVE }
@@ -9,36 +10,30 @@ enum class PromptMode { POSITIVE, NEGATIVE }
 data class PromptUiState(
     val mode: PromptMode = PromptMode.POSITIVE,
 
-    // ---- ポジティブ側 ----
     val positiveItems: List<PromptItem> = emptyList(),
     val positiveCategories: List<CategoryEntity> = emptyList(),
     val selectedPositiveCategoryId: Long? = null,
 
-    // ---- ネガティブ側 ----
     val negativeItems: List<PromptItem> = emptyList(),
     val negativeCategories: List<CategoryEntity> = emptyList(),
     val selectedNegativeCategoryId: Long? = null,
 
-    // ---- 現在のモードに応じた単語プール ----
     val wordsInCategory: List<PromptWordEntity> = emptyList(),
-
     val isLoading: Boolean = true,
     val moveToBackOnCopy: Boolean = false,
-
-    // ---- テンプレート ----
     val allTemplates: List<PrefixTemplate> = emptyList(),
-
-    // ---- Undo / Redo ----
     val canUndo: Boolean = false,
     val canRedo: Boolean = false,
-
-    // ---- 最終プロンプト文字列（リアクティブ表示用） ----
     val positivePromptText: String = "",
     val negativePromptText: String = "",
-
-    // ---- 検索 ----
     val searchQuery: String = "",
     val searchResults: List<PromptWordEntity> = emptyList(),
+
+    // ---- マルチ調整ボトムシート ----
+    /** 現在シートで編集中の PromptItem。null のときシートは非表示 */
+    val adjustingItem: PromptItem? = null,
+    /** adjustingItem に対応するトッピング選択肢。トッピング非対応なら空リスト */
+    val adjustingToppingItems: List<ToppingItemEntity> = emptyList(),
 ) {
     val currentItems: List<PromptItem>
         get() = if (mode == PromptMode.POSITIVE) positiveItems else negativeItems
@@ -58,26 +53,34 @@ data class PromptItem(
     val wordEn: String,
     val wordJa: String,
     val weight: Float? = null,
+    /**
+     * 紐づくトッピンググループID。
+     * DB の PromptWordEntity.toppingGroupId を起点に
+     * WordPool → ViewModel → PromptItem と伝播させる。
+     * null のとき通常単語（マルチ調整シートにトッピング欄を表示しない）。
+     */
+    val toppingGroupId: Long? = null,
+    /**
+     * 現在選択中のトッピング文字列（例: "red"）。
+     * null のときはトッピング未選択 → プロンプトには wordEn のみ出力。
+     * 選択済みのとき → "${topping} ${wordEn}" の形で出力。
+     */
+    val selectedTopping: String? = null,
 ) {
+    /**
+     * プロンプト文字列として出力するベース単語。
+     * トッピング選択時は "red swimsuit" のように結合する。
+     */
+    val baseText: String
+        get() = if (selectedTopping != null) "$selectedTopping $wordEn" else wordEn
+
     val formatted: String
         get() = when {
-            weight == null || weight == 1.0f -> wordEn
-            else -> "(${wordEn}:${String.format("%.1f", weight)})"
+            weight == null || weight == 1.0f -> baseText
+            else -> "(${baseText}:${String.format("%.1f", weight)})"
         }
 }
 
-/**
- * クリップボードインポート用のプレビューアイテム。
- *
- * [isEnabled] false のとき半透明表示で「追加しない」状態を表す。
- * 削除ではなくトグルにすることで「やっぱり追加したい」に対応できる。
- *
- * [registerToDb] true のとき未分類カテゴリへの自動登録対象になる。
- * デフォルト false で「エリアAに一時追加のみ」が基本動作。
- *
- * [id] は UI での状態管理用の一意キー。
- * LazyRow の key に使うことでアニメーションが正確に動作する。
- */
 data class ClipboardImportItem(
     val id: Int,
     val wordEn: String,

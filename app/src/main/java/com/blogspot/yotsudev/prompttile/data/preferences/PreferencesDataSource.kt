@@ -32,6 +32,8 @@ private data class PersistedPromptItemDto(
     val wordEn: String,
     val wordJa: String,
     val weight: Float? = null,
+    val toppingGroupId: Long? = null,
+    val selectedTopping: String? = null,
 )
 
 // Json ビルダーは kotlinx.serialization.json.Json のトップレベル関数。
@@ -144,7 +146,12 @@ class PreferencesDataSource @Inject constructor(
     private fun encodeItems(list: List<PersistedPromptItem>): String {
         if (list.isEmpty()) return ""
         return json.encodeToString(
-            list.map { PersistedPromptItemDto(it.wordId, it.wordEn, it.wordJa, it.weight) }
+            list.map {
+                PersistedPromptItemDto(
+                    it.wordId, it.wordEn, it.wordJa, it.weight,
+                    it.toppingGroupId, it.selectedTopping
+                )
+            }
         )
     }
 
@@ -152,7 +159,12 @@ class PreferencesDataSource @Inject constructor(
         if (encoded.isBlank()) return emptyList()
         return runCatching {
             json.decodeFromString<List<PersistedPromptItemDto>>(encoded)
-                .map { PersistedPromptItem(it.wordId, it.wordEn, it.wordJa, it.weight) }
+                .map {
+                    PersistedPromptItem(
+                        it.wordId, it.wordEn, it.wordJa, it.weight,
+                        it.toppingGroupId, it.selectedTopping
+                    )
+                }
         }.getOrDefault(emptyList())
     }
 }

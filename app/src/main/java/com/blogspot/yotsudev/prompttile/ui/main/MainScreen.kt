@@ -21,6 +21,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.blogspot.yotsudev.prompttile.R
+import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
+import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
 import com.blogspot.yotsudev.prompttile.data.repository.UNCATEGORIZED_NEGATIVE_NAME
 import com.blogspot.yotsudev.prompttile.data.repository.UNCATEGORIZED_POSITIVE_NAME
 import com.blogspot.yotsudev.prompttile.util.PromptFormatter
@@ -55,13 +57,11 @@ fun MainScreen(
             .map { it.id }
             .toSet()
     }
+    // ---- ボトムシート関連のステート ----
+    var toppingTargetWord by remember { mutableStateOf<PromptWordEntity?>(null) }
+    var toppingChoices by remember { mutableStateOf<List<ToppingItemEntity>>(emptyList()) }
 
     var showSaveDialog by rememberSaveable { mutableStateOf(false) }
-
-    /**
-     * ボトムシートのプレビューアイテムリスト。
-     */
-    var importItems by remember { mutableStateOf<List<ClipboardImportItem>?>(null) }
 
     if (showSaveDialog) {
         SavePromptDialog(
@@ -75,6 +75,8 @@ fun MainScreen(
     }
 
     // ---- ボトムシート ----
+    // 1. クリップボードインポート
+    var importItems by remember { mutableStateOf<List<ClipboardImportItem>?>(null) }
     importItems?.let { items ->
         ClipboardImportSheet(
             mode = uiState.mode,
@@ -95,6 +97,34 @@ fun MainScreen(
                 scope.launch { snackbarHostState.showSnackbar(msgPromptAdded) }
             },
             onDismiss = { importItems = null },
+        )
+    }
+
+    // 2. 単語追加時のトッピング選択シート (WordPool から)
+    toppingTargetWord?.let { word ->
+        ToppingSelectSheet(
+            word = word,
+            toppingItems = toppingChoices,
+            onSelect = { topping ->
+                viewModel.addWordWithTopping(word, topping)
+                toppingTargetWord = null
+            },
+            onDismiss = { toppingTargetWord = null }
+        )
+    }
+
+    // 3. ワークスペースのチップ調整シート (PreviewArea から)
+    uiState.adjustingItem?.let { item ->
+        PromptAdjustSheet(
+            item = item,
+            toppingItems = uiState.adjustingToppingItems,
+            onWeightSelect = { weight -> viewModel.setWeight(item, weight) },
+            onToppingSelect = { topping -> viewModel.setTopping(item, topping) },
+            onDelete = {
+                viewModel.removeItem(item)
+                viewModel.closeAdjustSheet()
+            },
+            onDismiss = viewModel::closeAdjustSheet
         )
     }
 
@@ -157,6 +187,15 @@ fun MainScreen(
                                     )
                                 }
                             },
+                            onToppingIconTap = { word ->
+                                // トッピング選択肢を読み込んでシートを表示
+                                scope.launch {
+                                    word.toppingGroupId?.let { groupId ->
+                                        toppingChoices = viewModel.getToppingItems(groupId)
+                                        toppingTargetWord = word
+                                    }
+                                }
+                            },
                             modifier = Modifier.fillMaxSize()
                         )
                     }
@@ -173,7 +212,7 @@ fun MainScreen(
                         canRedo = uiState.canRedo,
                         onModeChange = viewModel::switchMode,
                         onRemove = viewModel::removeItem,
-                        onWeightCycle = viewModel::cycleWeight,
+                        onWeightCycle = viewModel::openAdjustSheet,
                         onMove = viewModel::moveItem,
                         onCopyAll = {
                             val text = viewModel.buildPromptText()
@@ -219,6 +258,14 @@ fun MainScreen(
                                     )
                                 }
                             },
+                            onToppingIconTap = { word ->
+                                scope.launch {
+                                    word.toppingGroupId?.let { groupId ->
+                                        toppingChoices = viewModel.getToppingItems(groupId)
+                                        toppingTargetWord = word
+                                    }
+                                }
+                            },
                             modifier = Modifier.fillMaxWidth().weight(1f)
                         )
                     }
@@ -232,7 +279,7 @@ fun MainScreen(
                         canRedo = uiState.canRedo,
                         onModeChange = viewModel::switchMode,
                         onRemove = viewModel::removeItem,
-                        onWeightCycle = viewModel::cycleWeight,
+                        onWeightCycle = viewModel::openAdjustSheet,
                         onMove = viewModel::moveItem,
                         onCopyAll = {
                             val text = viewModel.buildPromptText()
@@ -258,7 +305,7 @@ fun MainScreen(
                         canRedo = uiState.canRedo,
                         onModeChange = viewModel::switchMode,
                         onRemove = viewModel::removeItem,
-                        onWeightCycle = viewModel::cycleWeight,
+                        onWeightCycle = viewModel::openAdjustSheet,
                         onMove = viewModel::moveItem,
                         onCopyAll = {
                             val text = viewModel.buildPromptText()
@@ -310,6 +357,14 @@ fun MainScreen(
                             }
                             if (uiState.moveToBackOnCopy) {
                                 (context as? Activity)?.moveTaskToBack(true)
+                            }
+                        },
+                        onToppingIconTap = { word ->
+                            scope.launch {
+                                word.toppingGroupId?.let { groupId ->
+                                    toppingChoices = viewModel.getToppingItems(groupId)
+                                    toppingTargetWord = word
+                                }
                             }
                         },
                         modifier = Modifier

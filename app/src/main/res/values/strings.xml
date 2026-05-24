@@ -138,4 +138,22 @@
     <string name="dialog_word_category_select">カテゴリを選択</string>
     <string name="dialog_add">追加</string>
     <string name="dialog_save">保存</string>
+
+
+    <!-- WordPool 分割チップ -->
+    <string name="word_chip_topping_icon_desc">色・素材を選んで追加</string>
+
+    <!-- ToppingSelectSheet -->
+    <string name="topping_sheet_title">【%s】の色・素材を選ぶ</string>
+    <string name="topping_sheet_add_without">選択なしで追加</string>
+
+    <!-- PromptAdjustSheet -->
+    <string name="adjust_section_weight">重さ（強調度）</string>
+    <string name="adjust_weight_none">なし</string>
+    <string name="adjust_weight_1_2">1.2</string>
+    <string name="adjust_weight_1_5">1.5</string>
+    <string name="adjust_weight_0_8">0.8</string>
+    <string name="adjust_section_topping">色・素材</string>
+    <string name="adjust_topping_none">なし</string>
+    <string name="adjust_delete">削除</string>
 </resources>
