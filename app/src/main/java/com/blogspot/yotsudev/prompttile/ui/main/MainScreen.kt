@@ -395,19 +395,11 @@ private fun MainTopAppBar(
             )
         },
         actions = {
+            // グルーピングを意識した順序: インポート | 保存 | クリア
             IconButton(onClick = onImportClick) {
                 Icon(
                     imageVector = Icons.Default.ContentPaste,
                     contentDescription = stringResource(R.string.main_import_from_clipboard),
-                )
-            }
-            IconButton(
-                onClick = onClearClick,
-                enabled = hasItems,
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ClearAll,
-                    contentDescription = stringResource(R.string.main_clear_all),
                 )
             }
             IconButton(
@@ -419,9 +411,19 @@ private fun MainTopAppBar(
                     contentDescription = stringResource(R.string.main_save),
                 )
             }
+            IconButton(
+                onClick = onClearClick,
+                enabled = hasItems,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.ClearAll,
+                    contentDescription = stringResource(R.string.main_clear_all),
+                    tint = if (hasItems) MaterialTheme.colorScheme.error.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38f)
+                )
+            }
         },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.background, // 背景色と統一感を出す
+            containerColor = MaterialTheme.colorScheme.background,
             titleContentColor = MaterialTheme.colorScheme.primary,
             actionIconContentColor = MaterialTheme.colorScheme.onBackground,
             navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
@@ -472,26 +474,42 @@ private fun SearchBar(
     onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    TextField(
+    OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
         modifier = modifier,
-        placeholder = { Text(stringResource(R.string.word_pool_search_placeholder)) },
-        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+        placeholder = { 
+            Text(
+                text = stringResource(R.string.word_pool_search_placeholder),
+                style = MaterialTheme.typography.bodyMedium
+            ) 
+        },
+        leadingIcon = { 
+            Icon(
+                imageVector = Icons.Default.Search, 
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+            ) 
+        },
         trailingIcon = {
             if (query.isNotEmpty()) {
                 IconButton(onClick = { onQueryChange("") }) {
-                    Icon(Icons.Default.Clear, contentDescription = "Clear")
+                    Icon(
+                        imageVector = Icons.Default.Clear, 
+                        contentDescription = "Clear",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         },
         singleLine = true,
-        colors = TextFieldDefaults.colors(
-            focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-            unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        textStyle = MaterialTheme.typography.bodyMedium,
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f),
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
         ),
-        shape = RoundedCornerShape(24.dp)
+        shape = RoundedCornerShape(28.dp)
     )
 }

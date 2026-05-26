@@ -228,28 +228,28 @@ private fun ToppingSelectChip(
     val parsedColor = remember(colorHex) {
         colorHex?.let { runCatching { Color(android.graphics.Color.parseColor(it)) }.getOrNull() }
     }
+    
+    // WeightButton のスタイル（選択: FilledTonal, 未選択: Outlined）に合わせる
     val containerColor = if (isSelected)
         MaterialTheme.colorScheme.primaryContainer
     else
-        MaterialTheme.colorScheme.secondaryContainer
+        Color.Transparent
 
     val contentColor = if (isSelected)
         MaterialTheme.colorScheme.onPrimaryContainer
     else
-        MaterialTheme.colorScheme.onSecondaryContainer
+        MaterialTheme.colorScheme.onSurfaceVariant
 
     Surface(
         shape = RoundedCornerShape(20.dp),
         color = containerColor,
+        border = if (isSelected) {
+            null // 選択時は枠線なし（WeightButton と完全に合わせる）
+        } else {
+            androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+        },
         modifier = Modifier
             .clip(RoundedCornerShape(20.dp))
-            .then(
-                if (isSelected) Modifier.border(
-                    width = 2.dp,
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = RoundedCornerShape(20.dp),
-                ) else Modifier
-            )
             .clickable(onClick = onClick),
     ) {
         Row(

@@ -1,6 +1,8 @@
 package com.blogspot.yotsudev.prompttile.ui.main
 
-import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -9,8 +11,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import com.blogspot.yotsudev.prompttile.R
+import com.blogspot.yotsudev.prompttile.ui.components.StyledDialog
 
 /**
  * プロンプト保存時にタイトルを入力するダイアログ。
@@ -29,18 +34,10 @@ fun SavePromptDialog(
     var title by rememberSaveable { mutableStateOf("") }
     val canSave = title.isNotBlank()
 
-    AlertDialog(
+    StyledDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.dialog_save_prompt_title)) },
-        text = {
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text(stringResource(R.string.dialog_save_prompt_label)) },
-                placeholder = { Text(stringResource(R.string.dialog_save_prompt_placeholder)) },
-                singleLine = true,
-            )
-        },
+        title = stringResource(R.string.dialog_save_prompt_title),
+        icon = Icons.Default.Save,
         confirmButton = {
             TextButton(
                 onClick = {
@@ -50,7 +47,10 @@ fun SavePromptDialog(
                 },
                 enabled = canSave,
             ) {
-                Text(stringResource(R.string.dialog_save))
+                Text(
+                    text = stringResource(R.string.dialog_save),
+                    fontWeight = FontWeight.Bold
+                )
             }
         },
         dismissButton = {
@@ -58,5 +58,14 @@ fun SavePromptDialog(
                 Text(stringResource(R.string.dialog_cancel))
             }
         },
-    )
+    ) {
+        OutlinedTextField(
+            value = title,
+            onValueChange = { title = it },
+            label = { Text(stringResource(R.string.dialog_save_prompt_label)) },
+            placeholder = { Text(stringResource(R.string.dialog_save_prompt_placeholder)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
 }

@@ -78,11 +78,11 @@ fun ClipboardImportSheet(
             )
 
             LazyRow(
-                contentPadding = PaddingValues(horizontal = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp), // パディングを統一
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                    .padding(vertical = 12.dp),
             ) {
                 items(
                     items = items,
@@ -177,8 +177,6 @@ private fun ImportChip(
                 Icon(
                     imageVector = if (item.registerToDb)
                         Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
-                    // 修正: registerToDb=true のとき「登録済み（タップで解除）」
-                    //       registerToDb=false のとき「タップでDB登録」と正しく読み上げる
                     contentDescription = if (item.registerToDb)
                         stringResource(R.string.import_sheet_register_on)
                     else
@@ -194,8 +192,6 @@ private fun ImportChip(
             ) {
                 Icon(
                     imageVector = Icons.Default.Close,
-                    // isEnabled=true のとき「タップで除外」
-                    // isEnabled=false のとき「タップで復活」— こちらは元から正しい
                     contentDescription = if (item.isEnabled)
                         stringResource(R.string.import_chip_exclude)
                     else
@@ -207,6 +203,12 @@ private fun ImportChip(
         colors = FilterChipDefaults.filterChipColors(
             selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
             selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        ),
+        border = FilterChipDefaults.filterChipBorder(
+            enabled = true,
+            selected = item.registerToDb,
+            borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f),
+            borderWidth = 0.5.dp
         ),
         modifier = Modifier.alpha(if (item.isEnabled) 1f else 0.35f),
         enabled = true,

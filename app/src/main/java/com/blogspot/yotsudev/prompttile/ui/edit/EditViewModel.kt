@@ -29,16 +29,25 @@ class EditViewModel @Inject constructor(
     private val repository: PromptRepository,
 ) : ViewModel() {
 
+    private val _categories = MutableStateFlow<List<CategoryEntity>>(emptyList())
     private val _expandedCategoryId = MutableStateFlow<Long?>(null)
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private val _wordsInExpanded = _expandedCategoryId.flatMapLatest { id ->
-        if (id == null) flowOf(emptyList())
-        else repository.allWordsByCategory(id)
+    private val _wordsInExpanded = MutableStateFlow<List<PromptWordEntity>>(emptyList())
+
+    init {
+        viewModelScope.launch {
+            @OptIn(ExperimentalCoroutinesApi::class)
+            _expandedCategoryId.flatMapLatest { id ->
+                if (id == null) flowOf(emptyList())
+                else repository.allWordsByCategory(id)
+            }.collect { list ->
+                _wordsInExpanded.value = list
+            }
+        }
     }
 
     val uiState = combine(
-        repository.allCategories,
+        _categories,
         _expandedCategoryId,
         _wordsInExpanded,
     ) { categories, expandedId, words ->
@@ -53,6 +62,25 @@ class EditViewModel @Inject constructor(
         initialValue = EditUiState(),
     )
 
+    init {
+        viewModelScope.launch {
+            repository.allCategories.collect { list ->
+                // ドラッグ中（一括更新中）は外部からの更新を無視するか、適切にマージする必要があるが、
+                // 基本的にDBが真なので、DBからの最新を反映する。
+                // ただし、UIスレッドでの並び替えを優先するため、初期ロード時のみ反映する形にする。
+                if (_categories.value.isEmpty()) {
+                    _categories.value = list
+                } else {
+                    // 追加や削除があった場合に備えて更新
+                    // ただし、単純に代入するとドラッグ中の状態が壊れる可能性があるため、
+                    // IDのリストが変わった場合のみ更新する等の工夫が必要。
+                    // ここではシンプルに最新を反映（ドラッグ終了時にDBに書き込むので整合性は取れる）
+                    _categories.value = list
+                }
+            }
+        }
+    }
+
     fun toggleExpand(categoryId: Long) {
         _expandedCategoryId.update { current ->
             if (current == categoryId) null else categoryId
@@ -63,7 +91,7 @@ class EditViewModel @Inject constructor(
 
     fun addCategory(nameJa: String, nameEn: String) {
         viewModelScope.launch {
-            val nextOrder = uiState.value.categories.size
+            val nextOrder = _categories.value.size
             repository.insertCategory(
                 CategoryEntity(nameJa = nameJa, nameEn = nameEn, sortOrder = nextOrder)
             )
@@ -125,38 +153,50 @@ class EditViewModel @Inject constructor(
     // ---- 並び替えロジック ----
 
     /**
-     * カテゴリの順序を入れ替えてDBに保存する。
+     * カテゴリの順序をメモリ内で入れ替える。
      */
     fun reorderCategories(fromIndex: Int, toIndex: Int) {
-        val list = uiState.value.categories.toMutableList()
+        val list = _categories.value.toMutableList()
         if (fromIndex !in list.indices || toIndex !in list.indices) return
 
         val item = list.removeAt(fromIndex)
         list.add(toIndex, item)
 
-        val updatedList = list.mapIndexed { index, category ->
+        _categories.value = list
+    }
+
+    /**
+     * メモリ内の順序をDBに永続化する。
+     */
+    fun persistCategoryOrder() {
+        val updatedList = _categories.value.mapIndexed { index, category ->
             category.copy(sortOrder = index)
         }
-
         viewModelScope.launch {
             repository.updateCategories(updatedList)
         }
     }
 
     /**
-     * 現在展開中のカテゴリ内の単語の順序を入れ替えてDBに保存する。
+     * 現在展開中のカテゴリ内の単語の順序をメモリ内で入れ替える。
      */
     fun reorderWords(fromIndex: Int, toIndex: Int) {
-        val list = uiState.value.wordsInExpanded.toMutableList()
+        val list = _wordsInExpanded.value.toMutableList()
         if (fromIndex !in list.indices || toIndex !in list.indices) return
 
         val item = list.removeAt(fromIndex)
         list.add(toIndex, item)
 
-        val updatedList = list.mapIndexed { index, word ->
+        _wordsInExpanded.value = list
+    }
+
+    /**
+     * メモリ内の単語の順序をDBに永続化する。
+     */
+    fun persistWordOrder() {
+        val updatedList = _wordsInExpanded.value.mapIndexed { index, word ->
             word.copy(sortOrder = index)
         }
-
         viewModelScope.launch {
             repository.updateWords(updatedList)
         }

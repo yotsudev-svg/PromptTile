@@ -26,11 +26,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -193,6 +195,16 @@ fun EditScreen(
                 viewModel.reorderCategories(from.index, to.index)
             }
 
+            // ドラッグが終了した時にDBに保存する
+            LaunchedEffect(reorderableLazyColumnState) {
+                snapshotFlow { reorderableLazyColumnState.isAnyItemDragging }
+                    .collect { isDragging ->
+                        if (!isDragging) {
+                            viewModel.persistCategoryOrder()
+                        }
+                    }
+            }
+
             LazyColumn(
                 state = lazyListState,
                 contentPadding = PaddingValues(
@@ -205,7 +217,7 @@ fun EditScreen(
                 modifier = Modifier.fillMaxSize()
             ) {
                 itemsIndexed(uiState.categories, key = { _, category -> category.id }) { _, category ->
-                    ReorderableItem(reorderableLazyColumnState, key = category.id) {
+                    ReorderableItem(reorderableLazyColumnState, key = category.id) { isDragging ->
                         val isExpanded = category.id == uiState.expandedCategoryId
                         CategoryEditCard(
                             category = category,
@@ -220,6 +232,8 @@ fun EditScreen(
                             onDeleteWordClick = { word -> deletingWord = word },
                             onToggleWordVisibility = { word -> viewModel.toggleWordVisibility(word) },
                             onReorderWords = { from, to -> viewModel.reorderWords(from, to) },
+                            onSettleWords = { viewModel.persistWordOrder() },
+                            isDragging = isDragging,
                             dragHandle = {
                                 Icon(
                                     imageVector = Icons.Default.Reorder,

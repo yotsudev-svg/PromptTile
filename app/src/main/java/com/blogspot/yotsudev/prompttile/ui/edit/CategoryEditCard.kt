@@ -51,8 +51,10 @@ fun CategoryEditCard(
     onDeleteWordClick: (PromptWordEntity) -> Unit,
     onToggleWordVisibility: (PromptWordEntity) -> Unit,
     onReorderWords: (Int, Int) -> Unit,
+    onSettleWords: () -> Unit,
     dragHandle: @Composable () -> Unit,
     modifier: Modifier = Modifier,
+    isDragging: Boolean = false,
 ) {
     val containerAlpha = if (category.isHidden) 0.5f else 1.0f
     val contentAlpha = if (category.isHidden) 0.4f else 1.0f
@@ -60,7 +62,9 @@ fun CategoryEditCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .animateContentSize(),
+            .let {
+                if (isDragging) it else it.animateContentSize()
+            },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = containerAlpha),
         ),
@@ -132,8 +136,11 @@ fun CategoryEditCard(
                     // ReorderableColumn (sh.calvin.reorderable 3.1.0)
                     ReorderableColumn(
                         list = words,
-                        onSettle = { from, to -> onReorderWords(from, to) }
-                    ) { index, word, isDragging ->
+                        onSettle = { from, to ->
+                            onReorderWords(from, to)
+                            onSettleWords()
+                        },
+                    ) { _, word, _ ->
                         ReorderableItem {
                             WordEditRow(
                                 word = word,

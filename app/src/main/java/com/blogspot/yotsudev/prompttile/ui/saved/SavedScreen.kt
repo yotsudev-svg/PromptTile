@@ -5,7 +5,6 @@ import android.content.ClipboardManager
 import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,17 +13,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -38,7 +34,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -190,65 +185,6 @@ fun SavedScreen(
             }
         }
     }
-}
-
-@Composable
-private fun AddPromptDialog(
-    onConfirm: (title: String, positive: String, negative: String) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    var title    by rememberSaveable { mutableStateOf("") }
-    var positive by rememberSaveable { mutableStateOf("") }
-    var negative by rememberSaveable { mutableStateOf("") }
-
-    val canSave = positive.isNotBlank() || negative.isNotBlank()
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.dialog_add_prompt_title)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text(stringResource(R.string.dialog_save_prompt_label)) },
-                    placeholder = { Text(stringResource(R.string.dialog_save_prompt_placeholder)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = positive,
-                    onValueChange = { positive = it },
-                    label = { Text(stringResource(R.string.dialog_add_prompt_positive)) },
-                    placeholder = { Text(stringResource(R.string.dialog_add_prompt_positive_placeholder)) },
-                    minLines = 2,
-                    maxLines = 4,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = negative,
-                    onValueChange = { negative = it },
-                    label = { Text(stringResource(R.string.dialog_add_prompt_negative)) },
-                    placeholder = { Text(stringResource(R.string.dialog_add_prompt_negative_placeholder)) },
-                    minLines = 2,
-                    maxLines = 4,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { if (canSave) onConfirm(title, positive, negative) },
-                enabled = canSave,
-            ) { Text(stringResource(R.string.dialog_save)) }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.dialog_cancel)) }
-        },
-    )
 }
 
 private fun copyToClipboard(context: Context, text: String) {

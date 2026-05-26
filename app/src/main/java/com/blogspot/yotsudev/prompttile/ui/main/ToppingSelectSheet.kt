@@ -72,11 +72,11 @@ fun ToppingSelectSheet(
 
             // ---- トッピングチップ一覧（横スクロール） ----
             LazyRow(
-                contentPadding = PaddingValues(horizontal = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp),
+                    .padding(vertical = 12.dp),
             ) {
                 items(items = toppingItems, key = { it.id }) { item ->
                     ToppingChip(
@@ -114,15 +114,32 @@ fun ToppingSelectSheet(
 @Composable
 private fun ToppingChip(
     item: ToppingItemEntity,
+    isSelected: Boolean = false,
     onClick: () -> Unit,
 ) {
     val parsedColor = remember(item.colorHex) {
         item.colorHex?.let { runCatching { Color(android.graphics.Color.parseColor(it)) }.getOrNull() }
     }
 
+    // PromptAdjustSheet のスタイルに合わせる（選択: FilledTonal, 未選択: Outlined）
+    val containerColor = if (isSelected)
+        MaterialTheme.colorScheme.primaryContainer
+    else
+        Color.Transparent
+
+    val contentColor = if (isSelected)
+        MaterialTheme.colorScheme.onPrimaryContainer
+    else
+        MaterialTheme.colorScheme.onSurfaceVariant
+
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.secondaryContainer,
+        color = containerColor,
+        border = if (isSelected) {
+            null // 選択時は枠線なし
+        } else {
+            androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+        },
         modifier = Modifier
             .clip(RoundedCornerShape(20.dp))
             .clickable(onClick = onClick),
@@ -131,17 +148,16 @@ private fun ToppingChip(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
         ) {
-            // カラードット（colorHex がある場合のみ表示）
+            // ... (color dot logic remains the same)
             if (parsedColor != null) {
-                val isDark = parsedColor == Color.White || parsedColor.luminance() > 0.8f
+                val isLight = parsedColor.luminance() > 0.8f
                 Box(
                     modifier = Modifier
                         .size(14.dp)
                         .clip(CircleShape)
                         .background(parsedColor)
                         .then(
-                            // 白など明るい色はボーダーで視認性を確保
-                            if (isDark) Modifier.border(
+                            if (isLight) Modifier.border(
                                 width = 1.dp,
                                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
                                 shape = CircleShape,
@@ -153,7 +169,7 @@ private fun ToppingChip(
             Text(
                 text = item.nameJa,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                color = contentColor,
             )
         }
     }

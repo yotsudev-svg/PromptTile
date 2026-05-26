@@ -2,13 +2,12 @@ package com.blogspot.yotsudev.prompttile.ui.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import com.blogspot.yotsudev.prompttile.R
 
 /**
@@ -26,22 +25,17 @@ fun ConfirmDeleteDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    AlertDialog(
+    StyledDialog(
         onDismissRequest = onDismiss,
-        icon = {
-            Icon(
-                imageVector = Icons.Default.Delete,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.error,
-            )
-        },
-        title = { Text(stringResource(R.string.dialog_delete_confirm_title)) },
-        text = { Text(stringResource(R.string.dialog_delete_confirm_msg, targetName)) },
+        title = stringResource(R.string.dialog_delete_confirm_title),
+        icon = Icons.Default.Delete,
+        iconColor = MaterialTheme.colorScheme.error,
         confirmButton = {
             TextButton(onClick = onConfirm) {
                 Text(
                     text = stringResource(R.string.dialog_delete),
                     color = MaterialTheme.colorScheme.error,
+                    fontWeight = FontWeight.Bold
                 )
             }
         },
@@ -50,5 +44,11 @@ fun ConfirmDeleteDialog(
                 Text(stringResource(R.string.dialog_cancel))
             }
         },
-    )
+    ) {
+        Text(
+            text = stringResource(R.string.dialog_delete_confirm_msg, targetName),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
 }

@@ -154,24 +154,27 @@ private fun WordChip(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.92f else 1.0f,
-        animationSpec = spring(dampingRatio = 0.5f, stiffness = 300f),
+        targetValue = if (isPressed) 0.94f else 1.0f, // 押し感を少し弱めて上品に
+        animationSpec = spring(dampingRatio = 0.6f, stiffness = 400f),
         label = "scale",
     )
     val (containerColor, contentColor) = chipColors(isSelected, isUncategorized)
 
     Surface(
         color = containerColor,
-        tonalElevation = if (isSelected) 4.dp else 1.dp,
-        shadowElevation = if (isSelected) 2.dp else 0.dp,
+        tonalElevation = if (isSelected) 4.dp else 0.dp,
         shape = RoundedCornerShape(12.dp),
+        border = androidx.compose.foundation.BorderStroke(
+            width = 0.5.dp,
+            color = if (isSelected) contentColor.copy(alpha = 0.3f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
+        ),
         modifier = modifier
             .fillMaxWidth()
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .clip(RoundedCornerShape(12.dp))
             .combinedClickable(
                 interactionSource = interactionSource,
-                indication = null,
+                indication = androidx.compose.foundation.LocalIndication.current,
                 onClick = onTap,
                 onLongClick = onLongPress,
             ),
@@ -225,18 +228,21 @@ private fun SplitWordChip(
     val isPressedB by interactionSourceB.collectIsPressedAsState()
 
     val scale by animateFloatAsState(
-        targetValue = if (isPressedA || isPressedB) 0.92f else 1.0f,
-        animationSpec = spring(dampingRatio = 0.5f, stiffness = 300f),
+        targetValue = if (isPressedA || isPressedB) 0.94f else 1.0f,
+        animationSpec = spring(dampingRatio = 0.6f, stiffness = 400f),
         label = "scale",
     )
     val (containerColor, contentColor) = chipColors(isSelected, isUncategorized)
-    val dividerColor = contentColor.copy(alpha = 0.2f)
+    val dividerColor = contentColor.copy(alpha = 0.12f)
 
     Surface(
         color = containerColor,
-        tonalElevation = if (isSelected) 4.dp else 1.dp,
-        shadowElevation = if (isSelected) 2.dp else 0.dp,
+        tonalElevation = if (isSelected) 4.dp else 0.dp,
         shape = RoundedCornerShape(12.dp),
+        border = androidx.compose.foundation.BorderStroke(
+            width = 0.5.dp,
+            color = if (isSelected) contentColor.copy(alpha = 0.3f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
+        ),
         modifier = modifier
             .fillMaxWidth()
             .graphicsLayer { scaleX = scale; scaleY = scale },
@@ -251,7 +257,7 @@ private fun SplitWordChip(
                     .clip(RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp))
                     .combinedClickable(
                         interactionSource = interactionSourceA,
-                        indication = null,
+                        indication = androidx.compose.foundation.LocalIndication.current,
                         onClick = onTap,
                         onLongClick = onLongPress,
                     )
@@ -286,20 +292,21 @@ private fun SplitWordChip(
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .width(36.dp)
+                    .width(40.dp) // 少し広げる
                     .fillMaxHeight()
                     .clip(RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp))
                     .combinedClickable(
                         interactionSource = interactionSourceB,
-                        indication = null,
+                        indication = androidx.compose.foundation.LocalIndication.current,
                         onClick = onToppingIconTap,
-                    ),
+                    )
+                    .background(if (isPressedB) contentColor.copy(alpha = 0.08f) else Color.Transparent),
             ) {
                 Icon(
                     imageVector = Icons.Default.Palette,
                     contentDescription = stringResource(R.string.word_chip_topping_icon_desc),
-                    tint = contentColor.copy(alpha = if (isPressedB) 1f else 0.6f),
-                    modifier = Modifier.size(16.dp),
+                    tint = if (isPressedB) contentColor else contentColor.copy(alpha = 0.5f),
+                    modifier = Modifier.size(18.dp),
                 )
             }
         }

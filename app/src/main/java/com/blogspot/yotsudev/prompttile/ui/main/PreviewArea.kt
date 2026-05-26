@@ -6,16 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -28,17 +19,7 @@ import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Redo
 import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.graphicsLayer
@@ -79,12 +61,13 @@ fun PreviewArea(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.background), // surfaceVariantからbackgroundに変更
+            .background(MaterialTheme.colorScheme.background),
     ) {
         // ---- ポジティブ／ネガティブ タブ ----
         TabRow(
             selectedTabIndex = if (mode == PromptMode.POSITIVE) 0 else 1,
-            containerColor = MaterialTheme.colorScheme.background, // 同上
+            containerColor = MaterialTheme.colorScheme.background,
+            divider = { HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)) }
         ) {
             Tab(
                 selected = mode == PromptMode.POSITIVE,
@@ -122,114 +105,99 @@ fun PreviewArea(
             )
         }
 
-        // ---- ヘッダー行: カウンター + Undo/Redo + 削除モード + コピー ----
+        // ---- ヘッダー行: カウンター + [Undo/Redo] | [Delete/Template] | [Copy] ----
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 12.dp, end = 4.dp),
+                .padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            val modeText = if (mode == PromptMode.POSITIVE) 
-                stringResource(R.string.preview_mode_positive) 
-            else 
-                stringResource(R.string.preview_mode_negative)
+            val modeColor = if (mode == PromptMode.NEGATIVE)
+                MaterialTheme.colorScheme.error
+            else
+                MaterialTheme.colorScheme.onSurfaceVariant
 
             Text(
-                text = "$modeText (${items.size})",
+                text = "${if (mode == PromptMode.POSITIVE) stringResource(R.string.preview_mode_positive) else stringResource(R.string.preview_mode_negative)} (${items.size})",
                 style = MaterialTheme.typography.labelMedium,
-                color = if (mode == PromptMode.NEGATIVE)
-                    MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
-                else
-                    MaterialTheme.colorScheme.onSurfaceVariant,
+                color = modeColor.copy(alpha = 0.8f),
             )
 
-            Row {
-                IconButton(
-                    onClick = onUndo,
-                    enabled = canUndo,
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Undo,
-                        contentDescription = stringResource(R.string.preview_undo),
-                        tint = if (canUndo)
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        else
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                    )
-                }
-                IconButton(
-                    onClick = onRedo,
-                    enabled = canRedo,
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Redo,
-                        contentDescription = stringResource(R.string.preview_redo),
-                        tint = if (canRedo)
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        else
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                    )
-                }
-                IconButton(
-                    onClick = { isDeleteMode = !isDeleteMode },
-                    enabled = items.isNotEmpty(),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.DeleteSweep,
-                        contentDescription = if (isDeleteMode) 
-                            stringResource(R.string.preview_delete_mode_off) 
-                        else 
-                            stringResource(R.string.preview_delete_mode_on),
-                        tint = when {
-                            items.isEmpty() -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                            isDeleteMode -> MaterialTheme.colorScheme.error
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                    )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // グループ1: 履歴操作
+                Row {
+                    IconButton(onClick = onUndo, enabled = canUndo) {
+                        Icon(
+                            imageVector = Icons.Default.Undo,
+                            contentDescription = stringResource(R.string.preview_undo),
+                            modifier = Modifier.size(20.dp),
+                            tint = if (canUndo) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
+                        )
+                    }
+                    IconButton(onClick = onRedo, enabled = canRedo) {
+                        Icon(
+                            imageVector = Icons.Default.Redo,
+                            contentDescription = stringResource(R.string.preview_redo),
+                            modifier = Modifier.size(20.dp),
+                            tint = if (canRedo) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
+                        )
+                    }
                 }
 
-                // ---- テンプレート追加ボタン (AutoAwesome) ----
-                Box {
-                    val interactionSource = remember { MutableInteractionSource() }
-                    val isPressed by interactionSource.collectIsPressedAsState()
-                    val scale by animateFloatAsState(
-                        targetValue = if (isPressed) 0.92f else 1.0f,
-                        animationSpec = spring(dampingRatio = 0.5f, stiffness = 300f),
-                        label = "scale"
-                    )
+                Spacer(modifier = Modifier.width(4.dp))
+                androidx.compose.material3.VerticalDivider(modifier = Modifier.height(16.dp).alpha(0.3f))
+                Spacer(modifier = Modifier.width(4.dp))
 
+                // グループ2: 編集・補助
+                Row {
                     IconButton(
-                        onClick = { showTemplateMenu = true },
-                        interactionSource = interactionSource,
-                        modifier = Modifier.graphicsLayer {
-                            scaleX = scale
-                            scaleY = scale
-                        }
+                        onClick = { isDeleteMode = !isDeleteMode },
+                        enabled = items.isNotEmpty(),
                     ) {
                         Icon(
-                            imageVector = Icons.Default.AutoAwesome,
-                            contentDescription = "Quality Template",
-                            tint = MaterialTheme.colorScheme.primary
+                            imageVector = Icons.Default.DeleteSweep,
+                            contentDescription = if (isDeleteMode) stringResource(R.string.preview_delete_mode_off) else stringResource(R.string.preview_delete_mode_on),
+                            modifier = Modifier.size(20.dp),
+                            tint = when {
+                                items.isEmpty() -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                                isDeleteMode -> MaterialTheme.colorScheme.error
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                            },
                         )
                     }
 
-                    DropdownMenu(
-                        expanded = showTemplateMenu,
-                        onDismissRequest = { showTemplateMenu = false }
-                    ) {
-                        allTemplates.forEach { template ->
-                            DropdownMenuItem(
-                                text = { Text(template.name) },
-                                onClick = {
-                                    onAddTemplate(template.text)
-                                    showTemplateMenu = false
-                                }
+                    Box {
+                        IconButton(onClick = { showTemplateMenu = true }) {
+                            Icon(
+                                imageVector = Icons.Default.AutoAwesome,
+                                contentDescription = "Quality Template",
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
                             )
+                        }
+                        DropdownMenu(
+                            expanded = showTemplateMenu,
+                            onDismissRequest = { showTemplateMenu = false }
+                        ) {
+                            allTemplates.forEach { template ->
+                                DropdownMenuItem(
+                                    text = { Text(template.name, style = MaterialTheme.typography.bodyMedium) },
+                                    onClick = {
+                                        onAddTemplate(template.text)
+                                        showTemplateMenu = false
+                                    }
+                                )
+                            }
                         }
                     }
                 }
 
+                Spacer(modifier = Modifier.width(4.dp))
+                androidx.compose.material3.VerticalDivider(modifier = Modifier.height(16.dp).alpha(0.3f))
+                Spacer(modifier = Modifier.width(4.dp))
+
+                // グループ3: 出力
                 IconButton(
                     onClick = onCopyAll,
                     enabled = items.isNotEmpty(),
@@ -237,8 +205,9 @@ fun PreviewArea(
                     Icon(
                         imageVector = Icons.Default.ContentCopy,
                         contentDescription = stringResource(R.string.preview_copy),
+                        modifier = Modifier.size(20.dp),
                         tint = when {
-                            items.isEmpty() -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                            items.isEmpty() -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
                             mode == PromptMode.NEGATIVE -> MaterialTheme.colorScheme.error
                             else -> MaterialTheme.colorScheme.primary
                         },
@@ -268,30 +237,34 @@ fun PreviewArea(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .then(if (isVertical) Modifier.heightIn(max = 200.dp) else Modifier),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                tonalElevation = 2.dp
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
+                    .then(if (isVertical) Modifier.heightIn(max = 240.dp) else Modifier),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)),
+                tonalElevation = 1.dp
             ) {
-                val scrollState = rememberScrollState()
-                Text(
-                    text = promptText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .padding(12.dp)
-                        .then(
-                            if (isVertical) 
-                                Modifier.verticalScroll(scrollState) 
-                            else 
-                                Modifier.horizontalScroll(scrollState)
+                Box(modifier = Modifier.padding(12.dp)) {
+                    val scrollState = rememberScrollState()
+                    Text(
+                        text = promptText,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                            lineHeight = androidx.compose.ui.unit.TextUnit.Unspecified // 文字が詰まりすぎないように
                         ),
-                )
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .then(
+                                if (isVertical) Modifier.verticalScroll(scrollState) 
+                                else Modifier.horizontalScroll(scrollState)
+                            ),
+                    )
+                }
             }
         }
     }
 }
 
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun ChipList(
     items: List<PromptItem>,
@@ -311,14 +284,22 @@ private fun ChipList(
 
     if (items.isEmpty()) {
         Box(
-            modifier = modifier.heightIn(min = 48.dp),
-            contentAlignment = Alignment.CenterStart,
+            modifier = modifier.heightIn(min = 64.dp),
+            contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text = stringResource(R.string.preview_empty_msg),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    imageVector = Icons.Default.AutoAwesome,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp).alpha(0.2f)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.preview_empty_msg),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                )
+            }
         }
     } else if (isVertical) {
         // 縦型表示（3ペイン時）: 縦に並べる
@@ -430,6 +411,14 @@ private fun PromptChip(
             }
         } else null,
         colors = chipColors,
+        border = FilterChipDefaults.filterChipBorder(
+            enabled = true,
+            selected = hasWeight,
+            borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f),
+            selectedBorderColor = if (mode == PromptMode.NEGATIVE) MaterialTheme.colorScheme.error.copy(alpha = 0.3f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+            borderWidth = 0.5.dp,
+            selectedBorderWidth = 1.dp
+        ),
         modifier = modifier
             .then(dragModifier)
             .graphicsLayer {
