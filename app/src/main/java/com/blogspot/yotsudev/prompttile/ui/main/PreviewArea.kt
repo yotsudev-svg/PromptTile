@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.graphicsLayer
 import com.blogspot.yotsudev.prompttile.R
-import com.blogspot.yotsudev.prompttile.data.seed.PrefixTemplate
+import com.blogspot.yotsudev.prompttile.data.entity.SavedPromptEntity
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
@@ -41,7 +41,7 @@ fun PreviewArea(
     mode: PromptMode,
     items: List<PromptItem>,
     promptText: String,
-    allTemplates: List<PrefixTemplate>,
+    allTemplates: List<SavedPromptEntity>,
     canUndo: Boolean,
     canRedo: Boolean,
     onModeChange: (PromptMode) -> Unit,
@@ -182,9 +182,9 @@ fun PreviewArea(
                         ) {
                             allTemplates.forEach { template ->
                                 DropdownMenuItem(
-                                    text = { Text(template.name, style = MaterialTheme.typography.bodyMedium) },
+                                    text = { Text(template.title, style = MaterialTheme.typography.bodyMedium) },
                                     onClick = {
-                                        onAddTemplate(template.text)
+                                        onAddTemplate(template.promptText)
                                         showTemplateMenu = false
                                     }
                                 )
@@ -232,34 +232,36 @@ fun PreviewArea(
                 .then(if (isVertical) Modifier.weight(1f) else Modifier),
         )
 
-        // ---- 最終プロンプト表示エリア (Reactive) ----
-        if (items.isNotEmpty()) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 8.dp)
-                    .then(if (isVertical) Modifier.heightIn(max = 240.dp) else Modifier),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)),
-                tonalElevation = 1.dp
-            ) {
-                Box(modifier = Modifier.padding(12.dp)) {
-                    val scrollState = rememberScrollState()
-                    Text(
-                        text = promptText,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                            lineHeight = androidx.compose.ui.unit.TextUnit.Unspecified // 文字が詰まりすぎないように
+        // ---- 最終プロンプト表示エリア (Stable Layout) ----
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 8.dp)
+                .then(if (isVertical) Modifier.heightIn(min = 72.dp, max = 240.dp) else Modifier.height(72.dp)),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+            border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)),
+            tonalElevation = 1.dp
+        ) {
+            Box(modifier = Modifier.padding(12.dp)) {
+                val scrollState = rememberScrollState()
+                val isEmpty = items.isEmpty()
+                Text(
+                    text = if (isEmpty) stringResource(R.string.preview_placeholder) else promptText,
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                        lineHeight = androidx.compose.ui.unit.TextUnit.Unspecified
+                    ),
+                    color = if (isEmpty) 
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                    else 
+                        MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .then(
+                            if (isVertical) Modifier.verticalScroll(scrollState) 
+                            else Modifier.horizontalScroll(scrollState)
                         ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .then(
-                                if (isVertical) Modifier.verticalScroll(scrollState) 
-                                else Modifier.horizontalScroll(scrollState)
-                            ),
-                    )
-                }
+                )
             }
         }
     }
@@ -284,7 +286,7 @@ private fun ChipList(
 
     if (items.isEmpty()) {
         Box(
-            modifier = modifier.heightIn(min = 64.dp),
+            modifier = modifier.height(64.dp),
             contentAlignment = Alignment.Center,
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -332,7 +334,7 @@ private fun ChipList(
         LazyRow(
             state = lazyListState,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
-            modifier = modifier.heightIn(min = 48.dp, max = 64.dp),
+            modifier = modifier.height(64.dp),
         ) {
             itemsIndexed(
                 items = items,

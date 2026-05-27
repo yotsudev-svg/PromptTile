@@ -18,5 +18,7 @@ data class SavedPromptEntity(
     val title: String,
     val promptText: String,
     val negativeText: String = "",
+    val isDefault: Boolean = false,
+    val isEnabled: Boolean = true,
     val createdAt: Long = System.currentTimeMillis(),
 )

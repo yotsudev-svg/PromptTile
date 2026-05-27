@@ -8,6 +8,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -15,11 +18,14 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -35,6 +41,8 @@ fun SavedPromptCard(
     entity: SavedPromptEntity,
     onCopy: (SavedPromptEntity) -> Unit,
     onDelete: (SavedPromptEntity) -> Unit,
+    onEdit: (SavedPromptEntity) -> Unit = {},
+    onToggleEnabled: (SavedPromptEntity) -> Unit = {},
     onLoadPositive: ((SavedPromptEntity) -> Unit)? = null,
     onLoadNegative: ((SavedPromptEntity) -> Unit)? = null,
     onLoadFull: ((SavedPromptEntity) -> Unit)? = null,
@@ -42,6 +50,7 @@ fun SavedPromptCard(
 ) {
     // 日付文字列を remember で保持
     val dateString = remember(entity.createdAt) { entity.createdAt.toDateString() }
+    val contentAlpha = if (entity.isEnabled) 1.0f else 0.5f
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -53,7 +62,8 @@ fun SavedPromptCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 8.dp),
+                .padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 8.dp)
+                .alpha(contentAlpha),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             // ---- ヘッダー: タイトルと基本アクション ----
@@ -62,13 +72,30 @@ fun SavedPromptCard(
                 verticalAlignment = Alignment.Top,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = entity.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = entity.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        if (entity.isDefault) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp),
+                                modifier = Modifier.padding(start = 8.dp)
+                            ) {
+                                Text(
+                                    text = "DEFAULT",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                    }
                     Text(
                         text = dateString,
                         style = MaterialTheme.typography.labelSmall,
@@ -76,19 +103,39 @@ fun SavedPromptCard(
                     )
                 }
                 
-                IconButton(onClick = { onCopy(entity) }) {
-                    Icon(
-                        imageVector = Icons.Default.ContentCopy,
-                        contentDescription = stringResource(R.string.saved_copy),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                }
-                IconButton(onClick = { onDelete(entity) }) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = stringResource(R.string.saved_delete),
-                        tint = MaterialTheme.colorScheme.error,
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { onToggleEnabled(entity) }) {
+                        Icon(
+                            imageVector = if (entity.isEnabled) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            contentDescription = if (entity.isEnabled) "Enabled" else "Disabled",
+                            tint = if (entity.isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                    }
+                    if (!entity.isDefault) {
+                        IconButton(onClick = { onEdit(entity) }) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit",
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    }
+                    IconButton(onClick = { onCopy(entity) }) {
+                        Icon(
+                            imageVector = Icons.Default.ContentCopy,
+                            contentDescription = stringResource(R.string.saved_copy),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    if (!entity.isDefault) {
+                        IconButton(onClick = { onDelete(entity) }) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = stringResource(R.string.saved_delete),
+                                tint = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                    }
                 }
             }
 

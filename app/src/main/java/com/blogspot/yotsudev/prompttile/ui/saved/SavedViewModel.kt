@@ -3,44 +3,70 @@ package com.blogspot.yotsudev.prompttile.ui.saved
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.blogspot.yotsudev.prompttile.data.entity.SavedPromptEntity
+import com.blogspot.yotsudev.prompttile.data.preferences.ManagementFilterMode
+import com.blogspot.yotsudev.prompttile.data.preferences.PreferencesDataSource
+import com.blogspot.yotsudev.prompttile.data.preferences.UserPreferences
 import com.blogspot.yotsudev.prompttile.data.repository.PromptRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.coroutineScope
 import javax.inject.Inject
 
 @HiltViewModel
 class SavedViewModel @Inject constructor(
     private val repository: PromptRepository,
+    private val dataSource: PreferencesDataSource,
 ) : ViewModel() {
 
-    val savedPrompts = repository.savedPrompts.stateIn(
+    private val _prefs = dataSource.userPreferences.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = UserPreferences(),
+    )
+
+    val filterMode = combine(_prefs) { it[0].managementFilterMode }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = ManagementFilterMode.ALL
+    )
+
+    val savedPrompts = combine(
+        repository.savedPrompts,
+        filterMode
+    ) { prompts, mode ->
+        when (mode) {
+            ManagementFilterMode.ALL -> prompts.sortedBy { !it.isEnabled }
+            ManagementFilterMode.ENABLED_ONLY -> prompts.filter { it.isEnabled }
+            ManagementFilterMode.DISABLED_ONLY -> prompts.filter { !it.isEnabled }
+        }
+    }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = emptyList(),
     )
 
+    fun setFilterMode(mode: ManagementFilterMode) {
+        viewModelScope.launch { dataSource.updateManagementFilterMode(mode) }
+    }
+
     fun delete(entity: SavedPromptEntity) {
+        if (entity.isDefault) return
         viewModelScope.launch { repository.deletePrompt(entity) }
     }
 
-    /**
-     * 手動入力したプロンプトを保存し、未登録単語を自動登録する。
-     *
-     * savePrompt と registerNewWordsFromText は互いに依存しないため
-     * coroutineScope 内で並列実行する。
-     *
-     * 直列実行との違い:
-     *   直列: savePrompt → registerPos → registerNeg（最大3往復）
-     *   並列: savePrompt と register 系を同時に実行（1往復分の時間に短縮）
-     *
-     * coroutineScope を使う理由:
-     *   launch { launch{} launch{} } ではなく coroutineScope { launch{} launch{} } にすることで、
-     *   内側の全 launch が完了するまで外側のコルーチンが終了しない（構造化並行性）。
-     *   いずれかの処理が例外を投げた場合も全体がキャンセルされ、中途半端な状態にならない。
-     */
+    fun updatePrompt(entity: SavedPromptEntity) {
+        viewModelScope.launch { repository.updatePrompt(entity) }
+    }
+
+    fun togglePromptEnabled(entity: SavedPromptEntity) {
+        viewModelScope.launch {
+            repository.updatePrompt(entity.copy(isEnabled = !entity.isEnabled))
+        }
+    }
+
     fun addManualPrompt(title: String, positiveText: String, negativeText: String) {
         val pos = positiveText.trim()
         val neg = negativeText.trim()
@@ -53,7 +79,6 @@ class SavedViewModel @Inject constructor(
 
         viewModelScope.launch {
             coroutineScope {
-                // savePrompt と単語登録を並列で実行
                 launch {
                     repository.savePrompt(
                         SavedPromptEntity(

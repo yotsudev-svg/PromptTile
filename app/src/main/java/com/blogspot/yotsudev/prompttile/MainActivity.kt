@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
 
         // 2. ViewModel の準備（DataStoreのロードなど）が整うまでスプラッシュ画面を維持する
         splashScreen.setKeepOnScreenCondition {
-            !settingsViewModel.isReady.value
+            settingsViewModel.preferences.value == null
         }
 
         setContent {

@@ -6,6 +6,7 @@ import com.blogspot.yotsudev.prompttile.data.dao.SavedPromptDao
 import com.blogspot.yotsudev.prompttile.data.dao.ToppingDao
 import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
+import com.blogspot.yotsudev.prompttile.data.entity.PromptWordWithCategory
 import com.blogspot.yotsudev.prompttile.data.entity.SavedPromptEntity
 import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
 import com.blogspot.yotsudev.prompttile.util.PromptFormatter
@@ -39,6 +40,9 @@ class PromptRepository @Inject constructor(
 
     fun allWordsByCategory(categoryId: Long): Flow<List<PromptWordEntity>> =
         promptWordDao.observeByCategory(categoryId, includeHidden = true).flowOn(Dispatchers.IO)
+
+    val allWordsWithCategory: Flow<List<PromptWordWithCategory>> =
+        promptWordDao.observeAllWithCategory().flowOn(Dispatchers.IO)
 
     fun searchWords(query: String): Flow<List<PromptWordEntity>> =
         promptWordDao.searchWords(query).flowOn(Dispatchers.IO)
@@ -135,6 +139,9 @@ class PromptRepository @Inject constructor(
 
     suspend fun savePrompt(entity: SavedPromptEntity) =
         withContext(Dispatchers.IO) { savedPromptDao.insert(entity) }
+
+    suspend fun updatePrompt(entity: SavedPromptEntity) =
+        withContext(Dispatchers.IO) { savedPromptDao.update(entity) }
 
     suspend fun deletePrompt(entity: SavedPromptEntity) =
         withContext(Dispatchers.IO) { savedPromptDao.delete(entity) }

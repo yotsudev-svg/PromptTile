@@ -5,11 +5,14 @@ enum class ThemeConfig {
     FOLLOW_SYSTEM, LIGHT, DARK
 }
 
+enum class ManagementFilterMode {
+    ALL, ENABLED_ONLY, DISABLED_ONLY
+}
+
 data class UserPreferences(
     val themeConfig: ThemeConfig = ThemeConfig.FOLLOW_SYSTEM,
+    val managementFilterMode: ManagementFilterMode = ManagementFilterMode.ALL,
     val moveToBackOnCopy: Boolean = false,
-    val userTemplates: List<UserTemplate> = emptyList(),
-    val disabledDefaultTemplateNames: Set<String> = emptySet(),
 
     /**
      * アプリ終了時に保持するポジティブ・ネガティブのアイテムリスト。
@@ -28,10 +31,4 @@ data class PersistedPromptItem(
     val weight: Float?,
     val toppingGroupId: Long? = null,
     val selectedTopping: String? = null,
-)
-
-data class UserTemplate(
-    val name: String,
-    val text: String,
-    val isEnabled: Boolean = true
 )

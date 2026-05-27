@@ -2,8 +2,8 @@ package com.blogspot.yotsudev.prompttile.ui.main
 
 import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
+import com.blogspot.yotsudev.prompttile.data.entity.SavedPromptEntity
 import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
-import com.blogspot.yotsudev.prompttile.data.seed.PrefixTemplate
 
 enum class PromptMode { POSITIVE, NEGATIVE }
 
@@ -21,7 +21,7 @@ data class PromptUiState(
     val wordsInCategory: List<PromptWordEntity> = emptyList(),
     val isLoading: Boolean = true,
     val moveToBackOnCopy: Boolean = false,
-    val allTemplates: List<PrefixTemplate> = emptyList(),
+    val allTemplates: List<SavedPromptEntity> = emptyList(),
     val canUndo: Boolean = false,
     val canRedo: Boolean = false,
     val positivePromptText: String = "",

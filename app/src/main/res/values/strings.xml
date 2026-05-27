@@ -70,6 +70,7 @@
 
     <string name="msg_deleted">削除しました</string>
     <string name="msg_manual_added">手動追加しました</string>
+    <string name="msg_prompt_updated">更新しました</string>
     <string name="msg_positive_added">Positiveに追加しました</string>
     <string name="msg_negative_added">Negativeに追加しました</string>
 
@@ -77,11 +78,13 @@
     <string name="main_import_from_clipboard">クリップボードから追加</string>
     <string name="main_clear_all">全クリア</string>
     <string name="main_save">保存</string>
+    <string name="common_more_options">詳細メニュー</string>
 
     <!-- Preview Area -->
     <string name="preview_mode_positive">Positive</string>
     <string name="preview_mode_negative">Negative</string>
     <string name="preview_empty_msg">単語をタップして追加…</string>
+    <string name="preview_placeholder">ここにプロンプトが表示されます…</string>
     <string name="preview_undo">元に戻す</string>
     <string name="preview_redo">やり直す</string>
     <string name="preview_delete_mode_on">削除モードON</string>

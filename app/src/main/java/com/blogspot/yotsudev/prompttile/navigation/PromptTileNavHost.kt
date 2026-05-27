@@ -93,8 +93,7 @@ fun PromptTileNavHost(
                 entry<AppDestination.Edit>     { EditScreen() }
                 entry<AppDestination.Settings> {
                     SettingsScreen(
-                        viewModel = settingsViewModel,
-                        promptViewModel = promptViewModel,
+                        viewModel = settingsViewModel
                     )
                 }
             },

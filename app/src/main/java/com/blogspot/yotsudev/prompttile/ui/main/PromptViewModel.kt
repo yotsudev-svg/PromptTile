@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -97,14 +98,8 @@ class PromptViewModel @Inject constructor(
         )
     }
 
-    private val _allTemplates = combine(_defaultTemplates, _prefs) { defaults, prefs ->
-        val mapped = defaults.map { d ->
-            d.copy(isEnabled = !prefs.disabledDefaultTemplateNames.contains(d.name))
-        }
-        val user = prefs.userTemplates.map {
-            PrefixTemplate(name = it.name, text = it.text, isDefault = false, isEnabled = it.isEnabled)
-        }
-        (mapped + user).filter { it.isEnabled }
+    private val _allTemplates = repository.savedPrompts.map { list ->
+        list.filter { it.isEnabled }
     }
 
     val uiState = combine(
@@ -125,7 +120,7 @@ class PromptViewModel @Inject constructor(
         val prefs          = args[8] as UserPreferences
         val history        = args[9] as HistoryState
         val query          = args[10] as String
-        val templates      = args[11] as List<PrefixTemplate>
+        val templates      = args[11] as List<SavedPromptEntity>
         val adjItem        = args[12] as PromptItem?
         val adjToppings    = args[13] as List<ToppingItemEntity>
 

@@ -7,24 +7,31 @@ import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.blogspot.yotsudev.prompttile.R
+import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
 import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
 import com.blogspot.yotsudev.prompttile.data.repository.UNCATEGORIZED_NEGATIVE_NAME
 import com.blogspot.yotsudev.prompttile.data.repository.UNCATEGORIZED_POSITIVE_NAME
+import com.blogspot.yotsudev.prompttile.ui.components.PromptTileTopAppBar
 import com.blogspot.yotsudev.prompttile.util.PromptFormatter
 import kotlinx.coroutines.launch
 
@@ -62,6 +69,8 @@ fun MainScreen(
     var toppingChoices by remember { mutableStateOf<List<ToppingItemEntity>>(emptyList()) }
 
     var showSaveDialog by rememberSaveable { mutableStateOf(false) }
+    var isSearching by rememberSaveable { mutableStateOf(false) }
+    var showMoreMenu by remember { mutableStateOf(false) }
 
     if (showSaveDialog) {
         SavePromptDialog(
@@ -128,121 +137,188 @@ fun MainScreen(
         )
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = MaterialTheme.colorScheme.background, // 明示的にテーマの背景色を使用
-        topBar = {
-            MainTopAppBar(
-                hasItems = hasItems,
-                canSave = uiState.positiveItems.isNotEmpty() || uiState.negativeItems.isNotEmpty(),
-                onImportClick = {
-                    handleClipboardImport(context, snackbarHostState, scope) { items -> importItems = items }
-                },
-                onClearClick = viewModel::clearAll,
-                onSaveClick = { showSaveDialog = true }
-            )
-        }
-    ) { innerPadding ->
-        BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            val isWideScreen = maxWidth >= 840.dp
-            val isMediumScreen = maxWidth >= 600.dp && maxWidth < 840.dp
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val isWideScreen = maxWidth >= 840.dp
 
-            if (isWideScreen) {
-                // ---- 3ペイン構成 (Expanded) ----
-                Row(modifier = Modifier.fillMaxSize()) {
-                    // 左ペイン: カテゴリ (固定幅)
-                    CategorySidebar(
-                        categories = uiState.currentCategories,
-                        selectedCategoryId = uiState.currentSelectedCategoryId,
-                        onCategorySelected = viewModel::selectCategory,
-                        modifier = Modifier.width(200.dp)
-                    )
+        Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            containerColor = MaterialTheme.colorScheme.background,
+            topBar = {
+                PromptTileTopAppBar(
+                    title = "PromptTile",
+                    showSearchAction = true,
+                    isSearching = isSearching,
+                    onSearchingChange = { isSearching = it },
+                    isWideScreen = isWideScreen,
+                    searchQuery = uiState.searchQuery,
+                    onSearchQueryChange = viewModel::setSearchQuery,
+                    actions = {
+                        IconButton(onClick = {
+                            handleClipboardImport(context, snackbarHostState, scope) { items -> importItems = items }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.ContentPaste,
+                                contentDescription = stringResource(R.string.main_import_from_clipboard),
+                            )
+                        }
 
-                    VerticalDivider()
-
-                    // 中央ペイン: 単語プール (可変)
-                    Column(modifier = Modifier.weight(1f)) {
-                        SearchBar(
-                            query = uiState.searchQuery,
-                            onQueryChange = viewModel::setSearchQuery,
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)
+                        Box {
+                            IconButton(onClick = { showMoreMenu = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.MoreVert,
+                                    contentDescription = stringResource(R.string.common_more_options)
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = showMoreMenu,
+                                onDismissRequest = { showMoreMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.main_save)) },
+                                    leadingIcon = { Icon(Icons.Default.Save, contentDescription = null) },
+                                    onClick = {
+                                        showMoreMenu = false
+                                        showSaveDialog = true
+                                    },
+                                    enabled = uiState.positiveItems.isNotEmpty() || uiState.negativeItems.isNotEmpty()
+                                )
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            text = stringResource(R.string.main_clear_all),
+                                            color = if (hasItems) MaterialTheme.colorScheme.error else Color.Unspecified
+                                        )
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Default.ClearAll,
+                                            contentDescription = null,
+                                            tint = if (hasItems) MaterialTheme.colorScheme.error else LocalContentColor.current
+                                        )
+                                    },
+                                    onClick = {
+                                        showMoreMenu = false
+                                        viewModel.clearAll()
+                                    },
+                                    enabled = hasItems
+                                )
+                            }
+                        }
+                    }
+                )
+            }
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
+                if (isWideScreen) {
+                    // ---- 3ペイン構成 (Expanded) ----
+                    Row(modifier = Modifier.fillMaxSize()) {
+                        // 左ペイン: カテゴリ (固定幅)
+                        CategorySidebar(
+                            categories = uiState.currentCategories,
+                            selectedCategoryId = uiState.currentSelectedCategoryId,
+                            onCategorySelected = viewModel::selectCategory,
+                            modifier = Modifier.width(200.dp)
                         )
-                        HorizontalDivider()
-                        WordPool(
-                            words = uiState.wordsInCategory,
-                            searchResults = uiState.searchResults,
-                            searchQuery = uiState.searchQuery,
-                            selectedWordIds = selectedWordIds,
-                            uncategorizedIds = uncategorizedIds,
-                            onWordTap = viewModel::toggleWord,
-                            onWordLongPress = { word ->
-                                copyToClipboard(context, word.wordEn)
-                                scope.launch {
-                                    snackbarHostState.showSnackbar(
-                                        msgWordCopiedTemplate.format(word.wordEn)
-                                    )
-                                }
-                            },
-                            onToppingIconTap = { word ->
-                                // トッピング選択肢を読み込んでシートを表示
-                                scope.launch {
-                                    word.toppingGroupId?.let { groupId ->
-                                        toppingChoices = viewModel.getToppingItems(groupId)
-                                        toppingTargetWord = word
+
+                        VerticalDivider()
+
+                        // 中央ペイン: 単語プール (可変)
+                        Column(modifier = Modifier.weight(1f)) {
+                            WordPool(
+                                words = uiState.wordsInCategory,
+                                searchResults = uiState.searchResults,
+                                searchQuery = uiState.searchQuery,
+                                selectedWordIds = selectedWordIds,
+                                uncategorizedIds = uncategorizedIds,
+                                onWordTap = viewModel::toggleWord,
+                                onWordLongPress = { word ->
+                                    copyToClipboard(context, word.wordEn)
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            msgWordCopiedTemplate.format(word.wordEn)
+                                        )
                                     }
-                                }
+                                },
+                                onToppingIconTap = { word ->
+                                    // トッピング選択肢を読み込んでシートを表示
+                                    scope.launch {
+                                        word.toppingGroupId?.let { groupId ->
+                                            toppingChoices = viewModel.getToppingItems(groupId)
+                                            toppingTargetWord = word
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        VerticalDivider()
+                        PreviewArea(
+                            mode = uiState.mode,
+                            items = uiState.currentItems,
+                            promptText = uiState.currentPromptText,
+                            allTemplates = uiState.allTemplates,
+                            canUndo = uiState.canUndo,
+                            canRedo = uiState.canRedo,
+                            onModeChange = viewModel::switchMode,
+                            onRemove = viewModel::removeItem,
+                            onWeightCycle = viewModel::openAdjustSheet,
+                            onMove = viewModel::moveItem,
+                            onCopyAll = {
+                                val text = viewModel.buildPromptText()
+                                copyToClipboard(context, text)
+                                scope.launch { snackbarHostState.showSnackbar(msgPromptCopied) }
                             },
-                            modifier = Modifier.fillMaxSize()
+                            onUndo = viewModel::undo,
+                            onRedo = viewModel::redo,
+                            onAddTemplate = viewModel::addTemplateItems,
+                            modifier = Modifier.width(280.dp),
+                            isVertical = true
                         )
                     }
+                } else {
+                    // ---- 1列構成 (Compact): 従来のモバイルレイアウト ----
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        PreviewArea(
+                            mode = uiState.mode,
+                            items = uiState.currentItems,
+                            promptText = uiState.currentPromptText,
+                            allTemplates = uiState.allTemplates,
+                            canUndo = uiState.canUndo,
+                            canRedo = uiState.canRedo,
+                            onModeChange = viewModel::switchMode,
+                            onRemove = viewModel::removeItem,
+                            onWeightCycle = viewModel::openAdjustSheet,
+                            onMove = viewModel::moveItem,
+                            onCopyAll = {
+                                val text = viewModel.buildPromptText()
+                                copyToClipboard(context, text)
+                                scope.launch { snackbarHostState.showSnackbar(msgPromptCopied) }
+                                if (uiState.moveToBackOnCopy) {
+                                    (context as? Activity)?.moveTaskToBack(true)
+                                }
+                            },
+                            onUndo = viewModel::undo,
+                            onRedo = viewModel::redo,
+                            onAddTemplate = viewModel::addTemplateItems,
+                            modifier = Modifier.fillMaxWidth(),
+                            isVertical = false
+                        )
 
-                    VerticalDivider()
+                        HorizontalDivider()
 
-                    // 右ペイン: ワークスペース (プレビュー)
-                    PreviewArea(
-                        mode = uiState.mode,
-                        items = uiState.currentItems,
-                        promptText = uiState.currentPromptText,
-                        allTemplates = uiState.allTemplates,
-                        canUndo = uiState.canUndo,
-                        canRedo = uiState.canRedo,
-                        onModeChange = viewModel::switchMode,
-                        onRemove = viewModel::removeItem,
-                        onWeightCycle = viewModel::openAdjustSheet,
-                        onMove = viewModel::moveItem,
-                        onCopyAll = {
-                            val text = viewModel.buildPromptText()
-                            copyToClipboard(context, text)
-                            scope.launch { snackbarHostState.showSnackbar(msgPromptCopied) }
-                        },
-                        onUndo = viewModel::undo,
-                        onRedo = viewModel::redo,
-                        onAddTemplate = viewModel::addTemplateItems,
-                        modifier = Modifier.width(300.dp),
-                        isVertical = true
-                    )
-                }
-            } else if (isMediumScreen) {
-                // ---- 2ペイン構成 (Medium) ----
-                Row(modifier = Modifier.fillMaxSize()) {
-                    Column(modifier = Modifier.weight(1f)) {
                         CategoryBar(
                             categories = uiState.currentCategories,
                             selectedCategoryId = uiState.currentSelectedCategoryId,
                             onCategorySelected = viewModel::selectCategory,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         )
+
                         HorizontalDivider()
-                        SearchBar(
-                            query = uiState.searchQuery,
-                            onQueryChange = viewModel::setSearchQuery,
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)
-                        )
-                        HorizontalDivider()
+
                         WordPool(
                             words = uiState.wordsInCategory,
                             searchResults = uiState.searchResults,
@@ -257,6 +333,9 @@ fun MainScreen(
                                         msgWordCopiedTemplate.format(word.wordEn)
                                     )
                                 }
+                                if (uiState.moveToBackOnCopy) {
+                                    (context as? Activity)?.moveTaskToBack(true)
+                                }
                             },
                             onToppingIconTap = { word ->
                                 scope.launch {
@@ -266,170 +345,17 @@ fun MainScreen(
                                     }
                                 }
                             },
-                            modifier = Modifier.fillMaxWidth().weight(1f)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
                         )
                     }
-                    VerticalDivider()
-                    PreviewArea(
-                        mode = uiState.mode,
-                        items = uiState.currentItems,
-                        promptText = uiState.currentPromptText,
-                        allTemplates = uiState.allTemplates,
-                        canUndo = uiState.canUndo,
-                        canRedo = uiState.canRedo,
-                        onModeChange = viewModel::switchMode,
-                        onRemove = viewModel::removeItem,
-                        onWeightCycle = viewModel::openAdjustSheet,
-                        onMove = viewModel::moveItem,
-                        onCopyAll = {
-                            val text = viewModel.buildPromptText()
-                            copyToClipboard(context, text)
-                            scope.launch { snackbarHostState.showSnackbar(msgPromptCopied) }
-                        },
-                        onUndo = viewModel::undo,
-                        onRedo = viewModel::redo,
-                        onAddTemplate = viewModel::addTemplateItems,
-                        modifier = Modifier.width(280.dp),
-                        isVertical = true
-                    )
-                }
-            } else {
-                // ---- 1列構成 (Compact): 従来のモバイルレイアウト ----
-                Column(modifier = Modifier.fillMaxSize()) {
-                    PreviewArea(
-                        mode = uiState.mode,
-                        items = uiState.currentItems,
-                        promptText = uiState.currentPromptText,
-                        allTemplates = uiState.allTemplates,
-                        canUndo = uiState.canUndo,
-                        canRedo = uiState.canRedo,
-                        onModeChange = viewModel::switchMode,
-                        onRemove = viewModel::removeItem,
-                        onWeightCycle = viewModel::openAdjustSheet,
-                        onMove = viewModel::moveItem,
-                        onCopyAll = {
-                            val text = viewModel.buildPromptText()
-                            copyToClipboard(context, text)
-                            scope.launch { snackbarHostState.showSnackbar(msgPromptCopied) }
-                            if (uiState.moveToBackOnCopy) {
-                                (context as? Activity)?.moveTaskToBack(true)
-                            }
-                        },
-                        onUndo = viewModel::undo,
-                        onRedo = viewModel::redo,
-                        onAddTemplate = viewModel::addTemplateItems,
-                        modifier = Modifier.fillMaxWidth(),
-                        isVertical = false
-                    )
-
-                    HorizontalDivider()
-
-                    CategoryBar(
-                        categories = uiState.currentCategories,
-                        selectedCategoryId = uiState.currentSelectedCategoryId,
-                        onCategorySelected = viewModel::selectCategory,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-
-                    HorizontalDivider()
-
-                    SearchBar(
-                        query = uiState.searchQuery,
-                        onQueryChange = viewModel::setSearchQuery,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp)
-                    )
-
-                    HorizontalDivider()
-
-                    WordPool(
-                        words = uiState.wordsInCategory,
-                        searchResults = uiState.searchResults,
-                        searchQuery = uiState.searchQuery,
-                        selectedWordIds = selectedWordIds,
-                        uncategorizedIds = uncategorizedIds,
-                        onWordTap = viewModel::toggleWord,
-                        onWordLongPress = { word ->
-                            copyToClipboard(context, word.wordEn)
-                            scope.launch {
-                                snackbarHostState.showSnackbar(
-                                    msgWordCopiedTemplate.format(word.wordEn)
-                                )
-                            }
-                            if (uiState.moveToBackOnCopy) {
-                                (context as? Activity)?.moveTaskToBack(true)
-                            }
-                        },
-                        onToppingIconTap = { word ->
-                            scope.launch {
-                                word.toppingGroupId?.let { groupId ->
-                                    toppingChoices = viewModel.getToppingItems(groupId)
-                                    toppingTargetWord = word
-                                }
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                    )
                 }
             }
         }
     }
 }
 
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun MainTopAppBar(
-    hasItems: Boolean,
-    canSave: Boolean,
-    onImportClick: () -> Unit,
-    onClearClick: () -> Unit,
-    onSaveClick: () -> Unit,
-) {
-    TopAppBar(
-        title = {
-            Text(
-                text = "PromptTile",
-                style = MaterialTheme.typography.titleLarge,
-            )
-        },
-        actions = {
-            // グルーピングを意識した順序: インポート | 保存 | クリア
-            IconButton(onClick = onImportClick) {
-                Icon(
-                    imageVector = Icons.Default.ContentPaste,
-                    contentDescription = stringResource(R.string.main_import_from_clipboard),
-                )
-            }
-            IconButton(
-                onClick = onSaveClick,
-                enabled = canSave,
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Save,
-                    contentDescription = stringResource(R.string.main_save),
-                )
-            }
-            IconButton(
-                onClick = onClearClick,
-                enabled = hasItems,
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ClearAll,
-                    contentDescription = stringResource(R.string.main_clear_all),
-                    tint = if (hasItems) MaterialTheme.colorScheme.error.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.38f)
-                )
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.background,
-            titleContentColor = MaterialTheme.colorScheme.primary,
-            actionIconContentColor = MaterialTheme.colorScheme.onBackground,
-            navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
-        ),
-    )
-}
 
 private fun handleClipboardImport(
     context: Context,
@@ -466,50 +392,4 @@ private fun copyToClipboard(context: Context, text: String) {
 private fun getClipboardText(context: Context): String? {
     val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     return cm.primaryClip?.getItemAt(0)?.text?.toString()
-}
-
-@Composable
-private fun SearchBar(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    OutlinedTextField(
-        value = query,
-        onValueChange = onQueryChange,
-        modifier = modifier,
-        placeholder = { 
-            Text(
-                text = stringResource(R.string.word_pool_search_placeholder),
-                style = MaterialTheme.typography.bodyMedium
-            ) 
-        },
-        leadingIcon = { 
-            Icon(
-                imageVector = Icons.Default.Search, 
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
-            ) 
-        },
-        trailingIcon = {
-            if (query.isNotEmpty()) {
-                IconButton(onClick = { onQueryChange("") }) {
-                    Icon(
-                        imageVector = Icons.Default.Clear, 
-                        contentDescription = "Clear",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        },
-        singleLine = true,
-        textStyle = MaterialTheme.typography.bodyMedium,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f),
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-        ),
-        shape = RoundedCornerShape(28.dp)
-    )
 }

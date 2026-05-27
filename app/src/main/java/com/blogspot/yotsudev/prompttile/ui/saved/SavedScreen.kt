@@ -7,10 +7,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -21,8 +19,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,6 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.blogspot.yotsudev.prompttile.R
 import com.blogspot.yotsudev.prompttile.data.entity.SavedPromptEntity
 import com.blogspot.yotsudev.prompttile.ui.components.ConfirmDeleteDialog
+import com.blogspot.yotsudev.prompttile.ui.components.PromptTileTopAppBar
 import com.blogspot.yotsudev.prompttile.ui.main.PromptMode
 import com.blogspot.yotsudev.prompttile.ui.main.PromptViewModel
 import kotlinx.coroutines.launch
@@ -52,11 +49,13 @@ fun SavedScreen(
     promptViewModel: PromptViewModel,
 ) {
     val savedPrompts by viewModel.savedPrompts.collectAsStateWithLifecycle()
+    val filterMode by viewModel.filterMode.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
     var deletingPrompt by remember { mutableStateOf<SavedPromptEntity?>(null) }
+    var editingPrompt by remember { mutableStateOf<SavedPromptEntity?>(null) }
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
 
     val msgCopied = stringResource(R.string.msg_prompt_copied)
@@ -65,6 +64,7 @@ fun SavedScreen(
     val msgFullApplied = stringResource(R.string.msg_full_applied)
     val msgDeleted = stringResource(R.string.msg_deleted)
     val msgManualAdded = stringResource(R.string.msg_manual_added)
+    val msgUpdated = stringResource(R.string.msg_prompt_updated)
 
     // ---- パフォーマンス向上のための Callback 定義 (remember 化) ----
     val onCopy = remember(context) {
@@ -112,6 +112,20 @@ fun SavedScreen(
         )
     }
 
+    editingPrompt?.let { prompt ->
+        AddPromptDialog(
+            initialTitle = prompt.title,
+            initialPositive = prompt.promptText,
+            initialNegative = prompt.negativeText,
+            onConfirm = { title, positive, negative ->
+                viewModel.updatePrompt(prompt.copy(title = title, promptText = positive, negativeText = negative))
+                editingPrompt = null
+                scope.launch { snackbarHostState.showSnackbar(msgUpdated) }
+            },
+            onDismiss = { editingPrompt = null },
+        )
+    }
+
     if (showAddDialog) {
         AddPromptDialog(
             onConfirm = { title, positive, negative ->
@@ -127,13 +141,10 @@ fun SavedScreen(
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.saved_title), style = MaterialTheme.typography.titleLarge) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    titleContentColor = MaterialTheme.colorScheme.primary,
-                    actionIconContentColor = MaterialTheme.colorScheme.onBackground,
-                )
+            PromptTileTopAppBar(
+                title = stringResource(R.string.saved_title),
+                filterMode = filterMode,
+                onFilterModeChange = viewModel::setFilterMode
             )
         },
         floatingActionButton = {
@@ -173,14 +184,18 @@ fun SavedScreen(
                     key = { it.id },
                     contentType = { "saved_prompt_card" }
                 ) { entity ->
-                    SavedPromptCard(
-                        entity = entity,
-                        onCopy = onCopy,
-                        onDelete = { deletingPrompt = it },
-                        onLoadPositive = if (entity.promptText.isNotBlank()) onLoadPositive else null,
-                        onLoadNegative = if (entity.negativeText.isNotBlank()) onLoadNegative else null,
-                        onLoadFull = if (entity.promptText.isNotBlank() && entity.negativeText.isNotBlank()) onLoadFull else null,
-                    )
+                    Box(modifier = Modifier.animateItem()) {
+                        SavedPromptCard(
+                            entity = entity,
+                            onCopy = onCopy,
+                            onDelete = { deletingPrompt = it },
+                            onEdit = { editingPrompt = it },
+                            onToggleEnabled = { viewModel.togglePromptEnabled(it) },
+                            onLoadPositive = if (entity.promptText.isNotBlank()) onLoadPositive else null,
+                            onLoadNegative = if (entity.negativeText.isNotBlank()) onLoadNegative else null,
+                            onLoadFull = if (entity.promptText.isNotBlank() && entity.negativeText.isNotBlank()) onLoadFull else null,
+                        )
+                    }
                 }
             }
         }

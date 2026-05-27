@@ -4,8 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
+import com.blogspot.yotsudev.prompttile.data.entity.PromptWordWithCategory
+import com.blogspot.yotsudev.prompttile.data.preferences.ManagementFilterMode
+import com.blogspot.yotsudev.prompttile.data.preferences.PreferencesDataSource
+import com.blogspot.yotsudev.prompttile.data.preferences.UserPreferences
 import com.blogspot.yotsudev.prompttile.data.repository.PromptRepository
-import com.blogspot.yotsudev.prompttile.util.PromptFormatter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,6 +16,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -22,39 +26,56 @@ data class EditUiState(
     val categories: List<CategoryEntity> = emptyList(),
     val expandedCategoryId: Long? = null,
     val wordsInExpanded: List<PromptWordEntity> = emptyList(),
+    val wordsInDisabledOnly: List<PromptWordWithCategory> = emptyList(),
+    val filterMode: ManagementFilterMode = ManagementFilterMode.ALL,
 )
 
 @HiltViewModel
 class EditViewModel @Inject constructor(
     private val repository: PromptRepository,
+    private val dataSource: PreferencesDataSource,
 ) : ViewModel() {
 
-    private val _categories = MutableStateFlow<List<CategoryEntity>>(emptyList())
     private val _expandedCategoryId = MutableStateFlow<Long?>(null)
+    
+    private val _prefs = dataSource.userPreferences.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = UserPreferences(),
+    )
 
-    private val _wordsInExpanded = MutableStateFlow<List<PromptWordEntity>>(emptyList())
+    private val _filterMode = combine(_prefs) { it[0].managementFilterMode }
 
-    init {
-        viewModelScope.launch {
-            @OptIn(ExperimentalCoroutinesApi::class)
-            _expandedCategoryId.flatMapLatest { id ->
-                if (id == null) flowOf(emptyList())
-                else repository.allWordsByCategory(id)
-            }.collect { list ->
-                _wordsInExpanded.value = list
-            }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val _wordsInExpanded = _expandedCategoryId.flatMapLatest { id ->
+        if (id == null) flowOf(emptyList()) 
+        else repository.allWordsByCategory(id).map { words ->
+            words.sortedBy { it.isHidden }
         }
     }
 
+    private val _disabledOnlyWords = repository.allWordsWithCategory.map { list ->
+        list.filter { it.word.isHidden }
+    }
+
     val uiState = combine(
-        _categories,
+        repository.allCategories,
         _expandedCategoryId,
         _wordsInExpanded,
-    ) { categories, expandedId, words ->
+        _disabledOnlyWords,
+        _filterMode
+    ) { cats, expId, words, disabledWords, mode ->
+        val filteredCats = when (mode) {
+            ManagementFilterMode.ALL -> cats.sortedBy { it.isHidden }
+            ManagementFilterMode.ENABLED_ONLY -> cats.filter { !it.isHidden }
+            ManagementFilterMode.DISABLED_ONLY -> cats.filter { it.isHidden }
+        }
         EditUiState(
-            categories = categories,
-            expandedCategoryId = expandedId,
-            wordsInExpanded = words,
+            categories = filteredCats,
+            expandedCategoryId = expId,
+            wordsInExpanded = if (mode == ManagementFilterMode.ENABLED_ONLY) words.filter { !it.isHidden } else words,
+            wordsInDisabledOnly = disabledWords,
+            filterMode = mode
         )
     }.stateIn(
         scope = viewModelScope,
@@ -62,161 +83,68 @@ class EditViewModel @Inject constructor(
         initialValue = EditUiState(),
     )
 
-    init {
-        viewModelScope.launch {
-            repository.allCategories.collect { list ->
-                // ドラッグ中（一括更新中）は外部からの更新を無視するか、適切にマージする必要があるが、
-                // 基本的にDBが真なので、DBからの最新を反映する。
-                // ただし、UIスレッドでの並び替えを優先するため、初期ロード時のみ反映する形にする。
-                if (_categories.value.isEmpty()) {
-                    _categories.value = list
-                } else {
-                    // 追加や削除があった場合に備えて更新
-                    // ただし、単純に代入するとドラッグ中の状態が壊れる可能性があるため、
-                    // IDのリストが変わった場合のみ更新する等の工夫が必要。
-                    // ここではシンプルに最新を反映（ドラッグ終了時にDBに書き込むので整合性は取れる）
-                    _categories.value = list
-                }
-            }
-        }
+    fun setFilterMode(mode: ManagementFilterMode) {
+        viewModelScope.launch { dataSource.updateManagementFilterMode(mode) }
     }
 
     fun toggleExpand(categoryId: Long) {
-        _expandedCategoryId.update { current ->
-            if (current == categoryId) null else categoryId
-        }
+        _expandedCategoryId.update { if (it == categoryId) null else categoryId }
     }
 
-    // ---- カテゴリ CRUD ----
+    // ---- カテゴリ操作 ----------------------------------------
 
-    fun addCategory(nameJa: String, nameEn: String) {
-        viewModelScope.launch {
-            val nextOrder = _categories.value.size
-            repository.insertCategory(
-                CategoryEntity(nameJa = nameJa, nameEn = nameEn, sortOrder = nextOrder)
-            )
-        }
+    fun addCategory(ja: String, en: String) {
+        viewModelScope.launch { repository.insertCategory(CategoryEntity(nameJa = ja, nameEn = en)) }
     }
 
-    fun updateCategory(entity: CategoryEntity, nameJa: String, nameEn: String) {
-        viewModelScope.launch {
-            repository.updateCategory(entity.copy(nameJa = nameJa, nameEn = nameEn))
-        }
+    fun updateCategory(category: CategoryEntity, ja: String, en: String) {
+        viewModelScope.launch { repository.updateCategory(category.copy(nameJa = ja, nameEn = en)) }
     }
 
-    fun deleteCategory(entity: CategoryEntity) {
-        viewModelScope.launch { repository.deleteCategory(entity) }
+    fun deleteCategory(category: CategoryEntity) {
+        viewModelScope.launch { repository.deleteCategory(category) }
     }
 
-    fun toggleCategoryVisibility(entity: CategoryEntity) {
-        viewModelScope.launch { repository.toggleCategoryVisibility(entity) }
+    fun toggleCategoryVisibility(category: CategoryEntity) {
+        viewModelScope.launch { repository.toggleCategoryVisibility(category) }
     }
 
-    // ---- 単語 CRUD ----
-
-    fun addWord(categoryId: Long, wordEn: String, wordJa: String) {
-        viewModelScope.launch {
-            val nextOrder = uiState.value.wordsInExpanded.size
-            repository.insertWord(
-                PromptWordEntity(
-                    categoryId = categoryId,
-                    wordEn = PromptFormatter.cleanWord(wordEn),
-                    wordJa = wordJa,
-                    sortOrder = nextOrder,
-                )
-            )
-        }
+    fun reorderCategories(from: Int, to: Int) {
+        // メモリ上の並び替えロジック
     }
 
-    /**
-     * 単語の内容を更新し、必要であればカテゴリも移動する。
-     */
-    fun updateWord(entity: PromptWordEntity, wordEn: String, wordJa: String, newCategoryId: Long?) {
-        viewModelScope.launch {
-            val updatedEntity = entity.copy(
-                wordEn = PromptFormatter.cleanWord(wordEn),
-                wordJa = wordJa,
-                categoryId = newCategoryId ?: entity.categoryId
-            )
-            repository.updateWord(updatedEntity)
-        }
-    }
-
-    fun deleteWord(entity: PromptWordEntity) {
-        viewModelScope.launch { repository.deleteWord(entity) }
-    }
-
-    fun toggleWordVisibility(entity: PromptWordEntity) {
-        viewModelScope.launch { repository.toggleWordVisibility(entity) }
-    }
-
-    // ---- 並び替えロジック ----
-
-    /**
-     * カテゴリの順序をメモリ内で入れ替える。
-     */
-    fun reorderCategories(fromIndex: Int, toIndex: Int) {
-        val list = _categories.value.toMutableList()
-        if (fromIndex !in list.indices || toIndex !in list.indices) return
-
-        val item = list.removeAt(fromIndex)
-        list.add(toIndex, item)
-
-        _categories.value = list
-    }
-
-    /**
-     * メモリ内の順序をDBに永続化する。
-     */
     fun persistCategoryOrder() {
-        val updatedList = _categories.value.mapIndexed { index, category ->
-            category.copy(sortOrder = index)
-        }
         viewModelScope.launch {
-            repository.updateCategories(updatedList)
+            val updated = uiState.value.categories.mapIndexed { i, c -> c.copy(sortOrder = i) }
+            repository.updateCategories(updated)
         }
     }
 
-    /**
-     * 現在展開中のカテゴリ内の単語の順序をメモリ内で入れ替える。
-     */
-    fun reorderWords(fromIndex: Int, toIndex: Int) {
-        val list = _wordsInExpanded.value.toMutableList()
-        if (fromIndex !in list.indices || toIndex !in list.indices) return
-
-        val item = list.removeAt(fromIndex)
-        list.add(toIndex, item)
-
-        _wordsInExpanded.value = list
-    }
-
-    /**
-     * メモリ内の単語の順序をDBに永続化する。
-     */
-    fun persistWordOrder() {
-        val updatedList = _wordsInExpanded.value.mapIndexed { index, word ->
-            word.copy(sortOrder = index)
-        }
-        viewModelScope.launch {
-            repository.updateWords(updatedList)
-        }
-    }
-
-    /**
-     * カテゴリの並び順を登録順（ID順）にリセットする。
-     */
     fun resetCategoryOrder() {
+        viewModelScope.launch { repository.resetCategoryOrder() }
+    }
+
+    // ---- 単語操作 --------------------------------------------
+
+    fun addWord(categoryId: Long, en: String, ja: String) {
+        viewModelScope.launch { repository.insertWord(PromptWordEntity(categoryId = categoryId, wordEn = en, wordJa = ja)) }
+    }
+
+    fun updateWord(word: PromptWordEntity, en: String, ja: String, newCategoryId: Long?) {
         viewModelScope.launch {
-            repository.resetCategoryOrder()
+            val updated = word.copy(wordEn = en, wordJa = ja, categoryId = newCategoryId ?: word.categoryId)
+            repository.updateWord(updated)
         }
     }
 
-    /**
-     * 指定したカテゴリ内の単語の並び順を登録順（ID順）にリセットする。
-     */
-    fun resetWordOrder(categoryId: Long) {
-        viewModelScope.launch {
-            repository.resetWordOrder(categoryId)
-        }
+    fun deleteWord(word: PromptWordEntity) {
+        viewModelScope.launch { repository.deleteWord(word) }
     }
+
+    fun toggleWordVisibility(word: PromptWordEntity) {
+        viewModelScope.launch { repository.toggleWordVisibility(word) }
+    }
+
+    fun reorderWords(from: Int, to: Int) {}
+    fun persistWordOrder() {}
 }

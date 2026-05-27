@@ -3,6 +3,7 @@ package com.blogspot.yotsudev.prompttile.data.dao
 import androidx.room.Dao
 import androidx.room.Query
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
+import com.blogspot.yotsudev.prompttile.data.entity.PromptWordWithCategory
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -19,6 +20,15 @@ interface PromptWordDao : BaseDao<PromptWordEntity> {
         categoryId: Long,
         includeHidden: Boolean = false
     ): Flow<List<PromptWordEntity>>
+
+    /** 全ての単語をカテゴリ情報付きで取得する */
+    @Query("""
+        SELECT w.*, c.nameJa AS categoryNameJa, c.nameEn AS categoryNameEn
+        FROM prompt_words w
+        INNER JOIN categories c ON w.categoryId = c.id
+        ORDER BY c.sortOrder ASC, w.sortOrder ASC
+    """)
+    fun observeAllWithCategory(): Flow<List<PromptWordWithCategory>>
 
     @Query("SELECT wordEn FROM prompt_words WHERE categoryId = :categoryId")
     suspend fun getWordEnsByCategory(categoryId: Long): List<String>

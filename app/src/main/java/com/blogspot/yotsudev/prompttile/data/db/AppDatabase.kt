@@ -19,17 +19,17 @@ import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
         CategoryEntity::class,
         PromptWordEntity::class,
         SavedPromptEntity::class,
-        ToppingGroupEntity::class,  // 追加
-        ToppingItemEntity::class,   // 追加
+        ToppingGroupEntity::class,
+        ToppingItemEntity::class,
     ],
-    version = 7, // 6 → 7: toppingGroupId追加・トッピングテーブル新設
+    version = 8, // 7 → 8: SavedPromptEntityにisDefault, isEnabled追加・シード更新
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
     abstract fun promptWordDao(): PromptWordDao
     abstract fun savedPromptDao(): SavedPromptDao
-    abstract fun toppingDao(): ToppingDao   // 追加
+    abstract fun toppingDao(): ToppingDao
 
     companion object {
 
@@ -37,13 +37,13 @@ abstract class AppDatabase : RoomDatabase() {
             override fun onCreate(db: SupportSQLiteDatabase) {
                 super.onCreate(db)
 
-                val json = context.assets
+                val jsonText = context.assets
                     .open("seed_data.json")
                     .bufferedReader()
                     .use { it.readText() }
 
                 // ---- カテゴリ＆単語のシード ----
-                val seedData = parseSeedData(json)
+                val seedData = parseSeedData(jsonText)
                 seedData.categories.forEachIndexed { catIndex, category ->
                     db.execSQL(
                         """
@@ -60,7 +60,6 @@ abstract class AppDatabase : RoomDatabase() {
                         """.trimIndent()
                     )
                     category.words.forEachIndexed { wordIndex, word ->
-                        // toppingGroupId を含む INSERT に変更
                         val groupIdVal = if (word.toppingGroupId != null) word.toppingGroupId else "NULL"
                         db.execSQL(
                             """
@@ -103,6 +102,17 @@ abstract class AppDatabase : RoomDatabase() {
                             """.trimIndent()
                         )
                     }
+                }
+
+                // ---- テンプレートのシード (saved_prompts に統合) ----
+                val templates = com.blogspot.yotsudev.prompttile.data.seed.parsePrefixTemplates(jsonText)
+                templates.forEachIndexed { i, t ->
+                    db.execSQL(
+                        """
+                        INSERT INTO saved_prompts (title, promptText, negativeText, isDefault, isEnabled, createdAt)
+                        VALUES ('${t.name.escapeSql()}', '${t.text.escapeSql()}', '', 1, 1, ${System.currentTimeMillis() + i})
+                        """.trimIndent()
+                    )
                 }
             }
         }

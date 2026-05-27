@@ -31,10 +31,13 @@ import com.blogspot.yotsudev.prompttile.ui.components.StyledDialog
 fun AddPromptDialog(
     onConfirm: (title: String, positive: String, negative: String) -> Unit,
     onDismiss: () -> Unit,
+    initialTitle: String = "",
+    initialPositive: String = "",
+    initialNegative: String = "",
 ) {
-    var title    by rememberSaveable { mutableStateOf("") }
-    var positive by rememberSaveable { mutableStateOf("") }
-    var negative by rememberSaveable { mutableStateOf("") }
+    var title    by rememberSaveable { mutableStateOf(initialTitle) }
+    var positive by rememberSaveable { mutableStateOf(initialPositive) }
+    var negative by rememberSaveable { mutableStateOf(initialNegative) }
 
     val canSave = positive.isNotBlank() || negative.isNotBlank()
 
