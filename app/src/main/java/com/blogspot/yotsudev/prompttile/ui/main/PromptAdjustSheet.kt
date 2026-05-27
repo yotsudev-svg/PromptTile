@@ -19,15 +19,17 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -40,27 +42,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.blogspot.yotsudev.prompttile.R
 import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
-
-/** 重み選択肢の定義。(labelRes, weight値) */
-private val WEIGHT_OPTIONS = listOf(
-    R.string.adjust_weight_none  to null,
-    R.string.adjust_weight_1_2   to 1.2f,
-    R.string.adjust_weight_1_5   to 1.5f,
-    R.string.adjust_weight_0_8   to 0.8f,
-)
+import kotlin.math.roundToInt
 
 /**
  * プロンプトエリアのチップをタップすると表示される調整コックピット。
  *
- * 機能:
- * 1. 重みの一発変更（なし / 1.2 / 1.5 / 0.8）
+ * 改善後の機能:
+ * 1. 強調度（重み）のハイブリッド調整（スライダー 0.1刻み / ボタン 0.05刻み）
  * 2. トッピングの変更（対応単語のみ動的表示）
  * 3. 単語の削除
- *
- * [item] が null のときシートは非表示になる（呼び出し元で制御）。
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,6 +67,9 @@ fun PromptAdjustSheet(
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    
+    // 現在の重み（null は 1.0f として扱う）
+    val currentWeight = item.weight ?: 1.0f
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -118,38 +115,72 @@ fun PromptAdjustSheet(
             }
 
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(12.dp))
 
-            // ---- セクション1: 重みの一発変更 ----
-            Text(
-                text = stringResource(R.string.adjust_section_weight),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-            )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                WEIGHT_OPTIONS.forEach { (labelRes, weight) ->
-                    val isSelected = item.weight == weight ||
-                            (weight == null && (item.weight == null || item.weight == 1.0f))
-                    WeightButton(
-                        label = stringResource(labelRes),
-                        isSelected = isSelected,
-                        onClick = { onWeightSelect(weight) },
-                        modifier = Modifier.weight(1f),
+            // ---- セクション1: 強調度のハイブリッド調整 ----
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = stringResource(R.string.adjust_section_weight),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
                     )
+                    Text(
+                        text = String.format("%.2f", currentWeight),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // マイナスボタン (0.05刻み)
+                    IconButton(
+                        onClick = {
+                            val next = (currentWeight - 0.05f).coerceIn(0.2f, 1.8f)
+                            onWeightSelect(if (next == 1.0f) null else next)
+                        }
+                    ) {
+                        Icon(Icons.Default.Remove, contentDescription = "Decrease")
+                    }
+
+                    // スライダー (滑らかに見えて 0.1 刻みにスナップ、中央 1.0)
+                    Slider(
+                        value = currentWeight,
+                        onValueChange = { 
+                            val next = (it * 10f).roundToInt() / 10f // 0.1刻みにスナップ
+                            onWeightSelect(if (next == 1.0f) null else next)
+                        },
+                        valueRange = 0.2f..1.8f,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    // プラスボタン (0.05刻み)
+                    IconButton(
+                        onClick = {
+                            val next = (currentWeight + 0.05f).coerceIn(0.2f, 1.8f)
+                            onWeightSelect(if (next == 1.0f) null else next)
+                        }
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Increase")
+                    }
                 }
             }
 
             // ---- セクション2: トッピング変更（対応単語のみ） ----
             if (toppingItems.isNotEmpty()) {
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(16.dp))
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(12.dp))
 
                 Text(
                     text = stringResource(R.string.adjust_section_topping),
@@ -188,34 +219,6 @@ fun PromptAdjustSheet(
     }
 }
 
-// ─── WeightButton ─────────────────────────────────────────────────────────────
-
-@Composable
-private fun WeightButton(
-    label: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    if (isSelected) {
-        FilledTonalButton(
-            onClick = onClick,
-            modifier = modifier,
-            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
-        ) {
-            Text(label, style = MaterialTheme.typography.labelMedium)
-        }
-    } else {
-        OutlinedButton(
-            onClick = onClick,
-            modifier = modifier,
-            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
-        ) {
-            Text(label, style = MaterialTheme.typography.labelMedium)
-        }
-    }
-}
-
 // ─── ToppingSelectChip（調整シート内） ────────────────────────────────────────
 
 @Composable
@@ -229,7 +232,6 @@ private fun ToppingSelectChip(
         colorHex?.let { runCatching { Color(android.graphics.Color.parseColor(it)) }.getOrNull() }
     }
     
-    // WeightButton のスタイル（選択: FilledTonal, 未選択: Outlined）に合わせる
     val containerColor = if (isSelected)
         MaterialTheme.colorScheme.primaryContainer
     else
@@ -244,7 +246,7 @@ private fun ToppingSelectChip(
         shape = RoundedCornerShape(20.dp),
         color = containerColor,
         border = if (isSelected) {
-            null // 選択時は枠線なし（WeightButton と完全に合わせる）
+            null
         } else {
             androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
         },

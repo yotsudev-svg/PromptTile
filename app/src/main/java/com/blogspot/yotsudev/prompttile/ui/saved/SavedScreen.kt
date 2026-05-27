@@ -7,25 +7,33 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Reorder
+import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -36,11 +44,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.blogspot.yotsudev.prompttile.R
 import com.blogspot.yotsudev.prompttile.data.entity.SavedPromptEntity
+import com.blogspot.yotsudev.prompttile.data.preferences.ManagementFilterMode
 import com.blogspot.yotsudev.prompttile.ui.components.ConfirmDeleteDialog
 import com.blogspot.yotsudev.prompttile.ui.components.PromptTileTopAppBar
 import com.blogspot.yotsudev.prompttile.ui.main.PromptMode
 import com.blogspot.yotsudev.prompttile.ui.main.PromptViewModel
 import kotlinx.coroutines.launch
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,6 +69,7 @@ fun SavedScreen(
     var deletingPrompt by remember { mutableStateOf<SavedPromptEntity?>(null) }
     var editingPrompt by remember { mutableStateOf<SavedPromptEntity?>(null) }
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
+    var showResetOrderDialog by remember { mutableStateOf(false) }
 
     val msgCopied = stringResource(R.string.msg_prompt_copied)
     val msgPositiveAdded = stringResource(R.string.msg_positive_added)
@@ -137,6 +150,24 @@ fun SavedScreen(
         )
     }
 
+    if (showResetOrderDialog) {
+        AlertDialog(
+            onDismissRequest = { showResetOrderDialog = false },
+            title = { Text("並び順のリセット") },
+            text = { Text("保存済みプロンプトの並び順をデフォルト（登録順）に戻しますか？") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.resetOrder()
+                    showResetOrderDialog = false
+                    scope.launch { snackbarHostState.showSnackbar("並び順をリセットしました") }
+                }) { Text("リセット") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetOrderDialog = false }) { Text("キャンセル") }
+            }
+        )
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -144,7 +175,12 @@ fun SavedScreen(
             PromptTileTopAppBar(
                 title = stringResource(R.string.saved_title),
                 filterMode = filterMode,
-                onFilterModeChange = viewModel::setFilterMode
+                onFilterModeChange = viewModel::setFilterMode,
+                actions = {
+                    IconButton(onClick = { showResetOrderDialog = true }) {
+                        Icon(Icons.Default.RestartAlt, contentDescription = "並び順をリセット")
+                    }
+                }
             )
         },
         floatingActionButton = {
@@ -169,7 +205,25 @@ fun SavedScreen(
                 )
             }
         } else {
+            val lazyListState = rememberLazyListState()
+            val reorderableLazyColumnState = rememberReorderableLazyListState(lazyListState) { from, to ->
+                viewModel.reorderPrompts(from.index, to.index)
+            }
+
+            if (filterMode != ManagementFilterMode.DISABLED_ONLY) {
+                LaunchedEffect(reorderableLazyColumnState) {
+                    snapshotFlow { reorderableLazyColumnState.isAnyItemDragging }
+                        .collect { isDragging ->
+                            viewModel.setIsDragging(isDragging)
+                            if (!isDragging) {
+                                viewModel.persistOrder()
+                            }
+                        }
+                }
+            }
+
             LazyColumn(
+                state = lazyListState,
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
                     start = 16.dp,
@@ -184,17 +238,29 @@ fun SavedScreen(
                     key = { it.id },
                     contentType = { "saved_prompt_card" }
                 ) { entity ->
-                    Box(modifier = Modifier.animateItem()) {
-                        SavedPromptCard(
-                            entity = entity,
-                            onCopy = onCopy,
-                            onDelete = { deletingPrompt = it },
-                            onEdit = { editingPrompt = it },
-                            onToggleEnabled = { viewModel.togglePromptEnabled(it) },
-                            onLoadPositive = if (entity.promptText.isNotBlank()) onLoadPositive else null,
-                            onLoadNegative = if (entity.negativeText.isNotBlank()) onLoadNegative else null,
-                            onLoadFull = if (entity.promptText.isNotBlank() && entity.negativeText.isNotBlank()) onLoadFull else null,
-                        )
+                    ReorderableItem(reorderableLazyColumnState, key = entity.id) { isDragging ->
+                        Box(modifier = Modifier.animateItem()) {
+                            SavedPromptCard(
+                                entity = entity,
+                                onCopy = onCopy,
+                                onDelete = { deletingPrompt = it },
+                                onEdit = { editingPrompt = it },
+                                onToggleEnabled = { viewModel.togglePromptEnabled(it) },
+                                onLoadPositive = if (entity.promptText.isNotBlank()) onLoadPositive else null,
+                                onLoadNegative = if (entity.negativeText.isNotBlank()) onLoadNegative else null,
+                                onLoadFull = if (entity.promptText.isNotBlank() && entity.negativeText.isNotBlank()) onLoadFull else null,
+                                dragHandle = {
+                                    if (filterMode != ManagementFilterMode.DISABLED_ONLY) {
+                                        Icon(
+                                            imageVector = Icons.Default.Reorder,
+                                            contentDescription = "ドラッグして移動",
+                                            modifier = Modifier.draggableHandle().padding(horizontal = 8.dp),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                        )
+                                    }
+                                }
+                            )
+                        }
                     }
                 }
             }

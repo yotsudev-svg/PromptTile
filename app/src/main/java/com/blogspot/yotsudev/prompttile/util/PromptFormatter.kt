@@ -7,11 +7,22 @@ object PromptFormatter {
 
     /**
      * 単語をプロンプト用に整形する（重み付け対応）。
+     *
+     * 0.05 刻みの微調整に対応しつつ、無駄な末尾の 0 を省く。
+     * 例: 1.20 -> 1.2, 1.15 -> 1.15
      */
     fun formatItem(item: PromptItem): String {
+        val weight = item.weight
         return when {
-            item.weight == null || item.weight == 1.0f -> item.baseText
-            else -> "(${item.baseText}:${String.format(Locale.US, "%.1f", item.weight)})"
+            weight == null || weight == 1.0f -> item.baseText
+            else -> {
+                // 小数点以下2桁でフォーマットし、末尾の0を消す
+                // 1.20 -> 1.2, 1.15 -> 1.15
+                val weightStr = String.format(Locale.US, "%.2f", weight)
+                    .replace(Regex("0+$"), "") // 末尾の0を削除
+                    .replace(Regex("\\.$"), ".0") // もし 1. になったら 1.0 に戻す（念の為）
+                "(${item.baseText}:${weightStr})"
+            }
         }
     }
 

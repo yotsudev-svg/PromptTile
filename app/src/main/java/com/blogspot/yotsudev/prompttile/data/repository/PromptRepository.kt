@@ -145,4 +145,10 @@ class PromptRepository @Inject constructor(
 
     suspend fun deletePrompt(entity: SavedPromptEntity) =
         withContext(Dispatchers.IO) { savedPromptDao.delete(entity) }
+
+    suspend fun updateSavedPrompts(list: List<SavedPromptEntity>) =
+        withContext(Dispatchers.IO) { savedPromptDao.updateAll(list) }
+
+    suspend fun resetSavedPromptOrder() =
+        withContext(Dispatchers.IO) { savedPromptDao.resetOrderToId() }
 }

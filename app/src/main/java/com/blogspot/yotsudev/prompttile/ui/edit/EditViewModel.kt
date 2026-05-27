@@ -26,8 +26,9 @@ data class EditUiState(
     val categories: List<CategoryEntity> = emptyList(),
     val expandedCategoryId: Long? = null,
     val wordsInExpanded: List<PromptWordEntity> = emptyList(),
-    val wordsInDisabledOnly: List<PromptWordWithCategory> = emptyList(),
+    val allDisabledWords: List<PromptWordWithCategory> = emptyList(),
     val filterMode: ManagementFilterMode = ManagementFilterMode.ALL,
+    val isDragging: Boolean = false,
 )
 
 @HiltViewModel
@@ -37,45 +38,74 @@ class EditViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _expandedCategoryId = MutableStateFlow<Long?>(null)
-    
+    private val _isDragging = MutableStateFlow(false)
+
     private val _prefs = dataSource.userPreferences.stateIn(
         scope = viewModelScope,
         started = SharingStarted.Eagerly,
         initialValue = UserPreferences(),
     )
 
-    private val _filterMode = combine(_prefs) { it[0].managementFilterMode }
+    private val _filterMode = _prefs.map { it.managementFilterMode }
+
+    // ---- ドラッグ中の一時的な並び替え状態（nullのときはDBの値を優先） ----
+    private val _reorderedCategories = MutableStateFlow<List<CategoryEntity>?>(null)
+    private val _reorderedWords = MutableStateFlow<List<PromptWordEntity>?>(null)
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val _wordsInExpanded = _expandedCategoryId.flatMapLatest { id ->
-        if (id == null) flowOf(emptyList()) 
-        else repository.allWordsByCategory(id).map { words ->
-            words.sortedBy { it.isHidden }
+    private val _categoriesFlow = combine(
+        repository.allCategories,
+        _filterMode,
+        _reorderedCategories
+    ) { cats, mode, reordered ->
+        if (reordered != null) return@combine reordered
+
+        when (mode) {
+            ManagementFilterMode.ALL -> cats
+            ManagementFilterMode.ENABLED_ONLY -> cats.filter { !it.isHidden }
+            ManagementFilterMode.DISABLED_ONLY -> cats.filter { it.isHidden }
+            else -> cats
         }
     }
 
-    private val _disabledOnlyWords = repository.allWordsWithCategory.map { list ->
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val _wordsInExpanded = combine(
+        _expandedCategoryId,
+        _filterMode,
+        _reorderedWords
+    ) { expId, mode, reordered ->
+        if (expId == null) return@combine flowOf(emptyList<PromptWordEntity>())
+        if (reordered != null) return@combine flowOf(reordered)
+
+        repository.allWordsByCategory(expId).map { words ->
+            when (mode) {
+                ManagementFilterMode.ALL -> words
+                ManagementFilterMode.ENABLED_ONLY -> words.filter { !it.isHidden }
+                ManagementFilterMode.DISABLED_ONLY -> words.filter { it.isHidden }
+                else -> words
+            }
+        }
+    }.flatMapLatest { it }
+
+    private val _allDisabledWords = repository.allWordsWithCategory.map { list ->
         list.filter { it.word.isHidden }
     }
 
     val uiState = combine(
-        repository.allCategories,
+        _categoriesFlow,
         _expandedCategoryId,
         _wordsInExpanded,
-        _disabledOnlyWords,
-        _filterMode
-    ) { cats, expId, words, disabledWords, mode ->
-        val filteredCats = when (mode) {
-            ManagementFilterMode.ALL -> cats.sortedBy { it.isHidden }
-            ManagementFilterMode.ENABLED_ONLY -> cats.filter { !it.isHidden }
-            ManagementFilterMode.DISABLED_ONLY -> cats.filter { it.isHidden }
-        }
+        _allDisabledWords,
+        _filterMode,
+        _isDragging,
+    ) { args: Array<Any?> ->
         EditUiState(
-            categories = filteredCats,
-            expandedCategoryId = expId,
-            wordsInExpanded = if (mode == ManagementFilterMode.ENABLED_ONLY) words.filter { !it.isHidden } else words,
-            wordsInDisabledOnly = disabledWords,
-            filterMode = mode
+            categories = args[0] as List<CategoryEntity>,
+            expandedCategoryId = args[1] as Long?,
+            wordsInExpanded = args[2] as List<PromptWordEntity>,
+            allDisabledWords = args[3] as List<PromptWordWithCategory>,
+            filterMode = args[4] as ManagementFilterMode,
+            isDragging = args[5] as Boolean
         )
     }.stateIn(
         scope = viewModelScope,
@@ -89,12 +119,20 @@ class EditViewModel @Inject constructor(
 
     fun toggleExpand(categoryId: Long) {
         _expandedCategoryId.update { if (it == categoryId) null else categoryId }
+        _reorderedWords.value = null
+    }
+
+    fun setIsDragging(dragging: Boolean) {
+        _isDragging.value = dragging
     }
 
     // ---- カテゴリ操作 ----------------------------------------
 
     fun addCategory(ja: String, en: String) {
-        viewModelScope.launch { repository.insertCategory(CategoryEntity(nameJa = ja, nameEn = en)) }
+        viewModelScope.launch {
+            val maxSortOrder = uiState.value.categories.maxOfOrNull { it.sortOrder } ?: 0
+            repository.insertCategory(CategoryEntity(nameJa = ja, nameEn = en, sortOrder = maxSortOrder + 1))
+        }
     }
 
     fun updateCategory(category: CategoryEntity, ja: String, en: String) {
@@ -110,24 +148,41 @@ class EditViewModel @Inject constructor(
     }
 
     fun reorderCategories(from: Int, to: Int) {
-        // メモリ上の並び替えロジック
+        val current = uiState.value.categories.toMutableList()
+        if (from !in current.indices || to !in current.indices) return
+        val item = current.removeAt(from)
+        current.add(to, item)
+        _reorderedCategories.value = current
     }
 
     fun persistCategoryOrder() {
+        val list = _reorderedCategories.value ?: return
         viewModelScope.launch {
-            val updated = uiState.value.categories.mapIndexed { i, c -> c.copy(sortOrder = i) }
+            val updated = list.mapIndexed { i, c -> c.copy(sortOrder = i) }
             repository.updateCategories(updated)
+            _reorderedCategories.value = null
+            _isDragging.value = false // ドラッグ終了を明示
         }
     }
 
-    fun resetCategoryOrder() {
-        viewModelScope.launch { repository.resetCategoryOrder() }
+    fun resetOrder() {
+        viewModelScope.launch {
+            val expId = _expandedCategoryId.value
+            if (expId != null) {
+                repository.resetWordOrder(expId)
+            } else {
+                repository.resetCategoryOrder()
+            }
+        }
     }
 
     // ---- 単語操作 --------------------------------------------
 
     fun addWord(categoryId: Long, en: String, ja: String) {
-        viewModelScope.launch { repository.insertWord(PromptWordEntity(categoryId = categoryId, wordEn = en, wordJa = ja)) }
+        viewModelScope.launch {
+            val maxSortOrder = uiState.value.wordsInExpanded.maxOfOrNull { it.sortOrder } ?: 0
+            repository.insertWord(PromptWordEntity(categoryId = categoryId, wordEn = en, wordJa = ja, sortOrder = maxSortOrder + 1))
+        }
     }
 
     fun updateWord(word: PromptWordEntity, en: String, ja: String, newCategoryId: Long?) {
@@ -145,6 +200,21 @@ class EditViewModel @Inject constructor(
         viewModelScope.launch { repository.toggleWordVisibility(word) }
     }
 
-    fun reorderWords(from: Int, to: Int) {}
-    fun persistWordOrder() {}
+    fun reorderWords(from: Int, to: Int) {
+        val current = uiState.value.wordsInExpanded.toMutableList()
+        if (from !in current.indices || to !in current.indices) return
+        val item = current.removeAt(from)
+        current.add(to, item)
+        _reorderedWords.value = current
+    }
+
+    fun persistWordOrder() {
+        val list = _reorderedWords.value ?: return
+        viewModelScope.launch {
+            val updated = list.mapIndexed { i, w -> w.copy(sortOrder = i) }
+            repository.updateWords(updated)
+            _reorderedWords.value = null
+            _isDragging.value = false // ドラッグ終了を明示
+        }
+    }
 }

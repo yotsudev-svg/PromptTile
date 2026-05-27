@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -143,18 +144,16 @@ fun CategoryEditCard(
                 )
 
                 if (words.isNotEmpty()) {
-                    // ReorderableColumn (sh.calvin.reorderable 3.1.0)
-                    ReorderableColumn(
-                        list = words,
-                        onSettle = { from, to ->
-                            onReorderWords(from, to)
-                            onSettleWords()
-                        },
-                    ) { _, word, _ ->
-                        ReorderableItem {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .animateContentSize(),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        words.forEach { word ->
                             WordEditRow(
                                 word = word,
-                                categoryName = null, // 通常表示時はカテゴリ名不要
+                                categoryName = null,
                                 onEdit = { onEditWordClick(word) },
                                 onDelete = { onDeleteWordClick(word) },
                                 onToggleVisibility = { onToggleWordVisibility(word) },
@@ -162,7 +161,7 @@ fun CategoryEditCard(
                                     Icon(
                                         imageVector = Icons.Default.Reorder,
                                         contentDescription = "並び替え",
-                                        modifier = Modifier.draggableHandle().padding(horizontal = 12.dp),
+                                        modifier = Modifier.padding(horizontal = 12.dp),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                                     )
                                 }

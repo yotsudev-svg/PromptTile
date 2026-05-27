@@ -80,7 +80,7 @@ fun EditScreen(
             text = { Text("カテゴリの並び順をデフォルト（登録順）に戻しますか？") },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.resetCategoryOrder()
+                    viewModel.resetOrder()
                     showResetOrderDialog = false
                     scope.launch { snackbarHostState.showSnackbar("並び順をリセットしました") }
                 }) { Text("リセット") }
@@ -185,14 +185,15 @@ fun EditScreen(
             }
         },
     ) { innerPadding ->
-        val isEmpty = if (uiState.filterMode == ManagementFilterMode.DISABLED_ONLY)
-            uiState.categories.isEmpty() && uiState.wordsInDisabledOnly.isEmpty() 
-        else uiState.categories.isEmpty()
+        val isEmpty = when (uiState.filterMode) {
+            ManagementFilterMode.DISABLED_ONLY -> uiState.categories.isEmpty() && uiState.allDisabledWords.isEmpty()
+            else -> uiState.categories.isEmpty()
+        }
 
         if (isEmpty) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    text = if (uiState.filterMode == ManagementFilterMode.DISABLED_ONLY) "非表示の単語はありません" else stringResource(R.string.edit_empty_prompt),
+                    text = if (uiState.filterMode == ManagementFilterMode.DISABLED_ONLY) "非表示のアイテムはありません" else stringResource(R.string.edit_empty_prompt),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -207,6 +208,7 @@ fun EditScreen(
                 LaunchedEffect(reorderableLazyColumnState) {
                     snapshotFlow { reorderableLazyColumnState.isAnyItemDragging }
                         .collect { isDragging ->
+                            viewModel.setIsDragging(isDragging)
                             if (!isDragging) {
                                 viewModel.persistCategoryOrder()
                             }
@@ -225,11 +227,19 @@ fun EditScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
-                // 1. 非表示のカテゴリを最優先で表示
+                // 1. カテゴリ一覧（ALL / ENABLED_ONLY では全対象、DISABLED_ONLY では非表示カテゴリのみ）
+                if (uiState.filterMode == ManagementFilterMode.DISABLED_ONLY && uiState.categories.isNotEmpty()) {
+                    item {
+                        Text(
+                            text = "非表示のカテゴリ",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            modifier = Modifier.padding(start = 8.dp, top = 8.dp, bottom = 4.dp)
+                        )
+                    }
+                }
+
                 itemsIndexed(uiState.categories, key = { _, category -> category.id }) { _, category ->
-                    // ENABLED_ONLY の時は表示されない（ViewModelでフィルタ済み）
-                    // DISABLED_ONLY の時は isHidden=true のものだけ表示される
-                    // ALL の時は全部表示される
                     ReorderableItem(reorderableLazyColumnState, key = category.id) { isDragging ->
                         val isExpanded = category.id == uiState.expandedCategoryId
                         Box(modifier = Modifier.animateItem()) {
@@ -249,37 +259,32 @@ fun EditScreen(
                                 onSettleWords = { viewModel.persistWordOrder() },
                                 isDragging = isDragging,
                                 dragHandle = {
-                                    Icon(
-                                        imageVector = Icons.Default.Reorder,
-                                        contentDescription = "ドラッグして移動",
-                                        modifier = Modifier.draggableHandle().padding(horizontal = 8.dp),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                    )
+                                    if (uiState.filterMode != ManagementFilterMode.DISABLED_ONLY) {
+                                        Icon(
+                                            imageVector = Icons.Default.Reorder,
+                                            contentDescription = "ドラッグして移動",
+                                            modifier = Modifier.draggableHandle().padding(horizontal = 8.dp),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                        )
+                                    }
                                 }
                             )
                         }
                     }
                 }
 
-                // 2. 「親カテゴリは表示中だが、中身の単語だけ非表示」な単語をフラットに表示
-                // DISABLED_ONLY または ALL モードの時のみ表示
-                if (uiState.filterMode != ManagementFilterMode.ENABLED_ONLY) {
-                    val orphanDisabledWords = uiState.wordsInDisabledOnly.filter { item ->
-                        // 親カテゴリが uiState.categories に含まれていない（=非表示カテゴリではない）
-                        // かつ、その単語が既にツリー内で表示されていない場合に抽出
-                        uiState.categories.none { it.id == item.word.categoryId }
-                    }
-
-                    if (orphanDisabledWords.isNotEmpty()) {
+                // 2. 「非表示のみ」フィルター時：全ての非表示単語をフラットに表示
+                if (uiState.filterMode == ManagementFilterMode.DISABLED_ONLY) {
+                    if (uiState.allDisabledWords.isNotEmpty()) {
                         item {
                             Text(
-                                text = "非表示の単語 (個別)",
+                                text = "非表示の単語",
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                modifier = Modifier.padding(start = 8.dp, top = 8.dp, bottom = 4.dp)
+                                modifier = Modifier.padding(start = 8.dp, top = 16.dp, bottom = 4.dp)
                             )
                         }
-                        itemsIndexed(orphanDisabledWords, key = { _, item -> "orphan_${item.word.id}" }) { _, item ->
+                        itemsIndexed(uiState.allDisabledWords, key = { _, item -> "hidden_word_${item.word.id}" }) { _, item ->
                             Box(modifier = Modifier.animateItem()) {
                                 Card(
                                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -287,7 +292,7 @@ fun EditScreen(
                                 ) {
                                     WordEditRow(
                                         word = item.word,
-                                        categoryName = item.categoryNameJa,
+                                        categoryName = item.categoryNameJa, // 親カテゴリ名を表示
                                         onEdit = { editingWord = item.word },
                                         onDelete = { deletingWord = item.word },
                                         onToggleVisibility = { viewModel.toggleWordVisibility(item.word) },

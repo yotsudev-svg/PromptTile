@@ -20,5 +20,6 @@ data class SavedPromptEntity(
     val negativeText: String = "",
     val isDefault: Boolean = false,
     val isEnabled: Boolean = true,
+    val sortOrder: Int = 0,
     val createdAt: Long = System.currentTimeMillis(),
 )

@@ -75,10 +75,7 @@ data class PromptItem(
         get() = if (selectedTopping != null) "$selectedTopping $wordEn" else wordEn
 
     val formatted: String
-        get() = when {
-            weight == null || weight == 1.0f -> baseText
-            else -> "(${baseText}:${String.format("%.1f", weight)})"
-        }
+        get() = com.blogspot.yotsudev.prompttile.util.PromptFormatter.formatItem(this)
 }
 
 data class ClipboardImportItem(

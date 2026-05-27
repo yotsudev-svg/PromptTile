@@ -9,6 +9,7 @@ import com.blogspot.yotsudev.prompttile.data.preferences.UserPreferences
 import com.blogspot.yotsudev.prompttile.data.repository.PromptRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
@@ -20,6 +21,9 @@ class SavedViewModel @Inject constructor(
     private val repository: PromptRepository,
     private val dataSource: PreferencesDataSource,
 ) : ViewModel() {
+
+    private val _isDragging = MutableStateFlow(false)
+    private val _reorderedPrompts = MutableStateFlow<List<SavedPromptEntity>?>(null)
 
     private val _prefs = dataSource.userPreferences.stateIn(
         scope = viewModelScope,
@@ -35,10 +39,13 @@ class SavedViewModel @Inject constructor(
 
     val savedPrompts = combine(
         repository.savedPrompts,
-        filterMode
-    ) { prompts, mode ->
+        filterMode,
+        _reorderedPrompts
+    ) { prompts, mode, reordered ->
+        if (reordered != null) return@combine reordered
+
         when (mode) {
-            ManagementFilterMode.ALL -> prompts.sortedBy { !it.isEnabled }
+            ManagementFilterMode.ALL -> prompts
             ManagementFilterMode.ENABLED_ONLY -> prompts.filter { it.isEnabled }
             ManagementFilterMode.DISABLED_ONLY -> prompts.filter { !it.isEnabled }
         }
@@ -47,6 +54,34 @@ class SavedViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = emptyList(),
     )
+
+    fun setIsDragging(dragging: Boolean) {
+        _isDragging.value = dragging
+    }
+
+    fun reorderPrompts(from: Int, to: Int) {
+        val current = savedPrompts.value.toMutableList()
+        if (from !in current.indices || to !in current.indices) return
+        val item = current.removeAt(from)
+        current.add(to, item)
+        _reorderedPrompts.value = current
+    }
+
+    fun persistOrder() {
+        val list = _reorderedPrompts.value ?: return
+        viewModelScope.launch {
+            val updated = list.mapIndexed { i, p -> p.copy(sortOrder = i) }
+            repository.updateSavedPrompts(updated)
+            _reorderedPrompts.value = null
+            _isDragging.value = false
+        }
+    }
+
+    fun resetOrder() {
+        viewModelScope.launch {
+            repository.resetSavedPromptOrder()
+        }
+    }
 
     fun setFilterMode(mode: ManagementFilterMode) {
         viewModelScope.launch { dataSource.updateManagementFilterMode(mode) }
@@ -80,11 +115,13 @@ class SavedViewModel @Inject constructor(
         viewModelScope.launch {
             coroutineScope {
                 launch {
+                    val maxSortOrder = savedPrompts.value.maxOfOrNull { it.sortOrder } ?: 0
                     repository.savePrompt(
                         SavedPromptEntity(
                             title        = resolvedTitle,
                             promptText   = pos,
                             negativeText = neg,
+                            sortOrder    = maxSortOrder + 1
                         )
                     )
                 }

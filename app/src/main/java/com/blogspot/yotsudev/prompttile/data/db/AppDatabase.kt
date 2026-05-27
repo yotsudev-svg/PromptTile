@@ -22,7 +22,7 @@ import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
         ToppingGroupEntity::class,
         ToppingItemEntity::class,
     ],
-    version = 8, // 7 → 8: SavedPromptEntityにisDefault, isEnabled追加・シード更新
+    version = 9, // 8 → 9: SavedPromptEntityにsortOrder追加
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -109,8 +109,8 @@ abstract class AppDatabase : RoomDatabase() {
                 templates.forEachIndexed { i, t ->
                     db.execSQL(
                         """
-                        INSERT INTO saved_prompts (title, promptText, negativeText, isDefault, isEnabled, createdAt)
-                        VALUES ('${t.name.escapeSql()}', '${t.text.escapeSql()}', '', 1, 1, ${System.currentTimeMillis() + i})
+                        INSERT INTO saved_prompts (title, promptText, negativeText, isDefault, isEnabled, sortOrder, createdAt)
+                        VALUES ('${t.name.escapeSql()}', '${t.text.escapeSql()}', '', 1, 1, $i, ${System.currentTimeMillis() + i})
                         """.trimIndent()
                     )
                 }

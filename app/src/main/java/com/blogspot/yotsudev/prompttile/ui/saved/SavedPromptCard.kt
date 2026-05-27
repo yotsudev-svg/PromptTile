@@ -46,6 +46,7 @@ fun SavedPromptCard(
     onLoadPositive: ((SavedPromptEntity) -> Unit)? = null,
     onLoadNegative: ((SavedPromptEntity) -> Unit)? = null,
     onLoadFull: ((SavedPromptEntity) -> Unit)? = null,
+    dragHandle: @Composable () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     // 日付文字列を remember で保持
@@ -104,6 +105,7 @@ fun SavedPromptCard(
                 }
                 
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    dragHandle()
                     IconButton(onClick = { onToggleEnabled(entity) }) {
                         Icon(
                             imageVector = if (entity.isEnabled) Icons.Default.Visibility else Icons.Default.VisibilityOff,
