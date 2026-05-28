@@ -25,8 +25,16 @@ private data class PersistedPromptItemDto(
     val wordEn: String,
     val wordJa: String,
     val weight: Float? = null,
-    val toppingGroupId: Long? = null,
-    val selectedTopping: String? = null,
+    val toppingGroupIds: List<Long> = emptyList(),
+    val selectedToppings: List<PersistedSelectedToppingDto> = emptyList(),
+    val excludeToppingValues: List<String> = emptyList(),
+)
+
+@Serializable
+private data class PersistedSelectedToppingDto(
+    val groupId: Long,
+    val valueEn: String,
+    val isPrefix: Boolean,
 )
 
 // Json ビルダーは kotlinx.serialization.json.Json のトップレベル関数。
@@ -96,10 +104,17 @@ class PreferencesDataSource @Inject constructor(
     private fun encodeItems(list: List<PersistedPromptItem>): String {
         if (list.isEmpty()) return ""
         return json.encodeToString(
-            list.map {
+            list.map { item ->
                 PersistedPromptItemDto(
-                    it.wordId, it.wordEn, it.wordJa, it.weight,
-                    it.toppingGroupId, it.selectedTopping
+                    item.wordId,
+                    item.wordEn,
+                    item.wordJa,
+                    item.weight,
+                    item.toppingGroupIds,
+                    item.selectedToppings.map {
+                        PersistedSelectedToppingDto(it.groupId, it.valueEn, it.isPrefix)
+                    },
+                    item.excludeToppingValues
                 )
             }
         )
@@ -109,10 +124,17 @@ class PreferencesDataSource @Inject constructor(
         if (encoded.isBlank()) return emptyList()
         return runCatching {
             json.decodeFromString<List<PersistedPromptItemDto>>(encoded)
-                .map {
+                .map { item ->
                     PersistedPromptItem(
-                        it.wordId, it.wordEn, it.wordJa, it.weight,
-                        it.toppingGroupId, it.selectedTopping
+                        item.wordId,
+                        item.wordEn,
+                        item.wordJa,
+                        item.weight,
+                        item.toppingGroupIds,
+                        item.selectedToppings.map {
+                            PersistedSelectedTopping(it.groupId, it.valueEn, it.isPrefix)
+                        },
+                        item.excludeToppingValues
                     )
                 }
         }.getOrDefault(emptyList())

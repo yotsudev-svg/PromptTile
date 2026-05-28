@@ -45,6 +45,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.blogspot.yotsudev.prompttile.R
+import com.blogspot.yotsudev.prompttile.data.entity.ToppingGroupEntity
 import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
 import kotlin.math.roundToInt
 
@@ -60,9 +61,9 @@ import kotlin.math.roundToInt
 @Composable
 fun PromptAdjustSheet(
     item: PromptItem,
-    toppingItems: List<ToppingItemEntity>,
+    toppingGroups: List<ToppingGroupWithItems>,
     onWeightSelect: (Float?) -> Unit,
-    onToppingSelect: (String?) -> Unit,
+    onToppingSelect: (groupId: Long, topping: String?, isPrefix: Boolean) -> Unit,
     onDelete: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -177,13 +178,21 @@ fun PromptAdjustSheet(
             }
 
             // ---- セクション2: トッピング変更（対応単語のみ） ----
-            if (toppingItems.isNotEmpty()) {
+            toppingGroups.forEach { groupWithItems ->
+                val group = groupWithItems.group
+                val toppingItems = groupWithItems.items
+                
+                val filteredItems = remember(toppingItems, item.excludeToppingValues) {
+                    val excludedSet = item.excludeToppingValues.toSet()
+                    toppingItems.filter { it.valueEn !in excludedSet }
+                }
+
                 Spacer(Modifier.height(16.dp))
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 Spacer(Modifier.height(12.dp))
 
                 Text(
-                    text = stringResource(R.string.adjust_section_topping),
+                    text = group.nameJa,
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
@@ -197,20 +206,22 @@ fun PromptAdjustSheet(
                         .padding(vertical = 4.dp),
                 ) {
                     // 「なし」チップ
-                    item(key = "topping_none") {
+                    item(key = "topping_none_${group.id}") {
+                        val isSelected = item.selectedToppings.none { it.groupId == group.id }
                         ToppingSelectChip(
                             nameJa = stringResource(R.string.adjust_topping_none),
                             colorHex = null,
-                            isSelected = item.selectedTopping == null,
-                            onClick = { onToppingSelect(null) },
+                            isSelected = isSelected,
+                            onClick = { onToppingSelect(group.id, null, group.isPrefix) },
                         )
                     }
-                    items(items = toppingItems, key = { it.id }) { toppingItem ->
+                    items(items = filteredItems, key = { it.id }) { toppingItem ->
+                        val isSelected = item.selectedToppings.any { it.groupId == group.id && it.valueEn == toppingItem.valueEn }
                         ToppingSelectChip(
                             nameJa = toppingItem.nameJa,
                             colorHex = toppingItem.colorHex,
-                            isSelected = item.selectedTopping == toppingItem.valueEn,
-                            onClick = { onToppingSelect(toppingItem.valueEn) },
+                            isSelected = isSelected,
+                            onClick = { onToppingSelect(group.id, toppingItem.valueEn, group.isPrefix) },
                         )
                     }
                 }

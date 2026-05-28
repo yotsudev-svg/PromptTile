@@ -3,6 +3,7 @@ package com.blogspot.yotsudev.prompttile.ui.main
 import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
 import com.blogspot.yotsudev.prompttile.data.entity.SavedPromptEntity
+import com.blogspot.yotsudev.prompttile.data.entity.ToppingGroupEntity
 import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
 
 enum class PromptMode { POSITIVE, NEGATIVE }
@@ -32,8 +33,8 @@ data class PromptUiState(
     // ---- マルチ調整ボトムシート ----
     /** 現在シートで編集中の PromptItem。null のときシートは非表示 */
     val adjustingItem: PromptItem? = null,
-    /** adjustingItem に対応するトッピング選択肢。トッピング非対応なら空リスト */
-    val adjustingToppingItems: List<ToppingItemEntity> = emptyList(),
+    /** adjustingItem に対応するトッピンググループとその選択肢のリスト */
+    val adjustingToppingGroups: List<ToppingGroupWithItems> = emptyList(),
 ) {
     val currentItems: List<PromptItem>
         get() = if (mode == PromptMode.POSITIVE) positiveItems else negativeItems
@@ -54,33 +55,52 @@ data class PromptItem(
     val wordJa: String,
     val weight: Float? = null,
     /**
-     * 紐づくトッピンググループID。
-     * DB の PromptWordEntity.toppingGroupId を起点に
-     * WordPool → ViewModel → PromptItem と伝播させる。
-     * null のとき通常単語（マルチ調整シートにトッピング欄を表示しない）。
+     * 紐づくトッピンググループIDのリスト。
      */
-    val toppingGroupId: Long? = null,
+    val toppingGroupIds: List<Long> = emptyList(),
     /**
-     * 現在選択中のトッピング文字列（例: "red"）。
-     * null のときはトッピング未選択 → プロンプトには wordEn のみ出力。
-     * 選択済みのとき → "${topping} ${wordEn}" の形で出力。
+     * 現在選択中のトッピングリスト。
      */
-    val selectedTopping: String? = null,
+    val selectedToppings: List<SelectedTopping> = emptyList(),
+    /**
+     * 除外したいトッピングアイテムの valueEn リスト。
+     */
+    val excludeToppingValues: List<String> = emptyList(),
 ) {
     /**
      * プロンプト文字列として出力するベース単語。
-     * トッピング選択時は "red swimsuit" のように結合する。
+     * トッピング選択時は "red silk dress with ribbon" のように結合する。
      */
     val baseText: String
-        get() = if (selectedTopping != null) "$selectedTopping $wordEn" else wordEn
+        get() {
+            val prefixes = selectedToppings.filter { it.isPrefix }.joinToString(" ") { it.valueEn }
+            val suffixes = selectedToppings.filter { !it.isPrefix }.joinToString(" ") { it.valueEn }
+            
+            return listOfNotNull(
+                prefixes.takeIf { it.isNotBlank() },
+                wordEn,
+                suffixes.takeIf { it.isNotBlank() }
+            ).joinToString(" ")
+        }
 
     val formatted: String
         get() = com.blogspot.yotsudev.prompttile.util.PromptFormatter.formatItem(this)
 }
+
+data class SelectedTopping(
+    val groupId: Long,
+    val valueEn: String,
+    val isPrefix: Boolean,
+)
 
 data class ClipboardImportItem(
     val id: Int,
     val wordEn: String,
     val isEnabled: Boolean = true,
     val registerToDb: Boolean = false,
+)
+
+data class ToppingGroupWithItems(
+    val group: ToppingGroupEntity,
+    val items: List<ToppingItemEntity>,
 )

@@ -355,10 +355,10 @@
       "nameJa": "ドレス・ワンピース",
       "nameEn": "Dresses",
       "words": [
-        { "wordEn": "dress", "wordJa": "ドレス", "toppingGroupId": 1 },
-        { "wordEn": "one-piece dress", "wordJa": "ワンピース", "toppingGroupId": 1 },
-        { "wordEn": "sundress", "wordJa": "サンドレス", "toppingGroupId": 1 },
-        { "wordEn": "summer dress", "wordJa": "夏のワンピース", "toppingGroupId": 1 },
+        { "wordEn": "dress", "wordJa": "ドレス", "toppingGroupIds": [1, 2], "excludeToppingValues": ["leather", "latex"] },
+        { "wordEn": "one-piece dress", "wordJa": "ワンピース", "toppingGroupIds": [1, 2] },
+        { "wordEn": "sundress", "wordJa": "サンドレス", "toppingGroupIds": [1, 2] },
+        { "wordEn": "summer dress", "wordJa": "夏のワンピース", "toppingGroupIds": [1, 2] },
 
         { "wordEn": "lolita dress", "wordJa": "ロリータドレス" },
         { "wordEn": "gothic dress", "wordJa": "ゴシックドレス" },
@@ -386,14 +386,14 @@
       "nameJa": "水着（女性）",
       "nameEn": "Swimwear (Female)",
       "words": [
-        { "wordEn": "bikini", "wordJa": "ビキニ", "toppingGroupId": 1 },
-        { "wordEn": "micro bikini", "wordJa": "マイクロビキニ", "toppingGroupId": 1 },
-        { "wordEn": "string bikini", "wordJa": "紐ビキニ", "toppingGroupId": 1 },
-        { "wordEn": "side tie bikini", "wordJa": "サイドタイビキニ", "toppingGroupId": 1 },
+        { "wordEn": "bikini", "wordJa": "ビキニ", "toppingGroupIds": [1] },
+        { "wordEn": "micro bikini", "wordJa": "マイクロビキニ", "toppingGroupIds": [1] },
+        { "wordEn": "string bikini", "wordJa": "紐ビキニ", "toppingGroupIds": [1] },
+        { "wordEn": "side tie bikini", "wordJa": "サイドタイビキニ", "toppingGroupIds": [1] },
 
-        { "wordEn": "one piece swimsuit", "wordJa": "ワンピース水着", "toppingGroupId": 1 },
-        { "wordEn": "school swimsuit", "wordJa": "スクール水着", "toppingGroupId": 1 },
-        { "wordEn": "competition swimsuit", "wordJa": "競泳水着", "toppingGroupId": 1 },
+        { "wordEn": "one piece swimsuit", "wordJa": "ワンピース水着", "toppingGroupIds": [1] },
+        { "wordEn": "school swimsuit", "wordJa": "スクール水着", "toppingGroupIds": [1] },
+        { "wordEn": "competition swimsuit", "wordJa": "競泳水着", "toppingGroupIds": [1] },
 
         { "wordEn": "frilled bikini", "wordJa": "フリルビキニ" },
         { "wordEn": "halter bikini", "wordJa": "ホルタービキニ" },
@@ -581,10 +581,10 @@
       "nameJa": "アウター・上着",
       "nameEn": "Outerwear",
       "words": [
-        { "wordEn": "jacket", "wordJa": "ジャケット", "toppingGroupId": 2 },
-        { "wordEn": "blazer", "wordJa": "ブレザー", "toppingGroupId": 2 },
-        { "wordEn": "leather jacket", "wordJa": "レザージャケット", "toppingGroupId": 2 },
-        { "wordEn": "bomber jacket", "wordJa": "ボンバージャケット", "toppingGroupId": 2 },
+        { "wordEn": "jacket", "wordJa": "ジャケット", "toppingGroupIds": [2] },
+        { "wordEn": "blazer", "wordJa": "ブレザー", "toppingGroupIds": [2] },
+        { "wordEn": "leather jacket", "wordJa": "レザージャケット", "toppingGroupIds": [2] },
+        { "wordEn": "bomber jacket", "wordJa": "ボンバージャケット", "toppingGroupIds": [2] },
 
         { "wordEn": "hooded jacket", "wordJa": "フード付きジャケット" },
         { "wordEn": "parka", "wordJa": "パーカーコート" },
@@ -1286,6 +1286,7 @@
       "id": 1,
       "nameJa": "色",
       "nameEn": "Color",
+      "isPrefix": true,
       "items": [
         { "valueEn": "red", "nameJa": "赤", "colorHex": "#F44336" },
         { "valueEn": "blue", "nameJa": "青", "colorHex": "#2196F3" },
@@ -1296,13 +1297,25 @@
         { "valueEn": "orange", "nameJa": "オレンジ", "colorHex": "#FF9800" },
         { "valueEn": "cyan", "nameJa": "シアン", "colorHex": "#00BCD4" },
         { "valueEn": "white", "nameJa": "白", "colorHex": "#FFFFFF" },
-        { "valueEn": "black", "nameJa": "黒", "colorHex": "#000000" }
+        { "valueEn": "black", "nameJa": "黒", "colorHex": "#000000" },
+
+        { "valueEn": "golden", "nameJa": "金色", "colorHex": "#D4AF37" },
+        { "valueEn": "silver", "nameJa": "銀色", "colorHex": "#C0C0C0" },
+        { "valueEn": "crimson", "nameJa": "深紅", "colorHex": "#DC143C" },
+        { "valueEn": "midnight blue", "nameJa": "ミッドナイトブルー", "colorHex": "#191970" },
+        { "valueEn": "pastel", "nameJa": "パステル", "colorHex": "#F7D9E8" },
+        { "valueEn": "neon", "nameJa": "ネオン", "colorHex": "#39FF14" },
+        { "valueEn": "iridescent", "nameJa": "玉虫色", "colorHex": "#A7C7E7" },
+        { "valueEn": "holographic", "nameJa": "ホログラフィック", "colorHex": "#7DF9FF" },
+        { "valueEn": "gradient", "nameJa": "グラデーション", "colorHex": "#8E8E8E" },
+        { "valueEn": "monochrome", "nameJa": "モノクロ", "colorHex": "#B0B0B0" }
       ]
     },
     {
       "id": 2,
       "nameJa": "素材",
       "nameEn": "Material",
+      "isPrefix": true,
       "items": [
         { "valueEn": "leather", "nameJa": "レザー" },
         { "valueEn": "silk", "nameJa": "シルク" },
@@ -1310,7 +1323,104 @@
         { "valueEn": "latex", "nameJa": "ラテックス" },
         { "valueEn": "velvet", "nameJa": "ベルベット" },
         { "valueEn": "lace", "nameJa": "レース" },
-        { "valueEn": "transparent", "nameJa": "透明" }
+        { "valueEn": "transparent", "nameJa": "透明" },
+
+        { "valueEn": "satin", "nameJa": "サテン" },
+        { "valueEn": "metallic", "nameJa": "メタリック" },
+        { "valueEn": "sheer", "nameJa": "シアー" },
+        { "valueEn": "glossy", "nameJa": "グロッシー" }
+      ]
+    },
+    {
+      "id": 3,
+      "nameJa": "柄・パターン",
+      "nameEn": "Pattern",
+      "isPrefix": true,
+      "items": [
+        { "valueEn": "striped", "nameJa": "ストライプ・縦縞" },
+        { "valueEn": "polka dot", "nameJa": "水玉・ドット柄" },
+        { "valueEn": "plaid", "nameJa": "チェック・格子柄" },
+        { "valueEn": "floral", "nameJa": "花柄" },
+        { "valueEn": "camouflaged", "nameJa": "迷彩柄" },
+        { "valueEn": "leopard print", "nameJa": "豹柄" },
+        { "valueEn": "geometric", "nameJa": "幾何学模様" },
+        { "valueEn": "argyle", "nameJa": "アーガイル" },
+        { "valueEn": "paisley", "nameJa": "ペイズリー" }
+      ]
+    },
+    {
+      "id": 4,
+      "nameJa": "状態・演出",
+      "nameEn": "Condition",
+      "isPrefix": true,
+      "items": [
+        { "valueEn": "wet", "nameJa": "濡れた" },
+        { "valueEn": "torn", "nameJa": "破れた・ダメージ" },
+        { "valueEn": "glowing", "nameJa": "発光する" },
+        { "valueEn": "soaked", "nameJa": "びしょ濡れ" },
+        { "valueEn": "tattered", "nameJa": "ボロボロの" },
+        { "valueEn": "stained", "nameJa": "汚れた" },
+        { "valueEn": "disheveled", "nameJa": "乱れた" },
+        { "valueEn": "sweaty", "nameJa": "汗ばんだ" }
+      ]
+    },
+    {
+      "id": 5,
+      "nameJa": "形状・カット",
+      "nameEn": "Style & Cut",
+      "isPrefix": true,
+      "items": [
+        { "valueEn": "off-shoulder", "nameJa": "オフショルダー" },
+        { "valueEn": "backless", "nameJa": "背中開き" },
+        { "valueEn": "sleeveless", "nameJa": "ノースリーブ" },
+        { "valueEn": "high-leg", "nameJa": "ハイレグ" },
+        { "valueEn": "low-cut", "nameJa": "胸元深め" },
+
+        { "valueEn": "strapless", "nameJa": "ストラップレス" },
+        { "valueEn": "asymmetrical", "nameJa": "アシンメトリー" },
+        { "valueEn": "halter neck", "nameJa": "ホルターネック" },
+        { "valueEn": "deep V-neck", "nameJa": "深いVネック" },
+        { "valueEn": "corset", "nameJa": "コルセット" },
+        { "valueEn": "slit", "nameJa": "スリット" }
+      ]
+    },
+    {
+      "id": 6,
+      "nameJa": "サイズ・ボリューム",
+      "nameEn": "Size & Volume",
+      "isPrefix": true,
+      "items": [
+        { "valueEn": "oversized", "nameJa": "オーバーサイズ・ダボダボ" },
+        { "valueEn": "skin-tight", "nameJa": "タイト・肌密着" },
+        { "valueEn": "short", "nameJa": "ショート・短い" },
+        { "valueEn": "long", "nameJa": "ロング・長い" },
+        { "valueEn": "fluffy", "nameJa": "フワフワした" },
+
+        { "valueEn": "form-fitting", "nameJa": "フォームフィッティング" },
+        { "valueEn": "puffy", "nameJa": "ふくらんだ" },
+        { "valueEn": "flowy", "nameJa": "流れるような" },
+        { "valueEn": "mini", "nameJa": "ミニ丈" },
+        { "valueEn": "floor-length", "nameJa": "床まで届く長さの" }
+      ]
+    },
+    {
+      "id": 7,
+      "nameJa": "追加パーツ・装飾",
+      "nameEn": "Accessory",
+      "isPrefix": false,
+      "items": [
+        { "valueEn": "with ribbon", "nameJa": "リボン付き" },
+        { "valueEn": "with frills", "nameJa": "フリル付き" },
+        { "valueEn": "with lace trim", "nameJa": "レース縁取り付き" },
+        { "valueEn": "with fur trim", "nameJa": "ファー付き" },
+        { "valueEn": "with hood", "nameJa": "フード付き" },
+
+        { "valueEn": "with bow", "nameJa": "大きなリボン付き" },
+        { "valueEn": "with cape", "nameJa": "ケープ付き" },
+        { "valueEn": "with belt", "nameJa": "ベルト付き" },
+        { "valueEn": "with gloves", "nameJa": "手袋付き" },
+        { "valueEn": "with stockings", "nameJa": "ストッキング付き" },
+        { "valueEn": "with choker", "nameJa": "チョーカー付き" }
       ]
     }
   ]

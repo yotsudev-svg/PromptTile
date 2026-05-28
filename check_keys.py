@@ -6,7 +6,7 @@ with open('app/src/main/assets/seed_data.json', 'r', encoding='utf-8') as f:
 for cat in data.get('categories', []):
     for word in cat.get('words', []):
         for key in word.keys():
-            if key not in ['wordEn', 'wordJa', 'toppingGroupId']:
+            if key not in ['wordEn', 'wordJa', 'toppingGroupIds']:
                 print(f"Unexpected key '{key}' in category '{cat.get('nameJa')}': {word}")
 
 for group in data.get('topping_groups', []):

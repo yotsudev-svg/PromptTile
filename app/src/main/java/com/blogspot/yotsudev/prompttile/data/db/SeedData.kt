@@ -16,8 +16,10 @@ data class SeedCategory(
 data class SeedWord(
     val wordEn: String,
     val wordJa: String,
-    /** 紐づくトッピンググループID。JSONに toppingGroupId キーがなければ null */
-    val toppingGroupId: Long? = null,
+    /** 紐づくトッピンググループIDのリスト。 */
+    val toppingGroupIds: List<Long> = emptyList(),
+    /** 除外したいトッピングアイテムの valueEn リスト。 */
+    val excludeToppingValues: List<String> = emptyList(),
 )
 
 // ─── トッピング系 ─────────────────────────────────────────────────────────────
@@ -26,6 +28,7 @@ data class SeedToppingGroup(
     val id: Int,
     val nameJa: String,
     val nameEn: String,
+    val isPrefix: Boolean = true,
     val items: List<SeedToppingItem>,
 )
 
@@ -62,9 +65,19 @@ fun parseSeedData(json: String): SeedData {
                 SeedWord(
                     wordEn = wordObj.getString("wordEn"),
                     wordJa = wordObj.getString("wordJa"),
-                    // キーが存在しない既存単語は null として扱う
-                    toppingGroupId = if (wordObj.has("toppingGroupId"))
-                        wordObj.getLong("toppingGroupId") else null,
+                    // 複数のトッピンググループIDに対応
+                    toppingGroupIds = if (wordObj.has("toppingGroupIds")) {
+                        val arr = wordObj.getJSONArray("toppingGroupIds")
+                        List(arr.length()) { idx -> arr.getLong(idx) }
+                    } else if (wordObj.has("toppingGroupId")) {
+                        // 互換性のため古いキーも一応拾う
+                        listOf(wordObj.getLong("toppingGroupId"))
+                    } else emptyList(),
+                    // 除外トッピング
+                    excludeToppingValues = if (wordObj.has("excludeToppingValues")) {
+                        val arr = wordObj.getJSONArray("excludeToppingValues")
+                        List(arr.length()) { idx -> arr.getString(idx) }
+                    } else emptyList()
                 )
             } catch (e: Exception) {
                 throw RuntimeException("Error parsing word at category $catName (ID: $catId), index $j: ${e.message}. JSON: $wordObj", e)
@@ -106,6 +119,7 @@ fun parseSeedData(json: String): SeedData {
                 id      = groupObj.getInt("id"),
                 nameJa  = groupObj.getString("nameJa"),
                 nameEn  = groupObj.getString("nameEn"),
+                isPrefix = groupObj.optBoolean("isPrefix", true),
                 items   = items,
             )
         }

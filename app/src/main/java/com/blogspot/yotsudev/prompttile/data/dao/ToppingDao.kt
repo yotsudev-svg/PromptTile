@@ -17,6 +17,9 @@ interface ToppingDao : BaseDao<ToppingGroupEntity> {
     @Query("SELECT * FROM topping_items WHERE groupId = :groupId ORDER BY sortOrder ASC")
     fun observeItemsByGroup(groupId: Long): Flow<List<ToppingItemEntity>>
 
+    @Query("SELECT * FROM topping_groups WHERE id = :id")
+    suspend fun getGroupById(id: Long): ToppingGroupEntity?
+
     /** アイテムの挿入（BaseDao を ToppingItemEntity に使えないため個別定義）*/
     @androidx.room.Insert(onConflict = androidx.room.OnConflictStrategy.IGNORE)
     suspend fun insertItem(item: ToppingItemEntity): Long

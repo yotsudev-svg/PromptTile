@@ -60,18 +60,22 @@ abstract class AppDatabase : RoomDatabase() {
                         """.trimIndent()
                     )
                     category.words.forEachIndexed { wordIndex, word ->
-                        val groupIdVal = if (word.toppingGroupId != null) word.toppingGroupId else "NULL"
+                        val groupIdsVal = if (word.toppingGroupIds.isNotEmpty())
+                            "'${word.toppingGroupIds.joinToString(",")}'" else "NULL"
+                        val excludeVal = if (word.excludeToppingValues.isNotEmpty())
+                            "'${word.excludeToppingValues.joinToString(",")}'" else "NULL"
                         db.execSQL(
                             """
                             INSERT OR IGNORE INTO prompt_words
-                                (categoryId, wordEn, wordJa, sortOrder, isDefault, isHidden, toppingGroupId)
+                                (categoryId, wordEn, wordJa, sortOrder, isDefault, isHidden, toppingGroupIds, excludeToppingValues)
                             VALUES (
                                 ${category.id},
                                 '${word.wordEn.escapeSql()}',
                                 '${word.wordJa.escapeSql()}',
                                 $wordIndex,
                                 1, 0,
-                                $groupIdVal
+                                $groupIdsVal,
+                                $excludeVal
                             )
                             """.trimIndent()
                         )
@@ -82,8 +86,8 @@ abstract class AppDatabase : RoomDatabase() {
                 seedData.toppingGroups.forEachIndexed { _, group ->
                     db.execSQL(
                         """
-                        INSERT OR IGNORE INTO topping_groups (id, nameJa, nameEn)
-                        VALUES (${group.id}, '${group.nameJa.escapeSql()}', '${group.nameEn.escapeSql()}')
+                        INSERT OR IGNORE INTO topping_groups (id, nameJa, nameEn, isPrefix)
+                        VALUES (${group.id}, '${group.nameJa.escapeSql()}', '${group.nameEn.escapeSql()}', ${if (group.isPrefix) 1 else 0})
                         """.trimIndent()
                     )
                     group.items.forEachIndexed { itemIndex, item ->

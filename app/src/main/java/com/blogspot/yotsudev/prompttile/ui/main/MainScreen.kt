@@ -5,15 +5,11 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -22,12 +18,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.blogspot.yotsudev.prompttile.R
 import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
+import com.blogspot.yotsudev.prompttile.data.entity.ToppingGroupEntity
 import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
 import com.blogspot.yotsudev.prompttile.data.repository.UNCATEGORIZED_NEGATIVE_NAME
 import com.blogspot.yotsudev.prompttile.data.repository.UNCATEGORIZED_POSITIVE_NAME
@@ -66,6 +62,7 @@ fun MainScreen(
     }
     // ---- ボトムシート関連のステート ----
     var toppingTargetWord by remember { mutableStateOf<PromptWordEntity?>(null) }
+    var toppingTargetGroup by remember { mutableStateOf<ToppingGroupEntity?>(null) }
     var toppingChoices by remember { mutableStateOf<List<ToppingItemEntity>>(emptyList()) }
 
     var showSaveDialog by rememberSaveable { mutableStateOf(false) }
@@ -110,15 +107,22 @@ fun MainScreen(
     }
 
     // 2. 単語追加時のトッピング選択シート (WordPool から)
-    toppingTargetWord?.let { word ->
+    val targetWord = toppingTargetWord
+    val targetGroup = toppingTargetGroup
+    if (targetWord != null && targetGroup != null) {
         ToppingSelectSheet(
-            word = word,
+            word = targetWord,
+            group = targetGroup,
             toppingItems = toppingChoices,
-            onSelect = { topping ->
-                viewModel.addWordWithTopping(word, topping)
+            onSelect = { groupId, topping, isPrefix ->
+                viewModel.addWordWithTopping(targetWord, groupId, topping, isPrefix)
                 toppingTargetWord = null
+                toppingTargetGroup = null
             },
-            onDismiss = { toppingTargetWord = null }
+            onDismiss = {
+                toppingTargetWord = null
+                toppingTargetGroup = null
+            }
         )
     }
 
@@ -126,9 +130,11 @@ fun MainScreen(
     uiState.adjustingItem?.let { item ->
         PromptAdjustSheet(
             item = item,
-            toppingItems = uiState.adjustingToppingItems,
+            toppingGroups = uiState.adjustingToppingGroups,
             onWeightSelect = { weight -> viewModel.setWeight(item, weight) },
-            onToppingSelect = { topping -> viewModel.setTopping(item, topping) },
+            onToppingSelect = { groupId, topping, isPrefix ->
+                viewModel.setTopping(item, groupId, topping, isPrefix)
+            },
             onDelete = {
                 viewModel.removeItem(item)
                 viewModel.closeAdjustSheet()
@@ -246,9 +252,14 @@ fun MainScreen(
                                 onToppingIconTap = { word ->
                                     // トッピング選択肢を読み込んでシートを表示
                                     scope.launch {
-                                        word.toppingGroupId?.let { groupId ->
-                                            toppingChoices = viewModel.getToppingItems(groupId)
-                                            toppingTargetWord = word
+                                        val gids = word.toppingGroupIds?.split(",")?.mapNotNull { it.trim().toLongOrNull() } ?: emptyList()
+                                        gids.firstOrNull()?.let { groupId ->
+                                            val group = viewModel.getToppingGroup(groupId)
+                                            if (group != null) {
+                                                toppingChoices = viewModel.getToppingItems(groupId)
+                                                toppingTargetGroup = group
+                                                toppingTargetWord = word
+                                            }
                                         }
                                     }
                                 },
@@ -339,9 +350,14 @@ fun MainScreen(
                             },
                             onToppingIconTap = { word ->
                                 scope.launch {
-                                    word.toppingGroupId?.let { groupId ->
-                                        toppingChoices = viewModel.getToppingItems(groupId)
-                                        toppingTargetWord = word
+                                    val gids = word.toppingGroupIds?.split(",")?.mapNotNull { it.trim().toLongOrNull() } ?: emptyList()
+                                    gids.firstOrNull()?.let { groupId ->
+                                        val group = viewModel.getToppingGroup(groupId)
+                                        if (group != null) {
+                                            toppingChoices = viewModel.getToppingItems(groupId)
+                                            toppingTargetGroup = group
+                                            toppingTargetWord = word
+                                        }
                                     }
                                 }
                             },

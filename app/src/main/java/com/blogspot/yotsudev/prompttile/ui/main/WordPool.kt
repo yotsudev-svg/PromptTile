@@ -27,7 +27,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -109,7 +109,7 @@ fun WordPool(
     }
 }
 
-/** toppingGroupId の有無で通常チップ／分割チップを切り替えるルーター */
+/** toppingGroupIds の有無で通常チップ／分割チップを切り替えるルーター */
 @Composable
 private fun WordChipRouter(
     word: PromptWordEntity,
@@ -119,7 +119,7 @@ private fun WordChipRouter(
     onLongPress: () -> Unit,
     onToppingIconTap: () -> Unit,
 ) {
-    if (word.toppingGroupId != null) {
+    if (!word.toppingGroupIds.isNullOrBlank()) {
         SplitWordChip(
             word = word,
             isSelected = isSelected,
@@ -201,9 +201,9 @@ private fun WordChip(
 // ─── 分割スマート・アシストチップ ──────────────────────────────────────────────
 
 /**
- * toppingGroupId を持つ単語用の分割デザインチップ。
+ * toppingGroupIds を持つ単語用の分割デザインチップ。
  *
- * レイアウト: [ A: テキストエリア（weight=1） | 縦線 | B: 🎨アイコン（固定幅） ]
+ * レイアウト: [ A: テキストエリア（weight=1） | 縦線 | B: ⚙️アイコン（固定幅） ]
  *
  * - エリアA: 通常のタップ＆長押し操作（toggleWord / クリップボードコピー）
  * - エリアB: トッピング選択ミニボトムシートを開く
@@ -288,7 +288,7 @@ private fun SplitWordChip(
                 thickness = 1.dp,
             )
 
-            // ---- エリアB: 🎨アイコン ----
+            // ---- エリアB: ⚙️アイコン ----
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
@@ -303,7 +303,7 @@ private fun SplitWordChip(
                     .background(if (isPressedB) contentColor.copy(alpha = 0.08f) else Color.Transparent),
             ) {
                 Icon(
-                    imageVector = Icons.Default.Palette,
+                    imageVector = Icons.Default.Settings,
                     contentDescription = stringResource(R.string.word_chip_topping_icon_desc),
                     tint = if (isPressedB) contentColor else contentColor.copy(alpha = 0.5f),
                     modifier = Modifier.size(18.dp),

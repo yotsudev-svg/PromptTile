@@ -8,6 +8,7 @@ import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordWithCategory
 import com.blogspot.yotsudev.prompttile.data.entity.SavedPromptEntity
+import com.blogspot.yotsudev.prompttile.data.entity.ToppingGroupEntity
 import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
 import com.blogspot.yotsudev.prompttile.util.PromptFormatter
 import kotlinx.coroutines.Dispatchers
@@ -59,8 +60,12 @@ class PromptRepository @Inject constructor(
     suspend fun getToppingItems(groupId: Long): List<ToppingItemEntity> =
         withContext(Dispatchers.IO) { toppingDao.getItemsByGroup(groupId) }
 
+    suspend fun getToppingGroup(groupId: Long): ToppingGroupEntity? =
+        withContext(Dispatchers.IO) { toppingDao.getGroupById(groupId) }
+
     /**
      * 指定グループのトッピングアイテムをリアクティブに監視（Flow版）。
+
      * 将来的にトッピング編集機能を追加した際に使用する想定。
      */
     fun observeToppingItems(groupId: Long): Flow<List<ToppingItemEntity>> =

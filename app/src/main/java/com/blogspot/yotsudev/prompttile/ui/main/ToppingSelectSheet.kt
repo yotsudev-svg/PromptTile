@@ -36,6 +36,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.blogspot.yotsudev.prompttile.R
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
+import com.blogspot.yotsudev.prompttile.data.entity.ToppingGroupEntity
 import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
 
 /**
@@ -48,11 +49,19 @@ import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
 @Composable
 fun ToppingSelectSheet(
     word: PromptWordEntity,
+    group: ToppingGroupEntity,
     toppingItems: List<ToppingItemEntity>,
-    onSelect: (topping: String?) -> Unit,
+    onSelect: (groupId: Long, topping: String?, isPrefix: Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    val excludedSet = remember(word.excludeToppingValues) {
+        word.excludeToppingValues?.split(",")?.map { it.trim() }?.toSet() ?: emptySet()
+    }
+    val filteredItems = remember(toppingItems, excludedSet) {
+        toppingItems.filter { it.valueEn !in excludedSet }
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -70,6 +79,14 @@ fun ToppingSelectSheet(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
 
+            // ---- グループ名 ----
+            Text(
+                text = group.nameJa,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+
             // ---- トッピングチップ一覧（横スクロール） ----
             LazyRow(
                 contentPadding = PaddingValues(horizontal = 16.dp),
@@ -78,11 +95,11 @@ fun ToppingSelectSheet(
                     .fillMaxWidth()
                     .padding(vertical = 12.dp),
             ) {
-                items(items = toppingItems, key = { it.id }) { item ->
+                items(items = filteredItems, key = { it.id }) { item ->
                     ToppingChip(
                         item = item,
                         onClick = {
-                            onSelect(item.valueEn)
+                            onSelect(group.id, item.valueEn, group.isPrefix)
                             onDismiss()
                         },
                     )
@@ -92,7 +109,7 @@ fun ToppingSelectSheet(
             // ---- 「選択なしで追加」ボタン ----
             OutlinedButton(
                 onClick = {
-                    onSelect(null)
+                    onSelect(group.id, null, group.isPrefix)
                     onDismiss()
                 },
                 modifier = Modifier

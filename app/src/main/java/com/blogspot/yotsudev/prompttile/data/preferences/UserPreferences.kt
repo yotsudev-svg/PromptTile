@@ -29,6 +29,13 @@ data class PersistedPromptItem(
     val wordEn: String,
     val wordJa: String,
     val weight: Float?,
-    val toppingGroupId: Long? = null,
-    val selectedTopping: String? = null,
+    val toppingGroupIds: List<Long> = emptyList(),
+    val selectedToppings: List<PersistedSelectedTopping> = emptyList(),
+    val excludeToppingValues: List<String> = emptyList(),
+)
+
+data class PersistedSelectedTopping(
+    val groupId: Long,
+    val valueEn: String,
+    val isPrefix: Boolean,
 )

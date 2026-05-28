@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 9,
-    "identityHash": "5d8d8c56bd30df97afd3f2e3f2c1af70",
+    "identityHash": "0462db396b67ec5f62719b545ae591af",
     "entities": [
       {
         "tableName": "categories",
@@ -60,7 +60,7 @@
       },
       {
         "tableName": "prompt_words",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `categoryId` INTEGER NOT NULL, `wordEn` TEXT NOT NULL, `wordJa` TEXT NOT NULL, `sortOrder` INTEGER NOT NULL, `isDefault` INTEGER NOT NULL, `isHidden` INTEGER NOT NULL, `toppingGroupId` INTEGER, FOREIGN KEY(`categoryId`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `categoryId` INTEGER NOT NULL, `wordEn` TEXT NOT NULL, `wordJa` TEXT NOT NULL, `sortOrder` INTEGER NOT NULL, `isDefault` INTEGER NOT NULL, `isHidden` INTEGER NOT NULL, `toppingGroupIds` TEXT, `excludeToppingValues` TEXT, FOREIGN KEY(`categoryId`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "id",
@@ -105,9 +105,14 @@
             "notNull": true
           },
           {
-            "fieldPath": "toppingGroupId",
-            "columnName": "toppingGroupId",
-            "affinity": "INTEGER"
+            "fieldPath": "toppingGroupIds",
+            "columnName": "toppingGroupIds",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "excludeToppingValues",
+            "columnName": "excludeToppingValues",
+            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
@@ -203,7 +208,7 @@
       },
       {
         "tableName": "topping_groups",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `nameJa` TEXT NOT NULL, `nameEn` TEXT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `nameJa` TEXT NOT NULL, `nameEn` TEXT NOT NULL, `isPrefix` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -221,6 +226,12 @@
             "fieldPath": "nameEn",
             "columnName": "nameEn",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isPrefix",
+            "columnName": "isPrefix",
+            "affinity": "INTEGER",
             "notNull": true
           }
         ],
@@ -305,7 +316,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5d8d8c56bd30df97afd3f2e3f2c1af70')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0462db396b67ec5f62719b545ae591af')"
     ]
   }
 }
