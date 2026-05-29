@@ -224,10 +224,13 @@ fun MainScreen(
                     Row(modifier = Modifier.fillMaxSize()) {
                         // 左ペイン: カテゴリ (固定幅)
                         CategorySidebar(
-                            categories = uiState.currentCategories,
-                            selectedCategoryId = uiState.currentSelectedCategoryId,
-                            onCategorySelected = viewModel::selectCategory,
-                            modifier = Modifier.width(200.dp)
+                            parentCategories = uiState.currentParentCategories,
+                            selectedParentId = uiState.currentSelectedParentId,
+                            onParentSelected = viewModel::selectParent,
+                            childCategories = uiState.currentCategories,
+                            selectedChildId = uiState.currentSelectedCategoryId,
+                            onChildSelected = viewModel::selectCategory,
+                            modifier = Modifier.width(240.dp) // 少し広げる
                         )
 
                         VerticalDivider()
@@ -322,9 +325,12 @@ fun MainScreen(
                         HorizontalDivider()
 
                         CategoryBar(
-                            categories = uiState.currentCategories,
-                            selectedCategoryId = uiState.currentSelectedCategoryId,
-                            onCategorySelected = viewModel::selectCategory,
+                            parentCategories = uiState.currentParentCategories,
+                            selectedParentId = uiState.currentSelectedParentId,
+                            onParentSelected = viewModel::selectParent,
+                            childCategories = uiState.currentCategories,
+                            selectedChildId = uiState.currentSelectedCategoryId,
+                            onChildSelected = viewModel::selectCategory,
                             modifier = Modifier.fillMaxWidth(),
                         )
 

@@ -21,8 +21,9 @@ import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
         SavedPromptEntity::class,
         ToppingGroupEntity::class,
         ToppingItemEntity::class,
+        com.blogspot.yotsudev.prompttile.data.entity.ParentCategoryEntity::class,
     ],
-    version = 9, // 8 → 9: SavedPromptEntityにsortOrder追加
+    version = 10, // 9 → 10: 親カテゴリ(ParentCategoryEntity)追加、CategoryEntityにparentId追加
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -44,18 +45,37 @@ abstract class AppDatabase : RoomDatabase() {
 
                 // ---- カテゴリ＆単語のシード ----
                 val seedData = parseSeedData(jsonText)
+
+                // 親カテゴリのインサート
+                seedData.parentCategories.forEachIndexed { index, parent ->
+                    db.execSQL(
+                        """
+                        INSERT OR IGNORE INTO parent_categories
+                            (id, nameJa, nameEn, sortOrder, isNegative)
+                        VALUES (
+                            ${parent.id},
+                            '${parent.nameJa.escapeSql()}',
+                            '${parent.nameEn.escapeSql()}',
+                            $index,
+                            ${if (parent.isNegative) 1 else 0}
+                        )
+                        """.trimIndent()
+                    )
+                }
+
                 seedData.categories.forEachIndexed { catIndex, category ->
                     db.execSQL(
                         """
                         INSERT OR IGNORE INTO categories
-                            (id, nameJa, nameEn, sortOrder, isDefault, isHidden, isNegative)
+                            (id, nameJa, nameEn, sortOrder, isDefault, isHidden, isNegative, parentId)
                         VALUES (
                             ${category.id},
                             '${category.nameJa.escapeSql()}',
                             '${category.nameEn.escapeSql()}',
                             $catIndex,
                             1, 0,
-                            ${if (category.isNegative) 1 else 0}
+                            ${if (category.isNegative) 1 else 0},
+                            ${category.parentId}
                         )
                         """.trimIndent()
                     )

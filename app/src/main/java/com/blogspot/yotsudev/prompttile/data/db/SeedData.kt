@@ -7,6 +7,7 @@ import org.json.JSONObject
 
 data class SeedCategory(
     val id: Int,
+    val parentId: Int = 0,
     val nameJa: String,
     val nameEn: String,
     val words: List<SeedWord>,
@@ -38,9 +39,17 @@ data class SeedToppingItem(
     val colorHex: String? = null,
 )
 
+data class SeedParentCategory(
+    val id: Int,
+    val nameJa: String,
+    val nameEn: String,
+    val isNegative: Boolean = false,
+)
+
 // ─── 統合データクラス ─────────────────────────────────────────────────────────
 
 data class SeedData(
+    val parentCategories: List<SeedParentCategory>,
     val categories: List<SeedCategory>,
     val toppingGroups: List<SeedToppingGroup>,
 )
@@ -50,6 +59,20 @@ data class SeedData(
 fun parseSeedData(json: String): SeedData {
     Log.d("SeedData", "parseSeedData started. JSON length: ${json.length}")
     val root = JSONObject(json)
+
+    // 親カテゴリ
+    val parentArray = if (root.has("parent_categories")) root.getJSONArray("parent_categories") else null
+    val parentCategories = if (parentArray != null) {
+        List(parentArray.length()) { i ->
+            val obj = parentArray.getJSONObject(i)
+            SeedParentCategory(
+                id = obj.getInt("id"),
+                nameJa = obj.getString("nameJa"),
+                nameEn = obj.getString("nameEn"),
+                isNegative = obj.optBoolean("isNegative", false)
+            )
+        }
+    } else emptyList()
 
     // カテゴリ＆単語
     val categoriesArray = root.getJSONArray("categories")
@@ -85,6 +108,7 @@ fun parseSeedData(json: String): SeedData {
         }
         SeedCategory(
             id         = catObj.getInt("id"),
+            parentId   = catObj.optInt("parentId", 0),
             nameJa     = catObj.getString("nameJa"),
             nameEn     = catObj.getString("nameEn"),
             words      = words,
@@ -125,5 +149,9 @@ fun parseSeedData(json: String): SeedData {
         }
     } else emptyList()
 
-    return SeedData(categories = categories, toppingGroups = toppingGroups)
+    return SeedData(
+        parentCategories = parentCategories,
+        categories = categories,
+        toppingGroups = toppingGroups
+    )
 }

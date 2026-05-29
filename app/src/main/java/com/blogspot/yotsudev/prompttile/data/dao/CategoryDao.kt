@@ -1,12 +1,41 @@
 package com.blogspot.yotsudev.prompttile.data.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
+import com.blogspot.yotsudev.prompttile.data.entity.ParentCategoryEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CategoryDao : BaseDao<CategoryEntity> {
+
+    // ---- Parent Categories ----
+
+    @Query("SELECT * FROM parent_categories ORDER BY sortOrder ASC")
+    fun observeParentCategories(): Flow<List<ParentCategoryEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertParents(parents: List<ParentCategoryEntity>)
+
+    // ---- Child Categories ----
+
+    /**
+     * 指定した親カテゴリに属するカテゴリを表示順に監視する。
+     */
+    @Query("""
+        SELECT * FROM categories 
+        WHERE (:includeHidden = 1 OR isHidden = 0) 
+        AND isNegative = :isNegative 
+        AND parentId = :parentId
+        ORDER BY sortOrder ASC
+    """)
+    fun observeCategoriesByParent(
+        parentId: Long,
+        isNegative: Boolean,
+        includeHidden: Boolean = false
+    ): Flow<List<CategoryEntity>>
 
     /**
      * カテゴリを表示順に監視する。

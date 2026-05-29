@@ -5,6 +5,7 @@ import com.blogspot.yotsudev.prompttile.data.dao.PromptWordDao
 import com.blogspot.yotsudev.prompttile.data.dao.SavedPromptDao
 import com.blogspot.yotsudev.prompttile.data.dao.ToppingDao
 import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
+import com.blogspot.yotsudev.prompttile.data.entity.ParentCategoryEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordWithCategory
 import com.blogspot.yotsudev.prompttile.data.entity.SavedPromptEntity
@@ -26,8 +27,18 @@ class PromptRepository @Inject constructor(
     private val categoryDao: CategoryDao,
     private val promptWordDao: PromptWordDao,
     private val savedPromptDao: SavedPromptDao,
-    private val toppingDao: ToppingDao,         // 追加
+    private val toppingDao: ToppingDao,
 ) {
+    // ---- Parent Categories ----
+
+    fun observeParentCategories(): Flow<List<ParentCategoryEntity>> =
+        categoryDao.observeParentCategories().flowOn(Dispatchers.IO)
+
+    // ---- Child Categories ----
+
+    fun observeCategoriesByParent(parentId: Long, isNegative: Boolean): Flow<List<CategoryEntity>> =
+        categoryDao.observeCategoriesByParent(parentId, isNegative, includeHidden = false).flowOn(Dispatchers.IO)
+
     val visibleCategories: Flow<List<CategoryEntity>> =
         categoryDao.observeCategories(isNegative = false)
 

@@ -44,8 +44,12 @@ class PromptViewModel @Inject constructor(
     private val _mode = MutableStateFlow(PromptMode.POSITIVE)
     private val _positiveItems = MutableStateFlow<List<PromptItem>>(emptyList())
     private val _negativeItems = MutableStateFlow<List<PromptItem>>(emptyList())
+
+    private val _selectedPositiveParentId = MutableStateFlow<Long?>(null)
+    private val _selectedNegativeParentId = MutableStateFlow<Long?>(null)
     private val _selectedPositiveCategoryId = MutableStateFlow<Long?>(null)
     private val _selectedNegativeCategoryId = MutableStateFlow<Long?>(null)
+
     private val _searchQuery = MutableStateFlow("")
     private val _defaultTemplates = MutableStateFlow<List<PrefixTemplate>>(emptyList())
 
@@ -67,15 +71,39 @@ class PromptViewModel @Inject constructor(
     )
 
     @OptIn(ExperimentalCoroutinesApi::class)
+    private val _parentCategories = repository.observeParentCategories()
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val _resolvedSelectedParentId = combine(
+        _mode,
+        _selectedPositiveParentId,
+        _selectedNegativeParentId,
+        _parentCategories,
+    ) { mode, posId, negId, parents ->
+        if (mode == PromptMode.POSITIVE) posId ?: parents.firstOrNull()?.id
+        else negId ?: parents.firstOrNull()?.id
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val _childCategories = combine(
+        _mode,
+        _resolvedSelectedParentId
+    ) { mode, parentId ->
+        mode to parentId
+    }.flatMapLatest { (mode, parentId) ->
+        if (parentId == null) flowOf(emptyList())
+        else repository.observeCategoriesByParent(parentId, isNegative = mode == PromptMode.NEGATIVE)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
     private val _resolvedSelectedCategoryId = combine(
         _mode,
         _selectedPositiveCategoryId,
         _selectedNegativeCategoryId,
-        repository.visibleCategories,
-        repository.visibleNegativeCategories
-    ) { mode, posId, negId, posCats, negCats ->
-        if (mode == PromptMode.POSITIVE) posId ?: posCats.firstOrNull()?.id
-        else negId ?: negCats.firstOrNull()?.id
+        _childCategories
+    ) { mode, posId, negId, children ->
+        if (mode == PromptMode.POSITIVE) posId ?: children.firstOrNull()?.id
+        else negId ?: children.firstOrNull()?.id
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -105,7 +133,8 @@ class PromptViewModel @Inject constructor(
 
     val uiState = combine(
         _mode, _positiveItems, _negativeItems,
-        repository.visibleCategories, repository.visibleNegativeCategories,
+        _parentCategories,
+        _resolvedSelectedParentId, _childCategories,
         _resolvedSelectedCategoryId, _wordsInCategory, _searchResults,
         _prefs, _historyState, _searchQuery, _allTemplates,
         _adjustingItem, _adjustingToppingGroups,
@@ -113,28 +142,33 @@ class PromptViewModel @Inject constructor(
         val mode           = args[0] as PromptMode
         val posItems       = args[1] as List<PromptItem>
         val negItems       = args[2] as List<PromptItem>
-        val posCats        = args[3] as List<CategoryEntity>
-        val negCats        = args[4] as List<CategoryEntity>
-        val resolvedCatId  = args[5] as Long?
-        val words          = args[6] as List<PromptWordEntity>
-        val searchResults  = args[7] as List<PromptWordEntity>
-        val prefs          = args[8] as UserPreferences
-        val history        = args[9] as HistoryState
-        val query          = args[10] as String
-        val templates      = args[11] as List<SavedPromptEntity>
-        val adjItem        = args[12] as PromptItem?
-        val adjGroups      = args[13] as List<ToppingGroupWithItems>
+        val parents        = args[3] as List<com.blogspot.yotsudev.prompttile.data.entity.ParentCategoryEntity>
+        val resolvedParId  = args[4] as Long?
+        val childCats      = args[5] as List<CategoryEntity>
+        val resolvedCatId  = args[6] as Long?
+        val words          = args[7] as List<PromptWordEntity>
+        val searchResults  = args[8] as List<PromptWordEntity>
+        val prefs          = args[9] as UserPreferences
+        val history        = args[10] as HistoryState
+        val query          = args[11] as String
+        val templates      = args[12] as List<SavedPromptEntity>
+        val adjItem        = args[13] as PromptItem?
+        val adjGroups      = args[14] as List<ToppingGroupWithItems>
 
         PromptUiState(
             mode                       = mode,
             positiveItems              = posItems,
-            positiveCategories         = posCats,
-            selectedPositiveCategoryId = if (mode == PromptMode.POSITIVE) resolvedCatId
-            else (_selectedPositiveCategoryId.value ?: posCats.firstOrNull()?.id),
+            positiveParentCategories   = parents,
+            selectedPositiveParentId   = if (mode == PromptMode.POSITIVE) resolvedParId else (_selectedPositiveParentId.value ?: parents.firstOrNull()?.id),
+            positiveCategories         = if (mode == PromptMode.POSITIVE) childCats else emptyList(),
+            selectedPositiveCategoryId = if (mode == PromptMode.POSITIVE) resolvedCatId else _selectedPositiveCategoryId.value,
+            
             negativeItems              = negItems,
-            negativeCategories         = negCats,
-            selectedNegativeCategoryId = if (mode == PromptMode.NEGATIVE) resolvedCatId
-            else (_selectedNegativeCategoryId.value ?: negCats.firstOrNull()?.id),
+            negativeParentCategories   = parents,
+            selectedNegativeParentId   = if (mode == PromptMode.NEGATIVE) resolvedParId else (_selectedNegativeParentId.value ?: parents.firstOrNull()?.id),
+            negativeCategories         = if (mode == PromptMode.NEGATIVE) childCats else emptyList(),
+            selectedNegativeCategoryId = if (mode == PromptMode.NEGATIVE) resolvedCatId else _selectedNegativeCategoryId.value,
+
             wordsInCategory            = words,
             isLoading                  = false,
             moveToBackOnCopy           = prefs.moveToBackOnCopy,
@@ -208,6 +242,16 @@ class PromptViewModel @Inject constructor(
     fun switchMode(mode: PromptMode) { _mode.value = mode }
 
     // ---- カテゴリ選択 ----------------------------------------
+
+    fun selectParent(id: Long) {
+        if (_mode.value == PromptMode.POSITIVE) {
+            _selectedPositiveParentId.value = id
+            _selectedPositiveCategoryId.value = null // reset child to trigger auto-select
+        } else {
+            _selectedNegativeParentId.value = id
+            _selectedNegativeCategoryId.value = null
+        }
+    }
 
     fun selectCategory(id: Long) {
         if (_mode.value == PromptMode.POSITIVE) _selectedPositiveCategoryId.value = id

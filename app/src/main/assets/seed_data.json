@@ -1,4 +1,12 @@
 {
+  "parent_categories": [
+    { "id": 1, "nameJa": "基本・画風", "nameEn": "Core & Style" },
+    { "id": 2, "nameJa": "キャラクター", "nameEn": "Character" },
+    { "id": 3, "nameJa": "顔・髪", "nameEn": "Face & Hair" },
+    { "id": 4, "nameJa": "服装", "nameEn": "Clothing" },
+    { "id": 5, "nameJa": "環境・構図", "nameEn": "Environment & Composition" },
+    { "id": 6, "nameJa": "その他・特殊", "nameEn": "Other" }
+  ],
   "prefix_templates": [
     {
       "name": "標準（アニメ調）",
@@ -20,6 +28,7 @@
   "categories": [
     {
       "id": 1,
+      "parentId": 2,
       "nameJa": "人物（女性）",
       "nameEn": "Character (Female)",
       "words": [
@@ -40,6 +49,7 @@
     },
     {
       "id": 2,
+      "parentId": 2,
       "nameJa": "人物（男性）",
       "nameEn": "Character (Male)",
       "words": [
@@ -60,6 +70,7 @@
     },
     {
       "id": 3,
+      "parentId": 3,
       "nameJa": "髪色",
       "nameEn": "Hair Color",
       "words": [
@@ -101,6 +112,7 @@
     },
     {
       "id": 4,
+      "parentId": 3,
       "nameJa": "髪型",
       "nameEn": "Hair Style",
       "words": [
@@ -150,6 +162,7 @@
     },
     {
       "id": 5,
+      "parentId": 3,
       "nameJa": "目の色",
       "nameEn": "Eye Color",
       "words": [
@@ -187,6 +200,7 @@
     },
     {
       "id": 6,
+      "parentId": 3,
       "nameJa": "目の形・特徴",
       "nameEn": "Eye Shape",
       "words": [
@@ -217,6 +231,7 @@
     },
     {
       "id": 7,
+      "parentId": 3,
       "nameJa": "表情",
       "nameEn": "Expression",
       "words": [
@@ -259,6 +274,7 @@
     },
     {
       "id": 8,
+      "parentId": 4,
       "nameJa": "制服・学校系",
       "nameEn": "School Uniforms",
       "words": [
@@ -287,6 +303,7 @@
     },
     {
       "id": 9,
+      "parentId": 4,
       "nameJa": "トップス・上半身",
       "nameEn": "Tops",
       "words": [
@@ -321,6 +338,7 @@
     },
     {
       "id": 10,
+      "parentId": 4,
       "nameJa": "ボトムス・下半身",
       "nameEn": "Bottoms",
       "words": [
@@ -352,6 +370,7 @@
     },
     {
       "id": 11,
+      "parentId": 4,
       "nameJa": "ドレス・ワンピース",
       "nameEn": "Dresses",
       "words": [
@@ -383,6 +402,7 @@
     },
     {
       "id": 12,
+      "parentId": 4,
       "nameJa": "水着（女性）",
       "nameEn": "Swimwear (Female)",
       "words": [
@@ -413,6 +433,7 @@
     },
     {
       "id": 13,
+      "parentId": 4,
       "nameJa": "水着（男性）",
       "nameEn": "Swimwear (Male)",
       "words": [
@@ -431,6 +452,7 @@
     },
     {
       "id": 14,
+      "parentId": 4,
       "nameJa": "下着（女性）",
       "nameEn": "Underwear (Female)",
       "words": [
@@ -462,6 +484,7 @@
     },
     {
       "id": 15,
+      "parentId": 4,
       "nameJa": "下着（男性）",
       "nameEn": "Underwear (Male)",
       "words": [
@@ -479,6 +502,7 @@
     },
     {
       "id": 16,
+      "parentId": 4,
       "nameJa": "コスプレ・特殊衣装",
       "nameEn": "Costumes",
       "words": [
@@ -514,6 +538,7 @@
     },
     {
       "id": 17,
+      "parentId": 4,
       "nameJa": "靴下・ストッキング",
       "nameEn": "Socks & Stockings",
       "words": [
@@ -546,6 +571,7 @@
     },
     {
       "id": 18,
+      "parentId": 4,
       "nameJa": "靴",
       "nameEn": "Footwear",
       "words": [
@@ -578,6 +604,7 @@
     },
     {
       "id": 19,
+      "parentId": 4,
       "nameJa": "アウター・上着",
       "nameEn": "Outerwear",
       "words": [
@@ -611,6 +638,7 @@
     },
     {
       "id": 20,
+      "parentId": 4,
       "nameJa": "帽子・ヘッドウェア",
       "nameEn": "Headwear",
       "words": [
@@ -644,6 +672,7 @@
     },
     {
       "id": 21,
+      "parentId": 4,
       "nameJa": "服装素材・ディテール",
       "nameEn": "Fabric & Details",
       "words": [
@@ -682,6 +711,7 @@
     },
     {
       "id": 22,
+      "parentId": 2,
       "nameJa": "ポーズ",
       "nameEn": "Pose",
       "words": [
@@ -725,6 +755,7 @@
     },
     {
       "id": 23,
+      "parentId": 2,
       "nameJa": "体型・特徴",
       "nameEn": "Body",
       "words": [
@@ -771,6 +802,7 @@
     },
     {
       "id": 24,
+      "parentId": 5,
       "nameJa": "背景",
       "nameEn": "Background",
       "words": [
@@ -819,6 +851,7 @@
     },
     {
       "id": 25,
+      "parentId": 5,
       "nameJa": "照明・雰囲気",
       "nameEn": "Lighting & Atmosphere",
       "words": [
@@ -859,6 +892,7 @@
     },
     {
       "id": 26,
+      "parentId": 5,
       "nameJa": "構図・視点",
       "nameEn": "Composition & Angle",
       "words": [
@@ -899,6 +933,7 @@
     },
     {
       "id": 27,
+      "parentId": 4,
       "nameJa": "アクセサリー・小物",
       "nameEn": "Accessories",
       "words": [
@@ -943,6 +978,7 @@
     },
     {
       "id": 28,
+      "parentId": 1,
       "nameJa": "クオリティ修飾",
       "nameEn": "Quality",
       "words": [
@@ -979,6 +1015,7 @@
     },
     {
       "id": 29,
+      "parentId": 1,
       "nameJa": "画風",
       "nameEn": "Art Style",
       "words": [
@@ -1018,6 +1055,7 @@
     },
     {
       "id": 30,
+      "parentId": 1,
       "nameJa": "効果",
       "nameEn": "Effects",
       "words": [
@@ -1059,6 +1097,7 @@
     },
     {
       "id": 31,
+      "parentId": 2,
       "nameJa": "手・指",
       "nameEn": "Hands",
       "words": [
@@ -1093,6 +1132,7 @@
     },
     {
       "id": 32,
+      "parentId": 5,
       "nameJa": "天候・季節",
       "nameEn": "Weather & Season",
       "words": [
@@ -1138,6 +1178,7 @@
     },
     {
       "id": 33,
+      "parentId": 6,
       "nameJa": "ファンタジー要素",
       "nameEn": "Fantasy Features",
       "words": [
@@ -1179,6 +1220,7 @@
     },
     {
       "id": 34,
+      "parentId": 6,
       "nameJa": "動物特徴",
       "nameEn": "Animal Features",
       "words": [
@@ -1219,6 +1261,7 @@
     },
     {
       "id": 35,
+      "parentId": 1,
       "nameJa": "色調・フィルター",
       "nameEn": "Color Tone",
       "words": [
@@ -1242,6 +1285,7 @@
     },
     {
       "id": 36,
+      "parentId": 6,
       "nameJa": "SF・メカ要素",
       "nameEn": "SF & Mecha",
       "words": [
@@ -1268,6 +1312,7 @@
     },
     {
       "id": 37,
+      "parentId": 6,
       "nameJa": "未分類",
       "nameEn": "Uncategorized",
       "isNegative": false,
@@ -1275,6 +1320,7 @@
     },
     {
       "id": 38,
+      "parentId": 6,
       "nameJa": "未分類（ネガティブ）",
       "nameEn": "Uncategorized (Negative)",
       "isNegative": true,

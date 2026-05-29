@@ -19,4 +19,9 @@ data class CategoryEntity(
      * マイグレーション時のデフォルト値として安全に使える。
      */
     val isNegative: Boolean = false,
+    /**
+     * 親カテゴリのID。
+     * 1: 基本・画風, 2: キャラクター, 3: 顔・髪, 4: 服装, 5: 環境・構図, 6: その他・特殊
+     */
+    val parentId: Long = 0,
 )
