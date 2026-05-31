@@ -22,6 +22,9 @@ import javax.inject.Singleton
 const val UNCATEGORIZED_POSITIVE_NAME = "Uncategorized"
 const val UNCATEGORIZED_NEGATIVE_NAME = "Uncategorized (Negative)"
 
+const val CATEGORY_ID_UNCATEGORIZED_POSITIVE = 998L
+const val CATEGORY_ID_UNCATEGORIZED_NEGATIVE = 999L
+
 @Singleton
 class PromptRepository @Inject constructor(
     private val categoryDao: CategoryDao,
@@ -33,6 +36,9 @@ class PromptRepository @Inject constructor(
 
     fun observeParentCategories(): Flow<List<ParentCategoryEntity>> =
         categoryDao.observeParentCategories().flowOn(Dispatchers.IO)
+
+    fun observeParentCategories(isNegative: Boolean): Flow<List<ParentCategoryEntity>> =
+        categoryDao.observeParentCategoriesByMode(isNegative).flowOn(Dispatchers.IO)
 
     // ---- Child Categories ----
 
@@ -138,15 +144,14 @@ class PromptRepository @Inject constructor(
     suspend fun registerNewWordsFromText(text: String, isNegative: Boolean) =
         withContext(Dispatchers.IO) {
             if (text.isBlank()) return@withContext
-            val name = if (isNegative) UNCATEGORIZED_NEGATIVE_NAME else UNCATEGORIZED_POSITIVE_NAME
-            val cat = categoryDao.getCategoryByNameEn(name) ?: return@withContext
-            val existing = promptWordDao.getWordEnsByCategory(cat.id).toHashSet()
+            val catId = if (isNegative) CATEGORY_ID_UNCATEGORIZED_NEGATIVE else CATEGORY_ID_UNCATEGORIZED_POSITIVE
+            val existing = promptWordDao.getWordEnsByCategory(catId).toHashSet()
             val newWords = text.split(",")
                 .map { PromptFormatter.cleanWord(it.trim()) }
                 .filter { it.isNotBlank() && it !in existing }
                 .distinct()
                 .mapIndexed { i, w ->
-                    PromptWordEntity(categoryId = cat.id, wordEn = w, wordJa = "", sortOrder = i)
+                    PromptWordEntity(categoryId = catId, wordEn = w, wordJa = "", sortOrder = i)
                 }
             if (newWords.isNotEmpty()) promptWordDao.insertAll(newWords)
         }

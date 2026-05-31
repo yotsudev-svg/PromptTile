@@ -23,7 +23,7 @@ import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
         ToppingItemEntity::class,
         com.blogspot.yotsudev.prompttile.data.entity.ParentCategoryEntity::class,
     ],
-    version = 10, // 9 → 10: 親カテゴリ(ParentCategoryEntity)追加、CategoryEntityにparentId追加
+    version = 11, // 10 → 11: CategoryEntityにisSystem追加
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -67,7 +67,7 @@ abstract class AppDatabase : RoomDatabase() {
                     db.execSQL(
                         """
                         INSERT OR IGNORE INTO categories
-                            (id, nameJa, nameEn, sortOrder, isDefault, isHidden, isNegative, parentId)
+                            (id, nameJa, nameEn, sortOrder, isDefault, isHidden, isNegative, parentId, isSystem)
                         VALUES (
                             ${category.id},
                             '${category.nameJa.escapeSql()}',
@@ -75,7 +75,8 @@ abstract class AppDatabase : RoomDatabase() {
                             $catIndex,
                             1, 0,
                             ${if (category.isNegative) 1 else 0},
-                            ${category.parentId}
+                            ${category.parentId},
+                            ${if (category.isSystem) 1 else 0}
                         )
                         """.trimIndent()
                     )

@@ -101,7 +101,7 @@ fun CategoryEditCard(
                 )
             }
 
-            if (!category.isDefault) {
+            if (!category.isDefault && !category.isSystem) {
                 IconButton(onClick = onEditCategoryClick) {
                     Icon(
                         imageVector = Icons.Default.Edit,
@@ -112,18 +112,18 @@ fun CategoryEditCard(
             }
             IconButton(
                 onClick = {
-                    if (category.isDefault) onToggleCategoryVisibility()
+                    if (category.isDefault || category.isSystem) onToggleCategoryVisibility()
                     else onDeleteCategoryClick()
                 }
             ) {
                 Icon(
-                    imageVector = if (category.isDefault) {
+                    imageVector = if (category.isDefault || category.isSystem) {
                         if (category.isHidden) Icons.Default.VisibilityOff else Icons.Default.Visibility
                     } else {
                         Icons.Default.Delete
                     },
                     contentDescription = null,
-                    tint = if (category.isDefault) {
+                    tint = if (category.isDefault || category.isSystem) {
                         if (category.isHidden) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                         else MaterialTheme.colorScheme.primary
                     } else MaterialTheme.colorScheme.error

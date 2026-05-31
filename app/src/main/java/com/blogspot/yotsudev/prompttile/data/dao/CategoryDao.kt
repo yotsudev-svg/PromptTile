@@ -16,6 +16,9 @@ interface CategoryDao : BaseDao<CategoryEntity> {
     @Query("SELECT * FROM parent_categories ORDER BY sortOrder ASC")
     fun observeParentCategories(): Flow<List<ParentCategoryEntity>>
 
+    @Query("SELECT * FROM parent_categories WHERE isNegative = :isNegative ORDER BY sortOrder ASC")
+    fun observeParentCategoriesByMode(isNegative: Boolean): Flow<List<ParentCategoryEntity>>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertParents(parents: List<ParentCategoryEntity>)
 

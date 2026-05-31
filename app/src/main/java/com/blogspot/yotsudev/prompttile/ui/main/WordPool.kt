@@ -319,13 +319,11 @@ private fun SplitWordChip(
 private fun chipColors(isSelected: Boolean, isUncategorized: Boolean): Pair<Color, Color> {
     val container = when {
         isSelected && isUncategorized -> MaterialTheme.colorScheme.tertiaryContainer
-        isUncategorized               -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
         isSelected                    -> MaterialTheme.colorScheme.primaryContainer
         else                          -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
     }
     val content = when {
         isSelected && isUncategorized -> MaterialTheme.colorScheme.onTertiaryContainer
-        isUncategorized               -> MaterialTheme.colorScheme.onSecondaryContainer
         isSelected                    -> MaterialTheme.colorScheme.onPrimaryContainer
         else                          -> MaterialTheme.colorScheme.onSurface
     }

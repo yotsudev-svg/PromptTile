@@ -66,7 +66,6 @@ fun MainScreen(
     var toppingChoices by remember { mutableStateOf<List<ToppingItemEntity>>(emptyList()) }
 
     var showSaveDialog by rememberSaveable { mutableStateOf(false) }
-    var isSearching by rememberSaveable { mutableStateOf(false) }
     var showMoreMenu by remember { mutableStateOf(false) }
 
     if (showSaveDialog) {
@@ -151,10 +150,7 @@ fun MainScreen(
             containerColor = MaterialTheme.colorScheme.background,
             topBar = {
                 PromptTileTopAppBar(
-                    title = "PromptTile",
                     showSearchAction = true,
-                    isSearching = isSearching,
-                    onSearchingChange = { isSearching = it },
                     isWideScreen = isWideScreen,
                     searchQuery = uiState.searchQuery,
                     onSearchQueryChange = viewModel::setSearchQuery,

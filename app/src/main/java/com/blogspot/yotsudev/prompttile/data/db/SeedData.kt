@@ -12,6 +12,7 @@ data class SeedCategory(
     val nameEn: String,
     val words: List<SeedWord>,
     val isNegative: Boolean = false,
+    val isSystem: Boolean = false,
 )
 
 data class SeedWord(
@@ -113,6 +114,7 @@ fun parseSeedData(json: String): SeedData {
             nameEn     = catObj.getString("nameEn"),
             words      = words,
             isNegative = catObj.optBoolean("isNegative", false),
+            isSystem   = catObj.optBoolean("isSystem", false),
         )
     }
 

@@ -71,7 +71,9 @@ class PromptViewModel @Inject constructor(
     )
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val _parentCategories = repository.observeParentCategories()
+    private val _parentCategories = _mode.flatMapLatest { mode ->
+        repository.observeParentCategories(isNegative = mode == PromptMode.NEGATIVE)
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val _resolvedSelectedParentId = combine(
@@ -80,8 +82,8 @@ class PromptViewModel @Inject constructor(
         _selectedNegativeParentId,
         _parentCategories,
     ) { mode, posId, negId, parents ->
-        if (mode == PromptMode.POSITIVE) posId ?: parents.firstOrNull()?.id
-        else negId ?: parents.firstOrNull()?.id
+        val currentId = if (mode == PromptMode.POSITIVE) posId else negId
+        currentId ?: parents.firstOrNull()?.id
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -158,14 +160,14 @@ class PromptViewModel @Inject constructor(
         PromptUiState(
             mode                       = mode,
             positiveItems              = posItems,
-            positiveParentCategories   = parents,
-            selectedPositiveParentId   = if (mode == PromptMode.POSITIVE) resolvedParId else (_selectedPositiveParentId.value ?: parents.firstOrNull()?.id),
+            positiveParentCategories   = if (mode == PromptMode.POSITIVE) parents else emptyList(),
+            selectedPositiveParentId   = if (mode == PromptMode.POSITIVE) resolvedParId else _selectedPositiveParentId.value,
             positiveCategories         = if (mode == PromptMode.POSITIVE) childCats else emptyList(),
             selectedPositiveCategoryId = if (mode == PromptMode.POSITIVE) resolvedCatId else _selectedPositiveCategoryId.value,
             
             negativeItems              = negItems,
-            negativeParentCategories   = parents,
-            selectedNegativeParentId   = if (mode == PromptMode.NEGATIVE) resolvedParId else (_selectedNegativeParentId.value ?: parents.firstOrNull()?.id),
+            negativeParentCategories   = if (mode == PromptMode.NEGATIVE) parents else emptyList(),
+            selectedNegativeParentId   = if (mode == PromptMode.NEGATIVE) resolvedParId else _selectedNegativeParentId.value,
             negativeCategories         = if (mode == PromptMode.NEGATIVE) childCats else emptyList(),
             selectedNegativeCategoryId = if (mode == PromptMode.NEGATIVE) resolvedCatId else _selectedNegativeCategoryId.value,
 
@@ -239,7 +241,14 @@ class PromptViewModel @Inject constructor(
 
     // ---- モード切り替え ----------------------------------------
 
-    fun switchMode(mode: PromptMode) { _mode.value = mode }
+    fun switchMode(mode: PromptMode) {
+        _mode.value = mode
+        // モード切り替え時に選択状態をリセットし、不整合によるクラッシュを防ぐ
+        _selectedPositiveParentId.value = null
+        _selectedNegativeParentId.value = null
+        _selectedPositiveCategoryId.value = null
+        _selectedNegativeCategoryId.value = null
+    }
 
     // ---- カテゴリ選択 ----------------------------------------
 

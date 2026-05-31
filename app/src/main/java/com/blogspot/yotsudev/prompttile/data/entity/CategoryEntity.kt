@@ -12,6 +12,7 @@ data class CategoryEntity(
     val sortOrder: Int = 0,
     val isDefault: Boolean = false,
     val isHidden: Boolean = false,
+    val isSystem: Boolean = false,
     /**
      * trueのときネガティブプロンプト専用カテゴリ。
      * ポジティブモードでは非表示、ネガティブモードでのみ表示される。
