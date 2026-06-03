@@ -84,14 +84,14 @@ data class PromptItem(
      */
     val baseText: String
         get() {
-            val prefixes = selectedToppings.filter { it.isPrefix }.joinToString(" ") { it.valueEn }
-            val suffixes = selectedToppings.filter { !it.isPrefix }.joinToString(" ") { it.valueEn }
-            
-            return listOfNotNull(
-                prefixes.takeIf { it.isNotBlank() },
-                wordEn,
-                suffixes.takeIf { it.isNotBlank() }
-            ).joinToString(" ")
+            // Priority-based sorting (lower number comes first)
+            val sortedToppings = selectedToppings.sortedBy { it.priority }
+
+            val prefixes = sortedToppings.filter { it.isPrefix }.map { it.valueEn }
+            val suffixes = sortedToppings.filter { !it.isPrefix }.map { it.valueEn }
+
+            val mainPart = (prefixes + wordEn).filter { it.isNotBlank() }.joinToString(" ")
+            return (listOf(mainPart) + suffixes).filter { it.isNotBlank() }.joinToString(", ")
         }
 
     val formatted: String
@@ -102,6 +102,7 @@ data class SelectedTopping(
     val groupId: Long,
     val valueEn: String,
     val isPrefix: Boolean,
+    val priority: Int = 999,
 )
 
 data class ClipboardImportItem(

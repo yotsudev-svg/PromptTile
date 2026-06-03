@@ -24,4 +24,6 @@ sealed interface AppDestination : NavKey {
 
     @Serializable
     data object Settings : AppDestination
+
+    @Serializable data object Import   : AppDestination
 }

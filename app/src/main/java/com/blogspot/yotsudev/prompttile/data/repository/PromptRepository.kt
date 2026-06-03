@@ -113,6 +113,14 @@ class PromptRepository @Inject constructor(
             categoryDao.update(category.copy(isHidden = !category.isHidden))
         }
 
+    /** インポート時にカテゴリ名の重複チェックに使う（既存メソッドをラップ） */
+    suspend fun getCategoryByNameEn(nameEn: String): CategoryEntity? =
+        withContext(Dispatchers.IO) { categoryDao.getCategoryByNameEn(nameEn) }
+
+    /** 新規カテゴリの sortOrder を末尾に設定するために現在の最大値を取得する */
+    suspend fun getMaxCategorySortOrder(): Int =
+        withContext(Dispatchers.IO) { categoryDao.getMaxSortOrder() ?: 0 }
+
     // ---- 単語 CRUD --------------------------------------------
 
     suspend fun insertWords(list: List<PromptWordEntity>) =
@@ -155,6 +163,9 @@ class PromptRepository @Inject constructor(
                 }
             if (newWords.isNotEmpty()) promptWordDao.insertAll(newWords)
         }
+
+    suspend fun getWordEnsByCategory(categoryId: Long): List<String> =
+        withContext(Dispatchers.IO) { promptWordDao.getWordEnsByCategory(categoryId) }
 
     // ---- 保存済みプロンプト ------------------------------------
 

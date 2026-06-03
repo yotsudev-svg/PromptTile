@@ -297,35 +297,38 @@ class PromptViewModel @Inject constructor(
      * selectedTopping を指定して直接 PromptItem を追加する。
      */
     fun addWordWithTopping(word: PromptWordEntity, groupId: Long, topping: String?, isPrefix: Boolean) {
-        pushHistory(currentItems.value)
-        currentItems.update { current ->
-            val existing = current.firstOrNull { it.wordId == word.id }
-            val toppingIds = word.toppingGroupIds?.split(",")?.mapNotNull { it.trim().toLongOrNull() } ?: emptyList()
-            val excludeValues = word.excludeToppingValues?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() } ?: emptyList()
-            
-            if (existing != null) {
-                current.map {
-                    if (it.wordId == word.id) {
-                        val newToppings = it.selectedToppings.filterNot { t -> t.groupId == groupId }.toMutableList()
-                        if (topping != null) {
-                            newToppings.add(SelectedTopping(groupId, topping, isPrefix))
-                        }
-                        it.copy(selectedToppings = newToppings)
-                    } else it
+        viewModelScope.launch {
+            val priority = calculatePriority(groupId, isPrefix)
+            pushHistory(currentItems.value)
+            currentItems.update { current ->
+                val existing = current.firstOrNull { it.wordId == word.id }
+                val toppingIds = word.toppingGroupIds?.split(",")?.mapNotNull { it.trim().toLongOrNull() } ?: emptyList()
+                val excludeValues = word.excludeToppingValues?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() } ?: emptyList()
+
+                if (existing != null) {
+                    current.map {
+                        if (it.wordId == word.id) {
+                            val newToppings = it.selectedToppings.filterNot { t -> t.groupId == groupId }.toMutableList()
+                            if (topping != null) {
+                                newToppings.add(SelectedTopping(groupId, topping, isPrefix, priority))
+                            }
+                            it.copy(selectedToppings = newToppings)
+                        } else it
+                    }
+                } else {
+                    val selected = if (topping != null) listOf(SelectedTopping(groupId, topping, isPrefix, priority)) else emptyList()
+                    current + PromptItem(
+                        wordId          = word.id,
+                        wordEn          = word.wordEn,
+                        wordJa          = word.wordJa,
+                        toppingGroupIds = toppingIds,
+                        selectedToppings = selected,
+                        excludeToppingValues = excludeValues,
+                    )
                 }
-            } else {
-                val selected = if (topping != null) listOf(SelectedTopping(groupId, topping, isPrefix)) else emptyList()
-                current + PromptItem(
-                    wordId          = word.id,
-                    wordEn          = word.wordEn,
-                    wordJa          = word.wordJa,
-                    toppingGroupIds = toppingIds,
-                    selectedToppings = selected,
-                    excludeToppingValues = excludeValues,
-                )
             }
+            persistItems()
         }
-        persistItems()
     }
 
     fun setSearchQuery(query: String) { _searchQuery.value = query }
@@ -421,27 +424,46 @@ class PromptViewModel @Inject constructor(
      * null を渡すとトッピングなし（wordEn のみ）に戻る。
      */
     fun setTopping(item: PromptItem, groupId: Long, topping: String?, isPrefix: Boolean) {
-        currentItems.update { current ->
-            current.map {
-                if (it.wordId == item.wordId) {
+        viewModelScope.launch {
+            val priority = calculatePriority(groupId, isPrefix)
+            currentItems.update { current ->
+                current.map {
+                    if (it.wordId == item.wordId) {
+                        val newToppings = it.selectedToppings.filterNot { t -> t.groupId == groupId }.toMutableList()
+                        if (topping != null) {
+                            newToppings.add(SelectedTopping(groupId, topping, isPrefix, priority))
+                        }
+                        it.copy(selectedToppings = newToppings)
+                    } else it
+                }
+            }
+            _adjustingItem.update {
+                if (it?.wordId == item.wordId) {
                     val newToppings = it.selectedToppings.filterNot { t -> t.groupId == groupId }.toMutableList()
                     if (topping != null) {
-                        newToppings.add(SelectedTopping(groupId, topping, isPrefix))
+                        newToppings.add(SelectedTopping(groupId, topping, isPrefix, priority))
                     }
                     it.copy(selectedToppings = newToppings)
                 } else it
             }
+            persistItems()
         }
-        _adjustingItem.update {
-            if (it?.wordId == item.wordId) {
-                val newToppings = it.selectedToppings.filterNot { t -> t.groupId == groupId }.toMutableList()
-                if (topping != null) {
-                    newToppings.add(SelectedTopping(groupId, topping, isPrefix))
-                }
-                it.copy(selectedToppings = newToppings)
-            } else it
+    }
+
+    private suspend fun calculatePriority(groupId: Long, isPrefix: Boolean): Int {
+        if (!isPrefix) return 800 // Suffixes are always 800+
+
+        val group = repository.getToppingGroup(groupId) ?: return 999
+        val name = group.nameEn.lowercase()
+        return when {
+            name.contains("size") || name.contains("volume") || name.contains("length") -> 100
+            name.contains("condition") || name.contains("state") || name.contains("status") || name.contains("appearance") -> 200
+            name.contains("shape") || name.contains("cut") || name.contains("style") -> 300
+            name.contains("color") -> 400
+            name.contains("material") || name.contains("texture") -> 500
+            name.contains("pattern") || name.contains("print") -> 600
+            else -> 999
         }
-        persistItems()
     }
 
     // ---- テンプレート ----------------------------------------
@@ -538,7 +560,7 @@ private fun PromptItem.toPersistedItem() = PersistedPromptItem(
     weight = weight,
     toppingGroupIds = toppingGroupIds,
     selectedToppings = selectedToppings.map {
-        PersistedSelectedTopping(it.groupId, it.valueEn, it.isPrefix)
+        PersistedSelectedTopping(it.groupId, it.valueEn, it.isPrefix, it.priority)
     },
     excludeToppingValues = excludeToppingValues,
 )
@@ -550,7 +572,7 @@ private fun PersistedPromptItem.toPromptItem() = PromptItem(
     weight = weight,
     toppingGroupIds = toppingGroupIds,
     selectedToppings = selectedToppings.map {
-        SelectedTopping(it.groupId, it.valueEn, it.isPrefix)
+        SelectedTopping(it.groupId, it.valueEn, it.isPrefix, it.priority)
     },
     excludeToppingValues = excludeToppingValues,
 )

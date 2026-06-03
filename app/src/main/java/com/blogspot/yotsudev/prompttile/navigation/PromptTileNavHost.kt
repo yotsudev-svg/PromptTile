@@ -18,6 +18,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.blogspot.yotsudev.prompttile.ui.edit.EditScreen
+import com.blogspot.yotsudev.prompttile.ui.import_screen.ImportScreen
 import com.blogspot.yotsudev.prompttile.ui.main.MainScreen
 import com.blogspot.yotsudev.prompttile.ui.main.PromptViewModel
 import com.blogspot.yotsudev.prompttile.ui.saved.SavedScreen
@@ -90,7 +91,14 @@ fun PromptTileNavHost(
             entryProvider = entryProvider {
                 entry<AppDestination.Main>     { MainScreen(viewModel = promptViewModel) }
                 entry<AppDestination.Saved>    { SavedScreen(promptViewModel = promptViewModel) }
-                entry<AppDestination.Edit>     { EditScreen() }
+                entry<AppDestination.Edit> {
+                    EditScreen(
+                        onNavigateToImport = { backStack.add(AppDestination.Import) }
+                    )
+                }
+                entry<AppDestination.Import> {
+                    ImportScreen(onBack = { backStack.removeAt(backStack.lastIndex) })
+                }
                 entry<AppDestination.Settings> {
                     SettingsScreen(
                         viewModel = settingsViewModel

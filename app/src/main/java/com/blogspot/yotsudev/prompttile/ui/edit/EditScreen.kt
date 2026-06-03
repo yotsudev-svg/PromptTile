@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Reorder
 import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -53,6 +54,7 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditScreen(
+    onNavigateToImport: () -> Unit,
     viewModel: EditViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -173,6 +175,12 @@ fun EditScreen(
                 actions = {
                     IconButton(onClick = { showResetOrderDialog = true }) {
                         Icon(Icons.Default.RestartAlt, contentDescription = "並び順をリセット")
+                    }
+                    IconButton(onClick = onNavigateToImport) {
+                        Icon(
+                            imageVector        = Icons.Default.Upload,
+                            contentDescription = "JSONインポート",
+                        )
                     }
                 }
             )

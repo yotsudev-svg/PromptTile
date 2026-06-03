@@ -35,6 +35,7 @@ private data class PersistedSelectedToppingDto(
     val groupId: Long,
     val valueEn: String,
     val isPrefix: Boolean,
+    val priority: Int = 999,
 )
 
 // Json ビルダーは kotlinx.serialization.json.Json のトップレベル関数。
@@ -112,7 +113,7 @@ class PreferencesDataSource @Inject constructor(
                     item.weight,
                     item.toppingGroupIds,
                     item.selectedToppings.map {
-                        PersistedSelectedToppingDto(it.groupId, it.valueEn, it.isPrefix)
+                        PersistedSelectedToppingDto(it.groupId, it.valueEn, it.isPrefix, it.priority)
                     },
                     item.excludeToppingValues
                 )
@@ -132,7 +133,7 @@ class PreferencesDataSource @Inject constructor(
                         item.weight,
                         item.toppingGroupIds,
                         item.selectedToppings.map {
-                            PersistedSelectedTopping(it.groupId, it.valueEn, it.isPrefix)
+                            PersistedSelectedTopping(it.groupId, it.valueEn, it.isPrefix, it.priority)
                         },
                         item.excludeToppingValues
                     )

@@ -38,4 +38,5 @@ data class PersistedSelectedTopping(
     val groupId: Long,
     val valueEn: String,
     val isPrefix: Boolean,
+    val priority: Int = 999,
 )

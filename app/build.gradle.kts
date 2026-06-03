@@ -40,6 +40,12 @@ android {
     buildFeatures {
         compose = true
     }
+    // ⭕ 以下のブロックを追記します
+    testOptions {
+        unitTests {
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 ksp {
@@ -61,6 +67,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.json)
     implementation(libs.reorderable)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.kotlinx.serialization.json)
@@ -79,4 +86,8 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)   // runTest / advanceUntilIdle
+    testImplementation(libs.mockk)                     // mockk() / coEvery / coVerify
 }

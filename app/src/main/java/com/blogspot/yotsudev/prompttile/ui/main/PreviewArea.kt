@@ -18,7 +18,8 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Redo
 import androidx.compose.material.icons.filled.Undo
-import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Bookmarks
+import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -170,7 +171,7 @@ fun PreviewArea(
                     Box {
                         IconButton(onClick = { showTemplateMenu = true }) {
                             Icon(
-                                imageVector = Icons.Default.AutoAwesome,
+                                imageVector = Icons.Default.Bookmarks,
                                 contentDescription = "Quality Template",
                                 modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
@@ -291,7 +292,7 @@ private fun ChipList(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(
-                    imageVector = Icons.Default.AutoAwesome,
+                    imageVector = Icons.Default.TouchApp,
                     contentDescription = null,
                     modifier = Modifier.size(24.dp).alpha(0.2f)
                 )

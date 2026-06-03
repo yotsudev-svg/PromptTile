@@ -70,4 +70,8 @@ interface CategoryDao : BaseDao<CategoryEntity> {
     /** カテゴリの並び順をID順（登録順）にリセットする */
     @Query("UPDATE categories SET sortOrder = id")
     suspend fun resetOrderToId()
+
+    /** 新規カテゴリを末尾に追加するための現在の最大 sortOrder を取得する */
+    @Query("SELECT MAX(sortOrder) FROM categories")
+    suspend fun getMaxSortOrder(): Int?
 }
