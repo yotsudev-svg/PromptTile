@@ -1,6 +1,8 @@
 package com.blogspot.yotsudev.prompttile.ui.import_screen
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,11 +14,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -35,6 +40,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -115,6 +123,40 @@ private fun InputSection(
     onInput: (String) -> Unit,
     onClear: () -> Unit,
 ) {
+    val clipboardManager = LocalClipboardManager.current
+    val context = LocalContext.current
+
+    // コピー対象となる、AIへの具体的なプロンプト文章（「」の内側）
+    val promptTemplate = """
+        以下の条件に従って、「〇〇」に関するプロンプト単語をいくつか、指定のJSON形式で出力してください。
+
+        【親カテゴリ一覧】
+        作成するカテゴリの内容に応じて、最も適切な親カテゴリのID番号を「parentId」に設定してください。
+        1: 画質・スタイル (Quality & Style)
+        2: 照明・色調 (Lighting & Color)
+        3: キャラクター (Character)
+        4: 顔・髪 (Face & Hair)
+        5: 服装 (Clothing)
+        6: 環境・構図 (Environment & Composition)
+        7: エフェクト (Effects)
+        8: 画面演出 (Post Processing)
+        9: 未分類 (Others & Uncategorized)
+
+        【出力フォーマット】
+        {
+          "categories": [
+            {
+              "nameJa": "子カテゴリ名(日本語)",
+              "nameEn": "Subcategory Name(英語)",
+              "parentId": 適切な親カテゴリのID番号,
+              "words": [
+                { "wordEn": "english_word", "wordJa": "日本語の意味" }
+              ]
+            }
+          ]
+        }
+    """.trimIndent()
+
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text  = "GeminiなどのAIが生成したJSONをここに貼り付けてください",
@@ -160,17 +202,50 @@ private fun InputSection(
                 Text("クリア")
             }
         }
-        // AIへの指示テンプレートヒント
-        HorizontalDivider()
+
+        // AIへの指示テンプレートヒント（ここをコピー可能なカード型に変更）
+        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
         Text(
-            text = """
-                💡 AIへの指示例:
-                「以下のJSON形式で、〇〇に関するプロンプト単語を10個追加してください。
-                { "categories": [{ "nameJa": "カテゴリ名", "nameEn": "Category Name", "parentId": 3, "words": [{ "wordEn": "english", "wordJa": "日本語" }] }] }」
-            """.trimIndent(),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            text = "💡 AIへの指示例（タップしてコピー）",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
         )
+
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            ),
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    // クリップボードにコピーを実行
+                    clipboardManager.setText(AnnotatedString(promptTemplate))
+                    // ユーザーへのフィードバックトースト
+                    Toast.makeText(context, "指示文をコピーしました。AIに貼り付けてください！", Toast.LENGTH_SHORT).show()
+                }
+        ) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = promptTemplate,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Spacer(Modifier.width(8.dp))
+                Icon(
+                    imageVector = Icons.Default.ContentCopy,
+                    contentDescription = "コピー",
+                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
     }
 }
 
