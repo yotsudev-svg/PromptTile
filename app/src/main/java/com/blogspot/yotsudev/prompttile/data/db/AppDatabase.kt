@@ -23,7 +23,7 @@ import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
         ToppingItemEntity::class,
         com.blogspot.yotsudev.prompttile.data.entity.ParentCategoryEntity::class,
     ],
-    version = 11, // 10 → 11: CategoryEntityにisSystem追加
+    version = 12,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
