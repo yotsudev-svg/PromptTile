@@ -62,8 +62,7 @@ fun MainScreen(
     }
     // ---- ボトムシート関連のステート ----
     var toppingTargetWord by remember { mutableStateOf<PromptWordEntity?>(null) }
-    var toppingTargetGroup by remember { mutableStateOf<ToppingGroupEntity?>(null) }
-    var toppingChoices by remember { mutableStateOf<List<ToppingItemEntity>>(emptyList()) }
+    var toppingTargetGroups by remember { mutableStateOf<List<ToppingGroupWithItems>>(emptyList()) }
 
     var showSaveDialog by rememberSaveable { mutableStateOf(false) }
     var showMoreMenu by remember { mutableStateOf(false) }
@@ -107,20 +106,18 @@ fun MainScreen(
 
     // 2. 単語追加時のトッピング選択シート (WordPool から)
     val targetWord = toppingTargetWord
-    val targetGroup = toppingTargetGroup
-    if (targetWord != null && targetGroup != null) {
+    if (targetWord != null && toppingTargetGroups.isNotEmpty()) {
         ToppingSelectSheet(
             word = targetWord,
-            group = targetGroup,
-            toppingItems = toppingChoices,
+            toppingGroups = toppingTargetGroups,
             onSelect = { groupId, topping, isPrefix ->
                 viewModel.addWordWithTopping(targetWord, groupId, topping, isPrefix)
                 toppingTargetWord = null
-                toppingTargetGroup = null
+                toppingTargetGroups = emptyList()
             },
             onDismiss = {
                 toppingTargetWord = null
-                toppingTargetGroup = null
+                toppingTargetGroups = emptyList()
             }
         )
     }
@@ -252,13 +249,16 @@ fun MainScreen(
                                     // トッピング選択肢を読み込んでシートを表示
                                     scope.launch {
                                         val gids = word.toppingGroupIds?.split(",")?.mapNotNull { it.trim().toLongOrNull() } ?: emptyList()
-                                        gids.firstOrNull()?.let { groupId ->
+                                        val groupsWithItems = gids.mapNotNull { groupId ->
                                             val group = viewModel.getToppingGroup(groupId)
                                             if (group != null) {
-                                                toppingChoices = viewModel.getToppingItems(groupId)
-                                                toppingTargetGroup = group
-                                                toppingTargetWord = word
-                                            }
+                                                val items = viewModel.getToppingItems(groupId)
+                                                ToppingGroupWithItems(group, items)
+                                            } else null
+                                        }
+                                        if (groupsWithItems.isNotEmpty()) {
+                                            toppingTargetWord = word
+                                            toppingTargetGroups = groupsWithItems
                                         }
                                     }
                                 },
@@ -353,13 +353,16 @@ fun MainScreen(
                             onToppingIconTap = { word ->
                                 scope.launch {
                                     val gids = word.toppingGroupIds?.split(",")?.mapNotNull { it.trim().toLongOrNull() } ?: emptyList()
-                                    gids.firstOrNull()?.let { groupId ->
+                                    val groupsWithItems = gids.mapNotNull { groupId ->
                                         val group = viewModel.getToppingGroup(groupId)
                                         if (group != null) {
-                                            toppingChoices = viewModel.getToppingItems(groupId)
-                                            toppingTargetGroup = group
-                                            toppingTargetWord = word
-                                        }
+                                            val items = viewModel.getToppingItems(groupId)
+                                            ToppingGroupWithItems(group, items)
+                                        } else null
+                                    }
+                                    if (groupsWithItems.isNotEmpty()) {
+                                        toppingTargetWord = word
+                                        toppingTargetGroups = groupsWithItems
                                     }
                                 }
                             },

@@ -92,9 +92,6 @@ fun WordPool(
                 }
             }
         } else {
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                SectionHeader(stringResource(R.string.word_pool_category_words))
-            }
             items(items = words, key = { "cat_${it.id}" }) { word ->
                 WordChipRouter(
                     word = word,

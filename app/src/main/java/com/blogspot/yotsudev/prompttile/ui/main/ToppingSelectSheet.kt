@@ -49,8 +49,7 @@ import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
 @Composable
 fun ToppingSelectSheet(
     word: PromptWordEntity,
-    group: ToppingGroupEntity,
-    toppingItems: List<ToppingItemEntity>,
+    toppingGroups: List<ToppingGroupWithItems>,
     onSelect: (groupId: Long, topping: String?, isPrefix: Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -58,9 +57,6 @@ fun ToppingSelectSheet(
 
     val excludedSet = remember(word.excludeToppingValues) {
         word.excludeToppingValues?.split(",")?.map { it.trim() }?.toSet() ?: emptySet()
-    }
-    val filteredItems = remember(toppingItems, excludedSet) {
-        toppingItems.filter { it.valueEn !in excludedSet }
     }
 
     ModalBottomSheet(
@@ -79,37 +75,55 @@ fun ToppingSelectSheet(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
 
-            // ---- グループ名 ----
-            Text(
-                text = group.nameJa,
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(horizontal = 16.dp),
-            )
+            // ---- トッピンググループ一覧 ----
+            toppingGroups.forEach { groupWithItems ->
+                val group = groupWithItems.group
+                val toppingItems = groupWithItems.items
+                val filteredItems = remember(toppingItems, excludedSet) {
+                    toppingItems.filter { it.valueEn !in excludedSet }
+                }
 
-            // ---- トッピングチップ一覧（横スクロール） ----
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 12.dp),
-            ) {
-                items(items = filteredItems, key = { it.id }) { item ->
-                    ToppingChip(
-                        item = item,
-                        onClick = {
-                            onSelect(group.id, item.valueEn, group.isPrefix)
-                            onDismiss()
-                        },
+                if (filteredItems.isNotEmpty()) {
+                    // グループ名
+                    Text(
+                        text = group.nameJa,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
                     )
+
+                    // トッピングチップ一覧（横スクロール）
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 12.dp),
+                    ) {
+                        items(items = filteredItems, key = { it.id }) { item ->
+                            ToppingChip(
+                                item = item,
+                                onClick = {
+                                    onSelect(group.id, item.valueEn, group.isPrefix)
+                                    // 複数ある場合でも、一個選んだら閉じる（追加動作なので）
+                                    onDismiss()
+                                },
+                            )
+                        }
+                    }
                 }
             }
 
             // ---- 「選択なしで追加」ボタン ----
+            // 最初のグループの情報を代表として使う（ViewModel側で toppings=null なら他は無視される想定）
+            val firstGroupId = toppingGroups.firstOrNull()?.group?.id
+            val firstGroupIsPrefix = toppingGroups.firstOrNull()?.group?.isPrefix ?: true
+
             OutlinedButton(
                 onClick = {
-                    onSelect(group.id, null, group.isPrefix)
+                    if (firstGroupId != null) {
+                        onSelect(firstGroupId, null, firstGroupIsPrefix)
+                    }
                     onDismiss()
                 },
                 modifier = Modifier

@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
@@ -39,13 +41,11 @@ import java.util.Locale
 @Composable
 fun SavedPromptCard(
     entity: SavedPromptEntity,
+    onClick: (SavedPromptEntity) -> Unit,
     onCopy: (SavedPromptEntity) -> Unit,
     onDelete: (SavedPromptEntity) -> Unit,
     onEdit: (SavedPromptEntity) -> Unit = {},
     onToggleEnabled: (SavedPromptEntity) -> Unit = {},
-    onLoadPositive: ((SavedPromptEntity) -> Unit)? = null,
-    onLoadNegative: ((SavedPromptEntity) -> Unit)? = null,
-    onLoadFull: ((SavedPromptEntity) -> Unit)? = null,
     dragHandle: @Composable () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -55,6 +55,7 @@ fun SavedPromptCard(
 
     Card(
         modifier = modifier.fillMaxWidth(),
+        onClick = { onClick(entity) },
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
         ),
@@ -63,20 +64,20 @@ fun SavedPromptCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 8.dp)
+                .padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp)
                 .alpha(contentAlpha),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             // ---- ヘッダー: タイトルと基本アクション ----
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = entity.title,
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -106,37 +107,21 @@ fun SavedPromptCard(
                 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     dragHandle()
-                    IconButton(onClick = { onToggleEnabled(entity) }) {
+                    IconButton(onClick = { onToggleEnabled(entity) }, modifier = Modifier.size(40.dp)) {
                         Icon(
                             imageVector = if (entity.isEnabled) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                             contentDescription = if (entity.isEnabled) "Enabled" else "Disabled",
-                            tint = if (entity.isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            tint = if (entity.isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            modifier = Modifier.size(20.dp)
                         )
                     }
-                    if (!entity.isDefault) {
-                        IconButton(onClick = { onEdit(entity) }) {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = "Edit",
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                    }
-                    IconButton(onClick = { onCopy(entity) }) {
+                    IconButton(onClick = { onCopy(entity) }, modifier = Modifier.size(40.dp)) {
                         Icon(
                             imageVector = Icons.Default.ContentCopy,
                             contentDescription = stringResource(R.string.saved_copy),
                             tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
                         )
-                    }
-                    if (!entity.isDefault) {
-                        IconButton(onClick = { onDelete(entity) }) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = stringResource(R.string.saved_delete),
-                                tint = MaterialTheme.colorScheme.error,
-                            )
-                        }
                     }
                 }
             }
@@ -156,68 +141,30 @@ fun SavedPromptCard(
                     color = MaterialTheme.colorScheme.error
                 )
             }
-
-            // ---- フッター: 適用ボタン ----
-            if (onLoadPositive != null || onLoadNegative != null) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-                ) {
-                    // 両方適用ボタン（両方のテキストがある場合のみ）
-                    if (onLoadFull != null) {
-                        FilledTonalButton(
-                            onClick = { onLoadFull(entity) },
-                            colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        ) {
-                            Text(stringResource(R.string.saved_apply_all), style = MaterialTheme.typography.labelLarge)
-                        }
-                    }
-
-                    if (onLoadPositive != null && entity.promptText.isNotBlank()) {
-                        FilledTonalButton(
-                            onClick = { onLoadPositive(entity) },
-                            colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        ) {
-                            Text(stringResource(R.string.saved_apply_positive), style = MaterialTheme.typography.labelLarge)
-                        }
-                    }
-                    if (onLoadNegative != null && entity.negativeText.isNotBlank()) {
-                        FilledTonalButton(
-                            onClick = { onLoadNegative(entity) },
-                            colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer,
-                                contentColor = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                        ) {
-                            Text(stringResource(R.string.saved_apply_negative), style = MaterialTheme.typography.labelLarge)
-                        }
-                    }
-                }
-            }
         }
     }
 }
 
 @Composable
 private fun PromptPreviewItem(label: String, text: String, color: Color) {
-    Column {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
             color = color.copy(alpha = 0.8f),
+            modifier = Modifier.width(56.dp)
         )
         Text(
             text = text,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
         )
     }
 }

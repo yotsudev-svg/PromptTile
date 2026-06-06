@@ -68,6 +68,7 @@ fun SavedScreen(
 
     var deletingPrompt by remember { mutableStateOf<SavedPromptEntity?>(null) }
     var editingPrompt by remember { mutableStateOf<SavedPromptEntity?>(null) }
+    var viewingPrompt by remember { mutableStateOf<SavedPromptEntity?>(null) }
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
     var showResetOrderDialog by remember { mutableStateOf(false) }
 
@@ -168,6 +169,19 @@ fun SavedScreen(
         )
     }
 
+    viewingPrompt?.let { prompt ->
+        SavedPromptDetailDialog(
+            entity = prompt,
+            onDismiss = { viewingPrompt = null },
+            onCopy = onCopy,
+            onEdit = { editingPrompt = it },
+            onDelete = { deletingPrompt = it },
+            onLoadPositive = onLoadPositive,
+            onLoadNegative = onLoadNegative,
+            onLoadFull = onLoadFull
+        )
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -242,13 +256,11 @@ fun SavedScreen(
                         Box(modifier = Modifier.animateItem()) {
                             SavedPromptCard(
                                 entity = entity,
+                                onClick = { viewingPrompt = it },
                                 onCopy = onCopy,
                                 onDelete = { deletingPrompt = it },
                                 onEdit = { editingPrompt = it },
                                 onToggleEnabled = { viewModel.togglePromptEnabled(it) },
-                                onLoadPositive = if (entity.promptText.isNotBlank()) onLoadPositive else null,
-                                onLoadNegative = if (entity.negativeText.isNotBlank()) onLoadNegative else null,
-                                onLoadFull = if (entity.promptText.isNotBlank() && entity.negativeText.isNotBlank()) onLoadFull else null,
                                 dragHandle = {
                                     if (filterMode != ManagementFilterMode.DISABLED_ONLY) {
                                         Icon(
