@@ -60,6 +60,11 @@ data class PromptUiState(
         get() = if (mode == PromptMode.POSITIVE) selectedPositiveCategoryId else selectedNegativeCategoryId
 }
 
+data class ToppingConfiguration(
+    val toppingGroupIds: List<Long> = emptyList(),
+    val excludeToppingValues: Set<String> = emptySet()
+)
+
 data class PromptItem(
     val wordId: Long,
     val wordEn: String,

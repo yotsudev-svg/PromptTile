@@ -1,7 +1,10 @@
 package com.blogspot.yotsudev.prompttile.data.db
 
 import android.util.Log
+import org.json.JSONArray
 import org.json.JSONObject
+
+const val SEED_DATA_FILE_NAME = "seed_data.tagged.json"
 
 // ─── カテゴリ系 ───────────────────────────────────────────────────────────────
 
@@ -18,10 +21,8 @@ data class SeedCategory(
 data class SeedWord(
     val wordEn: String,
     val wordJa: String,
-    /** 紐づくトッピンググループIDのリスト。 */
-    val toppingGroupIds: List<Long> = emptyList(),
-    /** 除外したいトッピングアイテムの valueEn リスト。 */
-    val excludeToppingValues: List<String> = emptyList(),
+    /** タグのリスト。 */
+    val tags: List<String> = emptyList(),
 )
 
 // ─── トッピング系 ─────────────────────────────────────────────────────────────
@@ -89,18 +90,15 @@ fun parseSeedData(json: String): SeedData {
                 SeedWord(
                     wordEn = wordObj.getString("wordEn"),
                     wordJa = wordObj.getString("wordJa"),
-                    // 複数のトッピンググループIDに対応
-                    toppingGroupIds = if (wordObj.has("toppingGroupIds")) {
-                        val arr = wordObj.getJSONArray("toppingGroupIds")
-                        List(arr.length()) { idx -> arr.getLong(idx) }
-                    } else if (wordObj.has("toppingGroupId")) {
-                        // 互換性のため古いキーも一応拾う
-                        listOf(wordObj.getLong("toppingGroupId"))
-                    } else emptyList(),
-                    // 除外トッピング
-                    excludeToppingValues = if (wordObj.has("excludeToppingValues")) {
-                        val arr = wordObj.getJSONArray("excludeToppingValues")
-                        List(arr.length()) { idx -> arr.getString(idx) }
+                    // タグのパース（配列と文字列の両方に対応）
+                    tags = if (wordObj.has("tags")) {
+                        val tagsObj = wordObj.get("tags")
+                        if (tagsObj is JSONArray) {
+                            List(tagsObj.length()) { idx -> tagsObj.getString(idx) }
+                        } else {
+                            // 文字列の場合はカンマ区切りとして処理
+                            tagsObj.toString().split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                        }
                     } else emptyList()
                 )
             } catch (e: Exception) {

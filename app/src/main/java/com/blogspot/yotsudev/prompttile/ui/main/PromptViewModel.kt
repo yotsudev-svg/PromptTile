@@ -13,6 +13,8 @@ import com.blogspot.yotsudev.prompttile.data.preferences.PreferencesDataSource
 import com.blogspot.yotsudev.prompttile.data.preferences.UserPreferences
 import com.blogspot.yotsudev.prompttile.data.repository.PromptRepository
 import com.blogspot.yotsudev.prompttile.data.seed.PrefixTemplate
+import com.blogspot.yotsudev.prompttile.data.db.parseTagRules
+import com.blogspot.yotsudev.prompttile.data.entity.TagRule
 import com.blogspot.yotsudev.prompttile.data.seed.parsePrefixTemplates
 import com.blogspot.yotsudev.prompttile.util.PromptFormatter
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -52,6 +54,7 @@ class PromptViewModel @Inject constructor(
 
     private val _searchQuery = MutableStateFlow("")
     private val _defaultTemplates = MutableStateFlow<List<PrefixTemplate>>(emptyList())
+    private val _tagRules = MutableStateFlow<Map<String, TagRule>>(emptyMap())
 
     private val _positiveUndoStack = MutableStateFlow<List<List<PromptItem>>>(emptyList())
     private val _positiveRedoStack = MutableStateFlow<List<List<PromptItem>>>(emptyList())
@@ -195,6 +198,7 @@ class PromptViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             launch { loadDefaultTemplates() }
+            launch { loadTagRules() }
             val prefs = dataSource.userPreferences.first()
             if (prefs.persistedPositiveItems.isNotEmpty())
                 _positiveItems.value = prefs.persistedPositiveItems.map { it.toPromptItem() }
@@ -205,8 +209,16 @@ class PromptViewModel @Inject constructor(
 
     private suspend fun loadDefaultTemplates() = withContext(Dispatchers.IO) {
         try {
-            val json = context.assets.open("seed_data.json").bufferedReader().use { it.readText() }
+            val json = context.assets.open(com.blogspot.yotsudev.prompttile.data.db.SEED_DATA_FILE_NAME).bufferedReader().use { it.readText() }
             _defaultTemplates.value = parsePrefixTemplates(json)
+        } catch (e: Exception) { e.printStackTrace() }
+    }
+
+    private suspend fun loadTagRules() = withContext(Dispatchers.IO) {
+        try {
+            val json = context.assets.open("tag_rules.json").bufferedReader().use { it.readText() }
+            val rules = parseTagRules(json)
+            _tagRules.value = rules.associateBy { it.tag }
         } catch (e: Exception) { e.printStackTrace() }
     }
 
@@ -270,8 +282,21 @@ class PromptViewModel @Inject constructor(
     // ---- 単語操作 ----------------------------------------
 
     /**
+     * 単語のタグからトッピング設定（適用グループIDと除外値）を動的に解決する。
+     */
+    fun resolveToppingConfig(tagsStr: String?): ToppingConfiguration {
+        val tags = tagsStr?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() } ?: return ToppingConfiguration()
+        val rules = tags.mapNotNull { _tagRules.value[it] }
+        
+        return ToppingConfiguration(
+            toppingGroupIds = rules.flatMap { it.toppingGroupIds }.distinct(),
+            excludeToppingValues = rules.flatMap { it.excludeToppingValues }.toSet()
+        )
+    }
+
+    /**
      * WordPool の通常タップ（左エリア）。
-     * トッピング情報を PromptItem に引き継ぐため toppingGroupIds を渡す。
+     * トッピング情報を PromptItem に引き継ぐ。
      */
     fun toggleWord(word: PromptWordEntity) {
         pushHistory(currentItems.value)
@@ -279,12 +304,13 @@ class PromptViewModel @Inject constructor(
             if (current.any { it.wordId == word.id }) {
                 current.filter { it.wordId != word.id }
             } else {
+                val config = resolveToppingConfig(word.tags)
                 current + PromptItem(
                     wordId          = word.id,
                     wordEn          = word.wordEn,
                     wordJa          = word.wordJa,
-                    toppingGroupIds = word.toppingGroupIds?.split(",")?.mapNotNull { it.trim().toLongOrNull() } ?: emptyList(),
-                    excludeToppingValues = word.excludeToppingValues?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() } ?: emptyList(),
+                    toppingGroupIds = config.toppingGroupIds,
+                    excludeToppingValues = config.excludeToppingValues.toList(),
                 )
             }
         }
@@ -294,16 +320,15 @@ class PromptViewModel @Inject constructor(
     /**
      * WordPool の分割チップ右エリア（🎨）タップ。
      * トッピング選択シートを経由して単語を追加する。
-     * selectedTopping を指定して直接 PromptItem を追加する。
      */
     fun addWordWithTopping(word: PromptWordEntity, groupId: Long, topping: String?, isPrefix: Boolean) {
         viewModelScope.launch {
             val priority = calculatePriority(groupId, isPrefix)
+            val config = resolveToppingConfig(word.tags)
+            
             pushHistory(currentItems.value)
             currentItems.update { current ->
                 val existing = current.firstOrNull { it.wordId == word.id }
-                val toppingIds = word.toppingGroupIds?.split(",")?.mapNotNull { it.trim().toLongOrNull() } ?: emptyList()
-                val excludeValues = word.excludeToppingValues?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() } ?: emptyList()
 
                 if (existing != null) {
                     current.map {
@@ -321,9 +346,9 @@ class PromptViewModel @Inject constructor(
                         wordId          = word.id,
                         wordEn          = word.wordEn,
                         wordJa          = word.wordJa,
-                        toppingGroupIds = toppingIds,
+                        toppingGroupIds = config.toppingGroupIds,
                         selectedToppings = selected,
-                        excludeToppingValues = excludeValues,
+                        excludeToppingValues = config.excludeToppingValues.toList(),
                     )
                 }
             }

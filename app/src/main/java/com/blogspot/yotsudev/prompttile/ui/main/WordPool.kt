@@ -54,9 +54,9 @@ fun WordPool(
     searchQuery: String,
     selectedWordIds: Set<Long>,
     uncategorizedIds: Set<Long>,
+    resolveToppingConfig: (String?) -> ToppingConfiguration,
     onWordTap: (PromptWordEntity) -> Unit,
     onWordLongPress: (PromptWordEntity) -> Unit,
-    /** 分割チップの右エリア（🎨）タップ時のコールバック */
     onToppingIconTap: (PromptWordEntity) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -85,6 +85,7 @@ fun WordPool(
                         word = word,
                         isSelected = word.id in selectedWordIds,
                         isUncategorized = word.categoryId in uncategorizedIds,
+                        toppingGroupIds = resolveToppingConfig(word.tags).toppingGroupIds,
                         onTap = { onWordTap(word) },
                         onLongPress = { onWordLongPress(word) },
                         onToppingIconTap = { onToppingIconTap(word) },
@@ -97,6 +98,7 @@ fun WordPool(
                     word = word,
                     isSelected = word.id in selectedWordIds,
                     isUncategorized = word.categoryId in uncategorizedIds,
+                    toppingGroupIds = resolveToppingConfig(word.tags).toppingGroupIds,
                     onTap = { onWordTap(word) },
                     onLongPress = { onWordLongPress(word) },
                     onToppingIconTap = { onToppingIconTap(word) },
@@ -106,17 +108,18 @@ fun WordPool(
     }
 }
 
-/** toppingGroupIds の有無で通常チップ／分割チップを切り替えるルーター */
+/** トッピンググループの有無で通常チップ／分割チップを切り替えるルーター */
 @Composable
 private fun WordChipRouter(
     word: PromptWordEntity,
     isSelected: Boolean,
     isUncategorized: Boolean,
+    toppingGroupIds: List<Long>,
     onTap: () -> Unit,
     onLongPress: () -> Unit,
     onToppingIconTap: () -> Unit,
 ) {
-    if (!word.toppingGroupIds.isNullOrBlank()) {
+    if (toppingGroupIds.isNotEmpty()) {
         SplitWordChip(
             word = word,
             isSelected = isSelected,

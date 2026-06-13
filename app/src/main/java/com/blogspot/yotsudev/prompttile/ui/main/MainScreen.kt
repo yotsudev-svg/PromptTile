@@ -107,8 +107,10 @@ fun MainScreen(
     // 2. 単語追加時のトッピング選択シート (WordPool から)
     val targetWord = toppingTargetWord
     if (targetWord != null && toppingTargetGroups.isNotEmpty()) {
+        val config = viewModel.resolveToppingConfig(targetWord.tags)
         ToppingSelectSheet(
-            word = targetWord,
+            wordEn = targetWord.wordEn,
+            excludeToppingValues = config.excludeToppingValues,
             toppingGroups = toppingTargetGroups,
             onSelect = { groupId, topping, isPrefix ->
                 viewModel.addWordWithTopping(targetWord, groupId, topping, isPrefix)
@@ -236,6 +238,7 @@ fun MainScreen(
                                 searchQuery = uiState.searchQuery,
                                 selectedWordIds = selectedWordIds,
                                 uncategorizedIds = uncategorizedIds,
+                                resolveToppingConfig = viewModel::resolveToppingConfig,
                                 onWordTap = viewModel::toggleWord,
                                 onWordLongPress = { word ->
                                     copyToClipboard(context, word.wordEn)
@@ -248,8 +251,8 @@ fun MainScreen(
                                 onToppingIconTap = { word ->
                                     // トッピング選択肢を読み込んでシートを表示
                                     scope.launch {
-                                        val gids = word.toppingGroupIds?.split(",")?.mapNotNull { it.trim().toLongOrNull() } ?: emptyList()
-                                        val groupsWithItems = gids.mapNotNull { groupId ->
+                                        val config = viewModel.resolveToppingConfig(word.tags)
+                                        val groupsWithItems = config.toppingGroupIds.mapNotNull { groupId ->
                                             val group = viewModel.getToppingGroup(groupId)
                                             if (group != null) {
                                                 val items = viewModel.getToppingItems(groupId)
@@ -338,6 +341,7 @@ fun MainScreen(
                             searchQuery = uiState.searchQuery,
                             selectedWordIds = selectedWordIds,
                             uncategorizedIds = uncategorizedIds,
+                            resolveToppingConfig = viewModel::resolveToppingConfig,
                             onWordTap = viewModel::toggleWord,
                             onWordLongPress = { word ->
                                 copyToClipboard(context, word.wordEn)
@@ -352,8 +356,8 @@ fun MainScreen(
                             },
                             onToppingIconTap = { word ->
                                 scope.launch {
-                                    val gids = word.toppingGroupIds?.split(",")?.mapNotNull { it.trim().toLongOrNull() } ?: emptyList()
-                                    val groupsWithItems = gids.mapNotNull { groupId ->
+                                    val config = viewModel.resolveToppingConfig(word.tags)
+                                    val groupsWithItems = config.toppingGroupIds.mapNotNull { groupId ->
                                         val group = viewModel.getToppingGroup(groupId)
                                         if (group != null) {
                                             val items = viewModel.getToppingItems(groupId)

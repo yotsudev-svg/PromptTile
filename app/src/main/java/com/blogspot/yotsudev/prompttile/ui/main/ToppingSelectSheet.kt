@@ -48,16 +48,13 @@ import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ToppingSelectSheet(
-    word: PromptWordEntity,
+    wordEn: String,
+    excludeToppingValues: Set<String>,
     toppingGroups: List<ToppingGroupWithItems>,
     onSelect: (groupId: Long, topping: String?, isPrefix: Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    val excludedSet = remember(word.excludeToppingValues) {
-        word.excludeToppingValues?.split(",")?.map { it.trim() }?.toSet() ?: emptySet()
-    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -70,7 +67,7 @@ fun ToppingSelectSheet(
         ) {
             // ---- ヘッダー ----
             Text(
-                text = stringResource(R.string.topping_sheet_title, word.wordEn),
+                text = stringResource(R.string.topping_sheet_title, wordEn),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
@@ -79,8 +76,8 @@ fun ToppingSelectSheet(
             toppingGroups.forEach { groupWithItems ->
                 val group = groupWithItems.group
                 val toppingItems = groupWithItems.items
-                val filteredItems = remember(toppingItems, excludedSet) {
-                    toppingItems.filter { it.valueEn !in excludedSet }
+                val filteredItems = remember(toppingItems, excludeToppingValues) {
+                    toppingItems.filter { it.valueEn !in excludeToppingValues }
                 }
 
                 if (filteredItems.isNotEmpty()) {

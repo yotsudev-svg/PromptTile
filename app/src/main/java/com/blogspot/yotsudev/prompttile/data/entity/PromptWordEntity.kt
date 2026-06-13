@@ -27,16 +27,8 @@ data class PromptWordEntity(
     val isDefault: Boolean = false,
     val isHidden: Boolean = false,
     /**
-     * 紐づくトッピンググループのIDリスト。カンマ区切り（例: "1,2"）。
-     * null または空文字の場合はトッピング非対応の通常単語。
-     *
-     * WordPool での表示分岐キーとして使用する:
-     *   null/empty → 通常チップ（従来デザイン）
-     *   non-empty  → 分割スマート・アシストチップ（⚙️アイコン付き）
+     * 単語に付与されたタグ。カンマ区切り（例: "hair,style"）。
+     * このタグに基づいて、TagRules からトッピンググループと除外設定を動的に解決する。
      */
-    val toppingGroupIds: String? = null,
-    /**
-     * 除外したいトッピングアイテムの valueEn リスト。カンマ区切り（例: "leather,silk"）。
-     */
-    val excludeToppingValues: String? = null,
+    val tags: String? = null,
 )

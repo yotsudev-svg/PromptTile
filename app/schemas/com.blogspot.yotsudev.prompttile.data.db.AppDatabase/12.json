@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 12,
-    "identityHash": "98784759ae48aa4e07897d34525efe3e",
+    "identityHash": "c1f44080d2aa7c84e2bf0bbcd14d5798",
     "entities": [
       {
         "tableName": "categories",
@@ -72,7 +72,7 @@
       },
       {
         "tableName": "prompt_words",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `categoryId` INTEGER NOT NULL, `wordEn` TEXT NOT NULL, `wordJa` TEXT NOT NULL, `sortOrder` INTEGER NOT NULL, `isDefault` INTEGER NOT NULL, `isHidden` INTEGER NOT NULL, `toppingGroupIds` TEXT, `excludeToppingValues` TEXT, FOREIGN KEY(`categoryId`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `categoryId` INTEGER NOT NULL, `wordEn` TEXT NOT NULL, `wordJa` TEXT NOT NULL, `sortOrder` INTEGER NOT NULL, `isDefault` INTEGER NOT NULL, `isHidden` INTEGER NOT NULL, `tags` TEXT, FOREIGN KEY(`categoryId`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "id",
@@ -117,13 +117,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "toppingGroupIds",
-            "columnName": "toppingGroupIds",
-            "affinity": "TEXT"
-          },
-          {
-            "fieldPath": "excludeToppingValues",
-            "columnName": "excludeToppingValues",
+            "fieldPath": "tags",
+            "columnName": "tags",
             "affinity": "TEXT"
           }
         ],
@@ -370,7 +365,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '98784759ae48aa4e07897d34525efe3e')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c1f44080d2aa7c84e2bf0bbcd14d5798')"
     ]
   }
 }

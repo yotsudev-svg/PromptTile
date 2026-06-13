@@ -39,7 +39,7 @@ abstract class AppDatabase : RoomDatabase() {
                 super.onCreate(db)
 
                 val jsonText = context.assets
-                    .open("seed_data.json")
+                    .open(SEED_DATA_FILE_NAME)
                     .bufferedReader()
                     .use { it.readText() }
 
@@ -81,22 +81,19 @@ abstract class AppDatabase : RoomDatabase() {
                         """.trimIndent()
                     )
                     category.words.forEachIndexed { wordIndex, word ->
-                        val groupIdsVal = if (word.toppingGroupIds.isNotEmpty())
-                            "'${word.toppingGroupIds.joinToString(",")}'" else "NULL"
-                        val excludeVal = if (word.excludeToppingValues.isNotEmpty())
-                            "'${word.excludeToppingValues.joinToString(",")}'" else "NULL"
+                        val tagsVal = if (word.tags.isNotEmpty())
+                            "'${word.tags.joinToString(",")}'" else "NULL"
                         db.execSQL(
                             """
                             INSERT OR IGNORE INTO prompt_words
-                                (categoryId, wordEn, wordJa, sortOrder, isDefault, isHidden, toppingGroupIds, excludeToppingValues)
+                                (categoryId, wordEn, wordJa, sortOrder, isDefault, isHidden, tags)
                             VALUES (
                                 ${category.id},
                                 '${word.wordEn.escapeSql()}',
                                 '${word.wordJa.escapeSql()}',
                                 $wordIndex,
                                 1, 0,
-                                $groupIdsVal,
-                                $excludeVal
+                                $tagsVal
                             )
                             """.trimIndent()
                         )
