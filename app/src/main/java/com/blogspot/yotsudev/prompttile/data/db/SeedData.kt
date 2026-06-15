@@ -23,6 +23,7 @@ data class SeedWord(
     val wordJa: String,
     /** タグのリスト。 */
     val tags: List<String> = emptyList(),
+    val promptTemplate: String? = null,
 )
 
 // ─── トッピング系 ─────────────────────────────────────────────────────────────
@@ -99,7 +100,8 @@ fun parseSeedData(json: String): SeedData {
                             // 文字列の場合はカンマ区切りとして処理
                             tagsObj.toString().split(",").map { it.trim() }.filter { it.isNotEmpty() }
                         }
-                    } else emptyList()
+                    } else emptyList(),
+                    promptTemplate = wordObj.optString("promptTemplate", null)
                 )
             } catch (e: Exception) {
                 throw RuntimeException("Error parsing word at category $catName (ID: $catId), index $j: ${e.message}. JSON: $wordObj", e)

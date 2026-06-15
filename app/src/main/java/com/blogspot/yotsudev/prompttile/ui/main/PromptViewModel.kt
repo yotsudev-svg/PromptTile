@@ -311,6 +311,8 @@ class PromptViewModel @Inject constructor(
                     wordJa          = word.wordJa,
                     toppingGroupIds = config.toppingGroupIds,
                     excludeToppingValues = config.excludeToppingValues.toList(),
+                    tags            = word.tags,
+                    promptTemplate  = word.promptTemplate,
                 )
             }
         }
@@ -321,7 +323,13 @@ class PromptViewModel @Inject constructor(
      * WordPool の分割チップ右エリア（🎨）タップ。
      * トッピング選択シートを経由して単語を追加する。
      */
-    fun addWordWithTopping(word: PromptWordEntity, groupId: Long, topping: String?, isPrefix: Boolean) {
+    fun addWordWithTopping(
+        word: PromptWordEntity,
+        groupId: Long,
+        topping: String?,
+        isPrefix: Boolean,
+        slot: String? = null
+    ) {
         viewModelScope.launch {
             val priority = calculatePriority(groupId, isPrefix)
             val config = resolveToppingConfig(word.tags)
@@ -333,15 +341,17 @@ class PromptViewModel @Inject constructor(
                 if (existing != null) {
                     current.map {
                         if (it.wordId == word.id) {
-                            val newToppings = it.selectedToppings.filterNot { t -> t.groupId == groupId }.toMutableList()
+                            val newToppings = it.selectedToppings.filterNot { t -> 
+                                if (slot != null) t.slot == slot else t.groupId == groupId 
+                            }.toMutableList()
                             if (topping != null) {
-                                newToppings.add(SelectedTopping(groupId, topping, isPrefix, priority))
+                                newToppings.add(SelectedTopping(groupId, topping, isPrefix, priority, slot))
                             }
                             it.copy(selectedToppings = newToppings)
                         } else it
                     }
                 } else {
-                    val selected = if (topping != null) listOf(SelectedTopping(groupId, topping, isPrefix, priority)) else emptyList()
+                    val selected = if (topping != null) listOf(SelectedTopping(groupId, topping, isPrefix, priority, slot)) else emptyList()
                     current + PromptItem(
                         wordId          = word.id,
                         wordEn          = word.wordEn,
@@ -349,6 +359,8 @@ class PromptViewModel @Inject constructor(
                         toppingGroupIds = config.toppingGroupIds,
                         selectedToppings = selected,
                         excludeToppingValues = config.excludeToppingValues.toList(),
+                        tags            = word.tags,
+                        promptTemplate  = word.promptTemplate,
                     )
                 }
             }
@@ -448,15 +460,17 @@ class PromptViewModel @Inject constructor(
      * シート内でトッピングを変更する。
      * null を渡すとトッピングなし（wordEn のみ）に戻る。
      */
-    fun setTopping(item: PromptItem, groupId: Long, topping: String?, isPrefix: Boolean) {
+    fun setTopping(item: PromptItem, groupId: Long, topping: String?, isPrefix: Boolean, slot: String? = null) {
         viewModelScope.launch {
             val priority = calculatePriority(groupId, isPrefix)
             currentItems.update { current ->
                 current.map {
                     if (it.wordId == item.wordId) {
-                        val newToppings = it.selectedToppings.filterNot { t -> t.groupId == groupId }.toMutableList()
+                        val newToppings = it.selectedToppings.filterNot { t -> 
+                            if (slot != null) t.slot == slot else t.groupId == groupId 
+                        }.toMutableList()
                         if (topping != null) {
-                            newToppings.add(SelectedTopping(groupId, topping, isPrefix, priority))
+                            newToppings.add(SelectedTopping(groupId, topping, isPrefix, priority, slot))
                         }
                         it.copy(selectedToppings = newToppings)
                     } else it
@@ -464,9 +478,11 @@ class PromptViewModel @Inject constructor(
             }
             _adjustingItem.update {
                 if (it?.wordId == item.wordId) {
-                    val newToppings = it.selectedToppings.filterNot { t -> t.groupId == groupId }.toMutableList()
+                    val newToppings = it.selectedToppings.filterNot { t -> 
+                        if (slot != null) t.slot == slot else t.groupId == groupId 
+                    }.toMutableList()
                     if (topping != null) {
-                        newToppings.add(SelectedTopping(groupId, topping, isPrefix, priority))
+                        newToppings.add(SelectedTopping(groupId, topping, isPrefix, priority, slot))
                     }
                     it.copy(selectedToppings = newToppings)
                 } else it
@@ -585,9 +601,11 @@ private fun PromptItem.toPersistedItem() = PersistedPromptItem(
     weight = weight,
     toppingGroupIds = toppingGroupIds,
     selectedToppings = selectedToppings.map {
-        PersistedSelectedTopping(it.groupId, it.valueEn, it.isPrefix, it.priority)
+        PersistedSelectedTopping(it.groupId, it.valueEn, it.isPrefix, it.priority, it.slot)
     },
     excludeToppingValues = excludeToppingValues,
+    tags = tags,
+    promptTemplate = promptTemplate,
 )
 
 private fun PersistedPromptItem.toPromptItem() = PromptItem(
@@ -597,7 +615,9 @@ private fun PersistedPromptItem.toPromptItem() = PromptItem(
     weight = weight,
     toppingGroupIds = toppingGroupIds,
     selectedToppings = selectedToppings.map {
-        SelectedTopping(it.groupId, it.valueEn, it.isPrefix, it.priority)
+        SelectedTopping(it.groupId, it.valueEn, it.isPrefix, it.priority, it.slot)
     },
     excludeToppingValues = excludeToppingValues,
+    tags = tags,
+    promptTemplate = promptTemplate,
 )

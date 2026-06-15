@@ -109,13 +109,11 @@ fun MainScreen(
     if (targetWord != null && toppingTargetGroups.isNotEmpty()) {
         val config = viewModel.resolveToppingConfig(targetWord.tags)
         ToppingSelectSheet(
-            wordEn = targetWord.wordEn,
+            word = targetWord,
             excludeToppingValues = config.excludeToppingValues,
             toppingGroups = toppingTargetGroups,
-            onSelect = { groupId, topping, isPrefix ->
-                viewModel.addWordWithTopping(targetWord, groupId, topping, isPrefix)
-                toppingTargetWord = null
-                toppingTargetGroups = emptyList()
+            onSelect = { groupId, topping, isPrefix, slot ->
+                viewModel.addWordWithTopping(targetWord, groupId, topping, isPrefix, slot)
             },
             onDismiss = {
                 toppingTargetWord = null
@@ -130,8 +128,8 @@ fun MainScreen(
             item = item,
             toppingGroups = uiState.adjustingToppingGroups,
             onWeightSelect = { weight -> viewModel.setWeight(item, weight) },
-            onToppingSelect = { groupId, topping, isPrefix ->
-                viewModel.setTopping(item, groupId, topping, isPrefix)
+            onToppingSelect = { groupId, topping, isPrefix, slot ->
+                viewModel.setTopping(item, groupId, topping, isPrefix, slot)
             },
             onDelete = {
                 viewModel.removeItem(item)

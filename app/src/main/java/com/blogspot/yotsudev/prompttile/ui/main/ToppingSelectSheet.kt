@@ -18,7 +18,12 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -26,7 +31,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,13 +56,19 @@ import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ToppingSelectSheet(
-    wordEn: String,
+    word: PromptWordEntity,
     excludeToppingValues: Set<String>,
     toppingGroups: List<ToppingGroupWithItems>,
-    onSelect: (groupId: Long, topping: String?, isPrefix: Boolean) -> Unit,
+    onSelect: (groupId: Long, topping: String?, isPrefix: Boolean, slot: String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val tags = remember(word.tags) { word.tags?.split(",")?.map { it.trim() } ?: emptyList() }
+    val isMultiColor = tags.contains("hair_multicolor") || tags.contains("eye_multicolor")
+    val hasColorB = word.promptTemplate?.contains("{colorB}") == true
+
+    var selectedColorA by remember { mutableStateOf<ToppingItemEntity?>(null) }
+    var selectedColorB by remember { mutableStateOf<ToppingItemEntity?>(null) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -67,45 +81,121 @@ fun ToppingSelectSheet(
         ) {
             // ---- ヘッダー ----
             Text(
-                text = stringResource(R.string.topping_sheet_title, wordEn),
+                text = stringResource(R.string.topping_sheet_title, word.wordEn),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
 
-            // ---- トッピンググループ一覧 ----
-            toppingGroups.forEach { groupWithItems ->
-                val group = groupWithItems.group
-                val toppingItems = groupWithItems.items
-                val filteredItems = remember(toppingItems, excludeToppingValues) {
-                    toppingItems.filter { it.valueEn !in excludeToppingValues }
-                }
+            if (isMultiColor && hasColorB) {
+                // ---- ダブルカラーピッカー形式 ----
+                val colorGroup = toppingGroups.find { it.group.nameEn.lowercase().contains("color") }
+                if (colorGroup != null) {
+                    val items = remember(colorGroup.items, excludeToppingValues) {
+                        colorGroup.items.filter { it.valueEn !in excludeToppingValues }
+                    }
 
-                if (filteredItems.isNotEmpty()) {
-                    // グループ名
+                    // Base Color (A)
                     Text(
-                        text = group.nameJa,
+                        text = "ベース色 (Color A)",
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
                     )
-
-                    // トッピングチップ一覧（横スクロール）
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 12.dp),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
                     ) {
-                        items(items = filteredItems, key = { it.id }) { item ->
+                        items(items = items, key = { "A_${it.id}" }) { item ->
                             ToppingChip(
                                 item = item,
-                                onClick = {
-                                    onSelect(group.id, item.valueEn, group.isPrefix)
-                                    // 複数ある場合でも、一個選んだら閉じる（追加動作なので）
-                                    onDismiss()
-                                },
+                                isSelected = selectedColorA?.id == item.id,
+                                onClick = { selectedColorA = item },
                             )
+                        }
+                    }
+
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+
+                    // Accent Color (B)
+                    Text(
+                        text = "差し色 (Color B)",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
+                    )
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                    ) {
+                        items(items = items, key = { "B_${it.id}" }) { item ->
+                            ToppingChip(
+                                item = item,
+                                isSelected = selectedColorB?.id == item.id,
+                                onClick = { selectedColorB = item },
+                            )
+                        }
+                    }
+
+                    // 確定ボタン
+                    Button(
+                        onClick = {
+                            if (selectedColorA != null) {
+                                onSelect(colorGroup.group.id, selectedColorA!!.valueEn, colorGroup.group.isPrefix, "colorA")
+                            }
+                            if (selectedColorB != null) {
+                                onSelect(colorGroup.group.id, selectedColorB!!.valueEn, colorGroup.group.isPrefix, "colorB")
+                            }
+                            onDismiss()
+                        },
+                        enabled = selectedColorA != null || selectedColorB != null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 16.dp),
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("この組み合わせで追加")
+                    }
+                }
+            } else {
+                // ---- 標準のトッピンググループ一覧 ----
+                toppingGroups.forEach { groupWithItems ->
+                    val group = groupWithItems.group
+                    val toppingItems = groupWithItems.items
+                    val filteredItems = remember(toppingItems, excludeToppingValues) {
+                        toppingItems.filter { it.valueEn !in excludeToppingValues }
+                    }
+
+                    if (filteredItems.isNotEmpty()) {
+                        // グループ名
+                        Text(
+                            text = group.nameJa,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
+                        )
+
+                        // トッピングチップ一覧（横スクロール）
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp),
+                        ) {
+                            items(items = filteredItems, key = { it.id }) { item ->
+                                ToppingChip(
+                                    item = item,
+                                    onClick = {
+                                        val slot = if (isMultiColor) "colorA" else null
+                                        onSelect(group.id, item.valueEn, group.isPrefix, slot)
+                                        // 複数ある場合でも、一個選んだら閉じる（追加動作なので）
+                                        onDismiss()
+                                    },
+                                )
+                            }
                         }
                     }
                 }
@@ -119,7 +209,7 @@ fun ToppingSelectSheet(
             OutlinedButton(
                 onClick = {
                     if (firstGroupId != null) {
-                        onSelect(firstGroupId, null, firstGroupIsPrefix)
+                        onSelect(firstGroupId, null, firstGroupIsPrefix, null)
                     }
                     onDismiss()
                 },

@@ -31,4 +31,9 @@ data class PromptWordEntity(
      * このタグに基づいて、TagRules からトッピンググループと除外設定を動的に解決する。
      */
     val tags: String? = null,
+    /**
+     * プロンプト生成用のテンプレート（例: "{colorA} to {colorB} gradient hair"）。
+     * A/B のスロットに選択された色が埋め込まれる。
+     */
+    val promptTemplate: String? = null,
 )

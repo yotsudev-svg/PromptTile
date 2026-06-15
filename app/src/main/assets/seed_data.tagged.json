@@ -1781,87 +1781,89 @@
         {
           "wordEn": "black hair",
           "wordJa": "黒髪",
-          "tags": "hair"
+          "tags": "hair_color"
         },
         {
           "wordEn": "brown hair",
           "wordJa": "茶髪",
-          "tags": "hair"
+          "tags": "hair_color"
         },
         {
           "wordEn": "blonde hair",
           "wordJa": "金髪",
-          "tags": "hair"
+          "tags": "hair_color"
         },
         {
           "wordEn": "silver hair",
           "wordJa": "銀髪",
-          "tags": "hair"
+          "tags": "hair_color"
         },
         {
           "wordEn": "white hair",
           "wordJa": "白髪",
-          "tags": "hair"
+          "tags": "hair_color"
         },
         {
           "wordEn": "grey hair",
           "wordJa": "灰色髪",
-          "tags": "hair"
+          "tags": "hair_color"
         },
         {
           "wordEn": "red hair",
           "wordJa": "赤髪",
-          "tags": "hair"
+          "tags": "hair_color"
         },
         {
           "wordEn": "pink hair",
           "wordJa": "ピンク髪",
-          "tags": "hair"
+          "tags": "hair_color"
         },
         {
           "wordEn": "purple hair",
           "wordJa": "紫髪",
-          "tags": "hair"
+          "tags": "hair_color"
         },
         {
           "wordEn": "blue hair",
           "wordJa": "青髪",
-          "tags": "hair"
+          "tags": "hair_color"
         },
         {
           "wordEn": "light blue hair",
           "wordJa": "水色髪",
-          "tags": "hair"
+          "tags": "hair_color"
         },
         {
           "wordEn": "green hair",
           "wordJa": "緑髪",
-          "tags": "hair"
+          "tags": "hair_color"
         },
         {
           "wordEn": "aqua hair",
           "wordJa": "アクア髪",
-          "tags": "hair"
+          "tags": "hair_color"
         },
         {
           "wordEn": "orange hair",
           "wordJa": "オレンジ髪",
-          "tags": "hair"
+          "tags": "hair_color"
         },
         {
-          "wordEn": "platinum blonde",
+          "wordEn": "platinum blonde hair",
           "wordJa": "プラチナブロンド",
-          "tags": "hair"
+          "tags": "hair_color"
         },
         {
           "wordEn": "two-tone hair",
           "wordJa": "ツートンカラー",
-          "tags": "hair"
+          "tags": "hair,hair_multicolor",
+          "promptTemplate": "{colorA} and {colorB} two-tone hair"
         },
         {
           "wordEn": "split-color hair",
           "wordJa": "左右染め分け（スプリットカラー）",
-          "tags": "hair"
+          "tags": "hair,hair_multicolor",
+          "promptTemplate": "{colorA} and {colorB} split-color hair"
         },
         {
           "wordEn": "multicolored hair",
@@ -1871,7 +1873,8 @@
         {
           "wordEn": "gradient hair",
           "wordJa": "グラデーション髪",
-          "tags": "hair"
+          "tags": "hair,hair_multicolor",
+          "promptTemplate": "{colorA} to {colorB} gradient hair"
         },
         {
           "wordEn": "rainbow hair",
@@ -1886,12 +1889,14 @@
         {
           "wordEn": "colored tips",
           "wordJa": "毛先カラー",
-          "tags": "hair"
+          "tags": "hair,hair_multicolor",
+          "promptTemplate": "{colorA} hair with {colorB} colored tips"
         },
         {
           "wordEn": "colored inner hair",
           "wordJa": "インナーカラー",
-          "tags": "hair"
+          "tags": "hair,hair_multicolor",
+          "promptTemplate": "{colorA} hair with {colorB} inner hair"
         },
         {
           "wordEn": "roots",
@@ -1901,7 +1906,8 @@
         {
           "wordEn": "hair highlights",
           "wordJa": "ハイライト",
-          "tags": "hair"
+          "tags": "hair,hair_multicolor",
+          "promptTemplate": "{colorA} hair with {colorB} highlights"
         },
         {
           "wordEn": "lowlights",
@@ -1916,12 +1922,14 @@
         {
           "wordEn": "ombre hair",
           "wordJa": "オンブレ髪",
-          "tags": "hair"
+          "tags": "hair,hair_multicolor",
+          "promptTemplate": "{colorA} to {colorB} ombre hair"
         },
         {
           "wordEn": "dyed hair",
           "wordJa": "染め髪",
-          "tags": "hair"
+          "tags": "hair,hair_multicolor",
+          "promptTemplate": "{colorA} dyed hair"
         },
         {
           "wordEn": "patterned hair",
@@ -1941,7 +1949,8 @@
         {
           "wordEn": "raccoon tails",
           "wordJa": "ラクーンテイル（しましまメッシュ）",
-          "tags": "hair"
+          "tags": "hair,hair_multicolor",
+          "promptTemplate": "{colorA} and {colorB} raccoon tails"
         },
         {
           "wordEn": "see-through hair",
@@ -2277,192 +2286,180 @@
         {
           "wordEn": "black eyes",
           "wordJa": "黒い目",
-          "tags": "color_accent"
+          "tags": "eye_color"
         },
         {
           "wordEn": "brown eyes",
           "wordJa": "茶色の目",
-          "tags": "color_accent"
+          "tags": "eye_color"
         },
         {
           "wordEn": "dark brown eyes",
           "wordJa": "濃い茶色の目",
-          "tags": "color_accent"
+          "tags": "eye_color"
         },
         {
           "wordEn": "blue eyes",
           "wordJa": "青い目",
-          "tags": "color_accent"
+          "tags": "eye_color"
         },
         {
           "wordEn": "light blue eyes",
           "wordJa": "水色の目",
-          "tags": "color_accent"
+          "tags": "eye_color"
         },
         {
           "wordEn": "aqua eyes",
           "wordJa": "アクア色の目",
-          "tags": "color_accent"
+          "tags": "eye_color"
         },
         {
           "wordEn": "turquoise eyes",
           "wordJa": "ターコイズ色の目",
-          "tags": "color_accent"
+          "tags": "eye_color"
         },
         {
           "wordEn": "green eyes",
           "wordJa": "緑の目",
-          "tags": "color_accent"
+          "tags": "eye_color"
         },
         {
           "wordEn": "emerald eyes",
           "wordJa": "エメラルド色の目",
-          "tags": "color_accent"
+          "tags": "eye_color"
         },
         {
           "wordEn": "red eyes",
           "wordJa": "赤い目",
-          "tags": "color_accent"
+          "tags": "eye_color"
         },
         {
           "wordEn": "pink eyes",
           "wordJa": "ピンクの目",
-          "tags": "color_accent"
+          "tags": "eye_color"
         },
         {
           "wordEn": "purple eyes",
           "wordJa": "紫の目",
-          "tags": "color_accent"
+          "tags": "eye_color"
         },
         {
           "wordEn": "violet eyes",
           "wordJa": "バイオレットの目",
-          "tags": "color_accent"
+          "tags": "eye_color"
         },
         {
           "wordEn": "yellow eyes",
           "wordJa": "黄色い目",
-          "tags": "color_accent"
+          "tags": "eye_color"
         },
         {
           "wordEn": "golden eyes",
           "wordJa": "金色の目",
-          "tags": "color_accent"
+          "tags": "eye_color"
         },
         {
           "wordEn": "amber eyes",
           "wordJa": "琥珀色の目",
-          "tags": "color_accent"
+          "tags": "eye_color"
         },
         {
           "wordEn": "orange eyes",
           "wordJa": "オレンジ色の目",
-          "tags": "color_accent"
+          "tags": "eye_color"
         },
         {
           "wordEn": "silver eyes",
           "wordJa": "銀色の目",
-          "tags": "color_accent"
+          "tags": "eye_color"
         },
         {
           "wordEn": "gray eyes",
           "wordJa": "灰色の目",
-          "tags": "color_accent"
+          "tags": "eye_color"
         },
         {
           "wordEn": "white eyes",
           "wordJa": "白い目",
-          "tags": "color_accent"
+          "tags": "eye_color"
         },
         {
           "wordEn": "heterochromia",
           "wordJa": "オッドアイ（左右色違い）",
-          "tags": "color_accent"
+          "tags": "eye_multicolor",
+          "promptTemplate": "{colorA} and {colorB} heterochromia"
         },
         {
           "wordEn": "two-tone eyes",
           "wordJa": "ツートンカラーの目",
-          "tags": "color_accent"
+          "tags": "eye_multicolor",
+          "promptTemplate": "{colorA} and {colorB} two-tone eyes"
         },
         {
           "wordEn": "gradient eyes",
           "wordJa": "グラデーションの目",
-          "tags": "color_accent"
+          "tags": "eye_multicolor",
+          "promptTemplate": "{colorA} to {colorB} gradient eyes"
         },
         {
           "wordEn": "multicolored eyes",
-          "wordJa": "多色の目",
-          "tags": "color_accent"
+          "wordJa": "多色の目"
         },
         {
           "wordEn": "rainbow eyes",
-          "wordJa": "虹色の目",
-          "tags": "color_accent"
+          "wordJa": "虹色の目"
         },
         {
           "wordEn": "ringed eyes",
-          "wordJa": "輪状の目（同心円状の瞳）",
-          "tags": "color_accent"
+          "wordJa": "輪状の目（同心円状の瞳）"
         },
         {
           "wordEn": "no pupils",
-          "wordJa": "瞳孔なし",
-          "tags": "color_accent"
+          "wordJa": "瞳孔なし"
         },
         {
           "wordEn": "slit pupils",
-          "wordJa": "縦長の瞳孔（猫目・トカゲ目）",
-          "tags": "color_accent"
+          "wordJa": "縦長の瞳孔（猫目・トカゲ目）"
         },
         {
           "wordEn": "constricted pupils",
-          "wordJa": "収縮した瞳孔（怯え・狂気）",
-          "tags": "color_accent"
+          "wordJa": "収縮した瞳孔（怯え・狂気）"
         },
         {
           "wordEn": "dilated pupils",
-          "wordJa": "見開いた瞳孔（潤み・興奮）",
-          "tags": "color_accent"
+          "wordJa": "見開いた瞳孔（潤み・興奮）"
         },
         {
           "wordEn": "heart-shaped pupils",
-          "wordJa": "ハート型の瞳孔",
-          "tags": "color_accent"
+          "wordJa": "ハート型の瞳孔"
         },
         {
           "wordEn": "star-shaped pupils",
-          "wordJa": "星型の瞳孔",
-          "tags": "color_accent"
+          "wordJa": "星型の瞳孔"
         },
         {
           "wordEn": "cross-shaped pupils",
-          "wordJa": "十字型の瞳孔",
-          "tags": "color_accent"
+          "wordJa": "十字型の瞳孔"
         },
         {
           "wordEn": "sparkling eyes",
-          "wordJa": "キラキラした目（しいたけ目）",
-          "tags": "color_accent"
+          "wordJa": "キラキラした目（しいたけ目）"
         },
         {
           "wordEn": "bloodshot eyes",
-          "wordJa": "充血した目",
-          "tags": "color_accent"
+          "wordJa": "充血した目"
         },
         {
           "wordEn": "black sclera",
-          "wordJa": "黒い白目（人外・魔族）",
-          "tags": "color_accent"
+          "wordJa": "黒い白目（人外・魔族）"
         },
         {
           "wordEn": "glowing eyes",
-          "wordJa": "光る目（発光）",
-          "tags": "color_accent"
+          "wordJa": "光る目（発光）"
         },
         {
           "wordEn": "empty eyes",
-          "wordJa": "虚ろな目（ハイライトなし）",
-          "tags": "color_accent"
+          "wordJa": "虚ろな目（ハイライトなし）"
         }
       ]
     },
@@ -3152,33 +3149,27 @@
         },
         {
           "wordEn": "vitiligo",
-          "wordJa": "白斑（まだら肌）",
-          "tags": "skin"
+          "wordJa": "白斑（まだら肌）"
         },
         {
           "wordEn": "freckles",
-          "wordJa": "そばかす",
-          "tags": "skin"
+          "wordJa": "そばかす"
         },
         {
           "wordEn": "scar",
-          "wordJa": "傷跡",
-          "tags": "skin"
+          "wordJa": "傷跡"
         },
         {
           "wordEn": "sweat",
-          "wordJa": "汗",
-          "tags": "skin"
+          "wordJa": "汗"
         },
         {
           "wordEn": "oiled skin",
-          "wordJa": "オイル塗りの肌",
-          "tags": "skin"
+          "wordJa": "オイル塗りの肌"
         },
         {
           "wordEn": "veins",
-          "wordJa": "浮き出た血管",
-          "tags": "skin"
+          "wordJa": "浮き出た血管"
         },
         {
           "wordEn": "ishokuhada",
@@ -3223,32 +3214,32 @@
         {
           "wordEn": "tattoo",
           "wordJa": "タトゥー・刺青",
-          "tags": "skin"
+          "tags": "skin,skin_tattoo"
         },
         {
           "wordEn": "glowing tattoo",
           "wordJa": "光るタトゥー・魔紋",
-          "tags": "skin"
+          "tags": "skin,skin_tattoo"
         },
         {
           "wordEn": "tribal tattoo",
           "wordJa": "トライバルタトゥー（民族調）",
-          "tags": "skin"
+          "tags": "skin,skin_tattoo"
         },
         {
           "wordEn": "irezumi",
           "wordJa": "和彫り・入れ墨",
-          "tags": "skin"
+          "tags": "skin,skin_tattoo"
         },
         {
           "wordEn": "facial tattoo",
           "wordJa": "顔のタトゥー",
-          "tags": "skin"
+          "tags": "skin,skin_tattoo"
         },
         {
           "wordEn": "full-body tattoo",
           "wordJa": "全身のタトゥー",
-          "tags": "skin"
+          "tags": "skin,skin_tattoo"
         }
       ]
     },
@@ -3260,23 +3251,15 @@
       "words": [
         {
           "wordEn": "shiny lips",
-          "wordJa": "艶のある唇",
-          "tags": "color_accent"
+          "wordJa": "艶のある唇"
         },
         {
           "wordEn": "red lips",
-          "wordJa": "赤い唇（リップ）",
-          "tags": "color_accent"
+          "wordJa": "赤い唇（リップ）"
         },
         {
           "wordEn": "black lips",
-          "wordJa": "黒い唇（ゴシック・ダーク系）",
-          "tags": "color_accent"
-        },
-        {
-          "wordEn": "smeared lipstick",
-          "wordJa": "にじんだ口紅・崩れたリップ",
-          "tags": "color_accent"
+          "wordJa": "黒い唇（ゴシック・ダーク系）"
         },
         {
           "wordEn": "tongue out",
@@ -8964,14 +8947,6 @@
         {
           "valueEn": "frayed",
           "nameJa": "ほつれた"
-        },
-        {
-          "valueEn": "cracked",
-          "nameJa": "ひび割れた"
-        },
-        {
-          "valueEn": "rusty",
-          "nameJa": "錆びた"
         }
       ]
     },
@@ -9000,18 +8975,6 @@
         {
           "valueEn": "mini",
           "nameJa": "ミニ丈"
-        },
-        {
-          "valueEn": "puffy",
-          "nameJa": "ふくらんだ"
-        },
-        {
-          "valueEn": "voluminous",
-          "nameJa": "ボリュームのある"
-        },
-        {
-          "valueEn": "layered",
-          "nameJa": "多層・重ね構造"
         }
       ]
     },

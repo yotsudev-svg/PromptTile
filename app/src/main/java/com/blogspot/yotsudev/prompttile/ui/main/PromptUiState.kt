@@ -82,6 +82,14 @@ data class PromptItem(
      * 除外したいトッピングアイテムの valueEn リスト。
      */
     val excludeToppingValues: List<String> = emptyList(),
+    /**
+     * 単語に付与されたタグ。カンマ区切り。
+     */
+    val tags: String? = null,
+    /**
+     * プロンプト生成用のテンプレート（例: "{colorA} to {colorB} gradient hair"）。
+     */
+    val promptTemplate: String? = null,
 ) {
     /**
      * プロンプト文字列として出力するベース単語。
@@ -89,13 +97,33 @@ data class PromptItem(
      */
     val baseText: String
         get() {
+            // 特殊髪色/瞳色かつテンプレートがある場合
+            val tagList = tags?.split(",")?.map { it.trim() } ?: emptyList()
+            if ((tagList.contains("hair_multicolor") || tagList.contains("eye_multicolor")) && promptTemplate != null) {
+                val colorA = selectedToppings.find { it.slot == "colorA" }?.valueEn ?: ""
+                val colorB = selectedToppings.find { it.slot == "colorB" }?.valueEn ?: ""
+                
+                return promptTemplate
+                    .replace("{colorA}", colorA)
+                    .replace("{colorB}", colorB)
+                    .trim()
+            }
+
             // Priority-based sorting (lower number comes first)
             val sortedToppings = selectedToppings.sortedBy { it.priority }
 
             val prefixes = sortedToppings.filter { it.isPrefix }.map { it.valueEn }
             val suffixes = sortedToppings.filter { !it.isPrefix }.map { it.valueEn }
 
-            val mainPart = (prefixes + wordEn).filter { it.isNotBlank() }.joinToString(" ")
+            val isHairColor = tagList.contains("hair_color")
+            val isEyeColor = tagList.contains("eye_color")
+            val finalWordEn = when {
+                isHairColor && prefixes.isNotEmpty() -> "hair"
+                isEyeColor && prefixes.isNotEmpty() -> "eyes"
+                else -> wordEn
+            }
+
+            val mainPart = (prefixes + finalWordEn).filter { it.isNotBlank() }.joinToString(" ")
             return (listOf(mainPart) + suffixes).filter { it.isNotBlank() }.joinToString(", ")
         }
 
@@ -108,6 +136,7 @@ data class SelectedTopping(
     val valueEn: String,
     val isPrefix: Boolean,
     val priority: Int = 999,
+    val slot: String? = null,
 )
 
 data class ClipboardImportItem(

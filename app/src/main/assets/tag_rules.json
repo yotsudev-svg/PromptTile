@@ -2,17 +2,27 @@
   "tag_rules": [
     {
       "tag": "hair",
-      "toppingGroupIds": [1, 2, 3, 6, 8],
-      "excludeToppingValues": ["leather", "metallic", "vinyl", "denim"]
+      "toppingGroupIds": [8],
+      "excludeToppingValues": []
     },
     {
-      "tag": "color_accent",
+      "tag": "hair_color",
       "toppingGroupIds": [1],
       "excludeToppingValues": []
     },
     {
-      "tag": "skin",
-      "toppingGroupIds": [1, 4, 8],
+      "tag": "hair_multicolor",
+      "toppingGroupIds": [1],
+      "excludeToppingValues": []
+    },
+    {
+      "tag": "eye_color",
+      "toppingGroupIds": [1],
+      "excludeToppingValues": []
+    },
+    {
+      "tag": "eye_multicolor",
+      "toppingGroupIds": [1],
       "excludeToppingValues": []
     },
     {
@@ -26,18 +36,23 @@
       "excludeToppingValues": []
     },
     {
-      "tag": "creature_parts",
-      "toppingGroupIds": [1, 2, 3, 6],
+      "tag": "skin",
+      "toppingGroupIds": [8],
+      "excludeToppingValues": ["disheveled"]
+    },
+    {
+      "tag": "skin_tattoo",
+      "toppingGroupIds": [1],
       "excludeToppingValues": []
     },
     {
-      "tag": "detail",
-      "toppingGroupIds": [1, 2],
+      "tag": "color_accent",
+      "toppingGroupIds": [1],
       "excludeToppingValues": []
     },
     {
       "tag": "background",
-      "toppingGroupIds": [1, 9],
+      "toppingGroupIds": [9],
       "excludeToppingValues": []
     }
   ]

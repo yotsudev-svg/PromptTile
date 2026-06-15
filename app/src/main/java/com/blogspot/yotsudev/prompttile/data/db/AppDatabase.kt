@@ -23,7 +23,7 @@ import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
         ToppingItemEntity::class,
         com.blogspot.yotsudev.prompttile.data.entity.ParentCategoryEntity::class,
     ],
-    version = 12,
+    version = 13,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -83,17 +83,20 @@ abstract class AppDatabase : RoomDatabase() {
                     category.words.forEachIndexed { wordIndex, word ->
                         val tagsVal = if (word.tags.isNotEmpty())
                             "'${word.tags.joinToString(",")}'" else "NULL"
+                        val templateVal = if (word.promptTemplate != null)
+                            "'${word.promptTemplate.escapeSql()}'" else "NULL"
                         db.execSQL(
                             """
                             INSERT OR IGNORE INTO prompt_words
-                                (categoryId, wordEn, wordJa, sortOrder, isDefault, isHidden, tags)
+                                (categoryId, wordEn, wordJa, sortOrder, isDefault, isHidden, tags, promptTemplate)
                             VALUES (
                                 ${category.id},
                                 '${word.wordEn.escapeSql()}',
                                 '${word.wordJa.escapeSql()}',
                                 $wordIndex,
                                 1, 0,
-                                $tagsVal
+                                $tagsVal,
+                                $templateVal
                             )
                             """.trimIndent()
                         )

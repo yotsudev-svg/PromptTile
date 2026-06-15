@@ -63,7 +63,7 @@ fun PromptAdjustSheet(
     item: PromptItem,
     toppingGroups: List<ToppingGroupWithItems>,
     onWeightSelect: (Float?) -> Unit,
-    onToppingSelect: (groupId: Long, topping: String?, isPrefix: Boolean) -> Unit,
+    onToppingSelect: (groupId: Long, topping: String?, isPrefix: Boolean, slot: String?) -> Unit,
     onDelete: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -178,6 +178,10 @@ fun PromptAdjustSheet(
             }
 
             // ---- セクション2: トッピング変更（対応単語のみ） ----
+            val tags = remember(item.tags) { item.tags?.split(",")?.map { it.trim() } ?: emptyList() }
+            val isMultiColor = tags.contains("hair_multicolor") || tags.contains("eye_multicolor")
+            val hasColorB = item.promptTemplate?.contains("{colorB}") == true
+
             toppingGroups.forEach { groupWithItems ->
                 val group = groupWithItems.group
                 val toppingItems = groupWithItems.items
@@ -191,38 +195,91 @@ fun PromptAdjustSheet(
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                 Spacer(Modifier.height(12.dp))
 
-                Text(
-                    text = group.nameJa,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                )
-
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                ) {
-                    // 「なし」チップ
-                    item(key = "topping_none_${group.id}") {
-                        val isSelected = item.selectedToppings.none { it.groupId == group.id }
-                        ToppingSelectChip(
-                            nameJa = stringResource(R.string.adjust_topping_none),
-                            colorHex = null,
-                            isSelected = isSelected,
-                            onClick = { onToppingSelect(group.id, null, group.isPrefix) },
-                        )
+                if (isMultiColor && hasColorB && group.nameEn.lowercase().contains("color")) {
+                    // ダブルカラー調整
+                    Text(
+                        text = "ベース色 (Color A)",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    ) {
+                        items(items = filteredItems, key = { "A_${it.id}" }) { toppingItem ->
+                            val isSelected = item.selectedToppings.any { it.slot == "colorA" && it.valueEn == toppingItem.valueEn }
+                            ToppingSelectChip(
+                                nameJa = toppingItem.nameJa,
+                                colorHex = toppingItem.colorHex,
+                                isSelected = isSelected,
+                                onClick = { onToppingSelect(group.id, toppingItem.valueEn, group.isPrefix, "colorA") },
+                            )
+                        }
                     }
-                    items(items = filteredItems, key = { it.id }) { toppingItem ->
-                        val isSelected = item.selectedToppings.any { it.groupId == group.id && it.valueEn == toppingItem.valueEn }
-                        ToppingSelectChip(
-                            nameJa = toppingItem.nameJa,
-                            colorHex = toppingItem.colorHex,
-                            isSelected = isSelected,
-                            onClick = { onToppingSelect(group.id, toppingItem.valueEn, group.isPrefix) },
-                        )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Text(
+                        text = "差し色 (Color B)",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    ) {
+                        items(items = filteredItems, key = { "B_${it.id}" }) { toppingItem ->
+                            val isSelected = item.selectedToppings.any { it.slot == "colorB" && it.valueEn == toppingItem.valueEn }
+                            ToppingSelectChip(
+                                nameJa = toppingItem.nameJa,
+                                colorHex = toppingItem.colorHex,
+                                isSelected = isSelected,
+                                onClick = { onToppingSelect(group.id, toppingItem.valueEn, group.isPrefix, "colorB") },
+                            )
+                        }
+                    }
+                } else {
+                    // 標準トッピング調整
+                    Text(
+                        text = group.nameJa,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                    ) {
+                        // 「なし」チップ
+                        item(key = "topping_none_${group.id}") {
+                            val isSelected = item.selectedToppings.none { it.groupId == group.id }
+                            ToppingSelectChip(
+                                nameJa = stringResource(R.string.adjust_topping_none),
+                                colorHex = null,
+                                isSelected = isSelected,
+                                onClick = { onToppingSelect(group.id, null, group.isPrefix, if (isMultiColor) "colorA" else null) },
+                            )
+                        }
+                        items(items = filteredItems, key = { it.id }) { toppingItem ->
+                            val isSelected = item.selectedToppings.any {
+                                if (isMultiColor) it.slot == "colorA" && it.valueEn == toppingItem.valueEn
+                                else it.groupId == group.id && it.valueEn == toppingItem.valueEn
+                            }
+                            ToppingSelectChip(
+                                nameJa = toppingItem.nameJa,
+                                colorHex = toppingItem.colorHex,
+                                isSelected = isSelected,
+                                onClick = { onToppingSelect(group.id, toppingItem.valueEn, group.isPrefix, if (isMultiColor) "colorA" else null) },
+                            )
+                        }
                     }
                 }
             }

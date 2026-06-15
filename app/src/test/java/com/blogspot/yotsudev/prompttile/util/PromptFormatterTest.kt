@@ -89,6 +89,106 @@ class PromptFormatterTest {
         assertEquals("(blue dress:1.3)", PromptFormatter.formatItem(item))
     }
 
+    @Test
+    fun `formatItem - 髪色タグ(hair_color)あり+prefixありの場合は単語がhairに置換される`() {
+        val item = PromptItem(
+            wordId = 1,
+            wordEn = "blonde hair",
+            wordJa = "金髪",
+            tags = "hair_color",
+            selectedToppings = listOf(SelectedTopping(groupId = 1, valueEn = "pink", isPrefix = true))
+        )
+        // "pink blonde hair" ではなく "pink hair" になるべき
+        assertEquals("pink hair", PromptFormatter.formatItem(item))
+    }
+
+    @Test
+    fun `formatItem - 髪色タグあり+複数prefixありの場合も単語がhairに置換される`() {
+        val item = PromptItem(
+            wordId = 1,
+            wordEn = "blonde hair",
+            wordJa = "金髪",
+            tags = "hair_color",
+            selectedToppings = listOf(
+                SelectedTopping(groupId = 6, valueEn = "puffy", isPrefix = true, priority = 100),
+                SelectedTopping(groupId = 1, valueEn = "pink", isPrefix = true, priority = 400)
+            )
+        )
+        assertEquals("puffy pink hair", PromptFormatter.formatItem(item))
+    }
+
+    @Test
+    fun `formatItem - 髪色タグあり+prefixなしの場合は単語は置換されない`() {
+        val item = PromptItem(
+            wordId = 1,
+            wordEn = "blonde hair",
+            wordJa = "金髪",
+            tags = "hair_color",
+            selectedToppings = listOf(
+                SelectedTopping(groupId = 7, valueEn = "with ribbon", isPrefix = false)
+            )
+        )
+        // suffixのみの場合は置換せず "blonde hair, with ribbon"
+        assertEquals("blonde hair, with ribbon", PromptFormatter.formatItem(item))
+    }
+
+    @Test
+    fun `formatItem - 通常のhairタグ(hair_colorでない)の場合は置換されない`() {
+        val item = PromptItem(
+            wordId = 1,
+            wordEn = "short hair",
+            wordJa = "ショートヘア",
+            tags = "hair",
+            selectedToppings = listOf(SelectedTopping(groupId = 1, valueEn = "pink", isPrefix = true))
+        )
+        // タグが "hair_color" でない（単に "hair" など）なら通常通り "pink short hair"
+        assertEquals("pink short hair", PromptFormatter.formatItem(item))
+    }
+
+    @Test
+    fun `formatItem - 瞳色タグ(eye_color)あり+prefixありの場合は単語がeyesに置換される`() {
+        val item = PromptItem(
+            wordId = 1,
+            wordEn = "blue eyes",
+            wordJa = "青い目",
+            tags = "eye_color",
+            selectedToppings = listOf(SelectedTopping(groupId = 1, valueEn = "red", isPrefix = true))
+        )
+        // "red blue eyes" ではなく "red eyes" になるべき
+        assertEquals("red eyes", PromptFormatter.formatItem(item))
+    }
+
+    @Test
+    fun `formatItem - 瞳色タグあり+複数prefixありの場合も単語がeyesに置換される`() {
+        val item = PromptItem(
+            wordId = 1,
+            wordEn = "blue eyes",
+            wordJa = "青い目",
+            tags = "eye_color",
+            selectedToppings = listOf(
+                SelectedTopping(groupId = 6, valueEn = "glowing", isPrefix = true, priority = 100),
+                SelectedTopping(groupId = 1, valueEn = "red", isPrefix = true, priority = 400)
+            )
+        )
+        assertEquals("glowing red eyes", PromptFormatter.formatItem(item))
+    }
+
+    @Test
+    fun `formatItem - 瞳色タグ(eye_multicolor)あり+テンプレート置換`() {
+        val item = PromptItem(
+            wordId = 1,
+            wordEn = "heterochromia",
+            wordJa = "オッドアイ",
+            tags = "eye_multicolor",
+            promptTemplate = "{colorA} and {colorB} heterochromia",
+            selectedToppings = listOf(
+                SelectedTopping(groupId = 1, valueEn = "blue", isPrefix = true, slot = "colorA"),
+                SelectedTopping(groupId = 1, valueEn = "red", isPrefix = true, slot = "colorB")
+            )
+        )
+        assertEquals("blue and red heterochromia", PromptFormatter.formatItem(item))
+    }
+
     // ---- formatPrompt ----
 
     @Test

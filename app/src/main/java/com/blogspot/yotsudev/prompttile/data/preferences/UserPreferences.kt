@@ -32,6 +32,8 @@ data class PersistedPromptItem(
     val toppingGroupIds: List<Long> = emptyList(),
     val selectedToppings: List<PersistedSelectedTopping> = emptyList(),
     val excludeToppingValues: List<String> = emptyList(),
+    val tags: String? = null,
+    val promptTemplate: String? = null,
 )
 
 data class PersistedSelectedTopping(
@@ -39,4 +41,5 @@ data class PersistedSelectedTopping(
     val valueEn: String,
     val isPrefix: Boolean,
     val priority: Int = 999,
+    val slot: String? = null,
 )

@@ -28,6 +28,7 @@ private data class PersistedPromptItemDto(
     val toppingGroupIds: List<Long> = emptyList(),
     val selectedToppings: List<PersistedSelectedToppingDto> = emptyList(),
     val excludeToppingValues: List<String> = emptyList(),
+    val tags: String? = null,
 )
 
 @Serializable
@@ -115,7 +116,8 @@ class PreferencesDataSource @Inject constructor(
                     item.selectedToppings.map {
                         PersistedSelectedToppingDto(it.groupId, it.valueEn, it.isPrefix, it.priority)
                     },
-                    item.excludeToppingValues
+                    item.excludeToppingValues,
+                    item.tags
                 )
             }
         )
@@ -135,7 +137,8 @@ class PreferencesDataSource @Inject constructor(
                         item.selectedToppings.map {
                             PersistedSelectedTopping(it.groupId, it.valueEn, it.isPrefix, it.priority)
                         },
-                        item.excludeToppingValues
+                        item.excludeToppingValues,
+                        item.tags
                     )
                 }
         }.getOrDefault(emptyList())
