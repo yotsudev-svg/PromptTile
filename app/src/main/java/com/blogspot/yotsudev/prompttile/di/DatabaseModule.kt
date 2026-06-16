@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.blogspot.yotsudev.prompttile.data.db.AppDatabase
 import com.blogspot.yotsudev.prompttile.data.dao.CategoryDao
+import com.blogspot.yotsudev.prompttile.data.dao.HistoryDao
 import com.blogspot.yotsudev.prompttile.data.dao.PromptWordDao
 import com.blogspot.yotsudev.prompttile.data.dao.SavedPromptDao
 import com.blogspot.yotsudev.prompttile.data.dao.ToppingDao
@@ -29,5 +30,6 @@ object DatabaseModule {
     @Provides fun provideCategoryDao(db: AppDatabase): CategoryDao = db.categoryDao()
     @Provides fun providePromptWordDao(db: AppDatabase): PromptWordDao = db.promptWordDao()
     @Provides fun provideSavedPromptDao(db: AppDatabase): SavedPromptDao = db.savedPromptDao()
-    @Provides fun provideToppingDao(db: AppDatabase): ToppingDao = db.toppingDao() // 追加
+    @Provides fun provideToppingDao(db: AppDatabase): ToppingDao = db.toppingDao()
+    @Provides fun provideHistoryDao(db: AppDatabase): HistoryDao = db.historyDao()
 }

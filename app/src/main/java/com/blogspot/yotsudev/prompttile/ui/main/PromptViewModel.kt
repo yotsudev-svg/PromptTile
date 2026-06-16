@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
+import com.blogspot.yotsudev.prompttile.data.entity.HistoryEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
 import com.blogspot.yotsudev.prompttile.data.entity.SavedPromptEntity
 import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
@@ -66,6 +67,12 @@ class PromptViewModel @Inject constructor(
     private val _adjustingItem = MutableStateFlow<PromptItem?>(null)
     /** 編集中アイテムのトッピンググループと選択肢（DB から非同期取得） */
     private val _adjustingToppingGroups = MutableStateFlow<List<ToppingGroupWithItems>>(emptyList())
+
+    private val _copyHistories = repository.copyHistories.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = emptyList()
+    )
 
     private val _prefs = dataSource.userPreferences.stateIn(
         scope = viewModelScope,
@@ -143,6 +150,7 @@ class PromptViewModel @Inject constructor(
         _resolvedSelectedCategoryId, _wordsInCategory, _searchResults,
         _prefs, _historyState, _searchQuery, _allTemplates,
         _adjustingItem, _adjustingToppingGroups,
+        _copyHistories,
     ) { args ->
         val mode           = args[0] as PromptMode
         val posItems       = args[1] as List<PromptItem>
@@ -159,6 +167,7 @@ class PromptViewModel @Inject constructor(
         val templates      = args[12] as List<SavedPromptEntity>
         val adjItem        = args[13] as PromptItem?
         val adjGroups      = args[14] as List<ToppingGroupWithItems>
+        val histories      = args[15] as List<HistoryEntity>
 
         PromptUiState(
             mode                       = mode,
@@ -177,6 +186,7 @@ class PromptViewModel @Inject constructor(
             wordsInCategory            = words,
             isLoading                  = false,
             moveToBackOnCopy           = prefs.moveToBackOnCopy,
+            gridColumnsConfig          = prefs.gridColumnsConfig,
             allTemplates               = templates,
             canUndo                    = history.canUndo,
             canRedo                    = history.canRedo,
@@ -186,6 +196,7 @@ class PromptViewModel @Inject constructor(
             searchResults              = searchResults,
             adjustingItem              = adjItem,
             adjustingToppingGroups     = adjGroups,
+            copyHistories              = histories,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -588,6 +599,60 @@ class PromptViewModel @Inject constructor(
         if (pos.isBlank() && neg.isBlank()) return
         viewModelScope.launch {
             repository.savePrompt(SavedPromptEntity(title = title, promptText = pos, negativeText = neg))
+        }
+    }
+
+    // ---- コピー履歴 --------------------------------------------
+
+    fun saveToHistory() {
+        val pos = PromptFormatter.formatPrompt(_positiveItems.value)
+        val neg = PromptFormatter.formatPrompt(_negativeItems.value)
+        if (pos.isBlank() && neg.isBlank()) return
+        viewModelScope.launch {
+            repository.saveHistory(pos, neg, _prefs.value.maxHistoryCount)
+        }
+    }
+
+    fun deleteHistoryItem(entity: HistoryEntity) {
+        viewModelScope.launch { repository.deleteHistory(entity) }
+    }
+
+    fun clearAllHistory() {
+        viewModelScope.launch { repository.clearAllHistory() }
+    }
+
+    fun restoreHistory(entity: HistoryEntity, append: Boolean) {
+        if (append) {
+            if (entity.positivePrompt.isNotBlank()) appendToCurrent(entity.positivePrompt, PromptMode.POSITIVE)
+            if (entity.negativePrompt.isNotBlank()) appendToCurrent(entity.negativePrompt, PromptMode.NEGATIVE)
+        } else {
+            if (entity.positivePrompt.isNotBlank()) replaceCurrent(entity.positivePrompt, PromptMode.POSITIVE)
+            else _positiveItems.value = emptyList()
+
+            if (entity.negativePrompt.isNotBlank()) replaceCurrent(entity.negativePrompt, PromptMode.NEGATIVE)
+            else _negativeItems.value = emptyList()
+        }
+        persistItems()
+    }
+
+    private fun replaceCurrent(text: String, targetMode: PromptMode) {
+        val words = PromptFormatter.parsePromptText(text)
+        val targetItems = if (targetMode == PromptMode.POSITIVE) _positiveItems else _negativeItems
+        pushHistoryFor(targetMode)
+        val baseId = -System.currentTimeMillis()
+        targetItems.value = words.mapIndexed { i, w -> PromptItem(wordId = baseId - i, wordEn = w, wordJa = "") }
+    }
+
+    private fun appendToCurrent(text: String, targetMode: PromptMode) {
+        val words = PromptFormatter.parsePromptText(text)
+        val targetItems = if (targetMode == PromptMode.POSITIVE) _positiveItems else _negativeItems
+        pushHistoryFor(targetMode)
+        val baseId = -System.currentTimeMillis()
+        targetItems.update { current ->
+            val existing = current.map { it.wordEn }.toSet()
+            val newItems = words.filterNot { it in existing }
+                .mapIndexed { i, w -> PromptItem(wordId = baseId - i, wordEn = w, wordJa = "") }
+            current + newItems
         }
     }
 }

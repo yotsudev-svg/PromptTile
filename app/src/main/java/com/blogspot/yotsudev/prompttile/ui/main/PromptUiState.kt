@@ -1,6 +1,7 @@
 package com.blogspot.yotsudev.prompttile.ui.main
 
 import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
+import com.blogspot.yotsudev.prompttile.data.entity.HistoryEntity
 import com.blogspot.yotsudev.prompttile.data.entity.ParentCategoryEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
 import com.blogspot.yotsudev.prompttile.data.entity.SavedPromptEntity
@@ -27,6 +28,7 @@ data class PromptUiState(
     val wordsInCategory: List<PromptWordEntity> = emptyList(),
     val isLoading: Boolean = true,
     val moveToBackOnCopy: Boolean = false,
+    val gridColumnsConfig: com.blogspot.yotsudev.prompttile.data.preferences.GridColumnsConfig = com.blogspot.yotsudev.prompttile.data.preferences.GridColumnsConfig.AUTO,
     val allTemplates: List<SavedPromptEntity> = emptyList(),
     val canUndo: Boolean = false,
     val canRedo: Boolean = false,
@@ -34,6 +36,9 @@ data class PromptUiState(
     val negativePromptText: String = "",
     val searchQuery: String = "",
     val searchResults: List<PromptWordEntity> = emptyList(),
+
+    // ---- コピー履歴 ----
+    val copyHistories: List<HistoryEntity> = emptyList(),
 
     // ---- マルチ調整ボトムシート ----
     /** 現在シートで編集中の PromptItem。null のときシートは非表示 */

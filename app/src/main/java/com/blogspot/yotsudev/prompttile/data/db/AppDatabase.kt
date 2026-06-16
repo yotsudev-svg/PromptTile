@@ -5,14 +5,11 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.blogspot.yotsudev.prompttile.data.dao.CategoryDao
+import com.blogspot.yotsudev.prompttile.data.dao.HistoryDao
 import com.blogspot.yotsudev.prompttile.data.dao.PromptWordDao
 import com.blogspot.yotsudev.prompttile.data.dao.SavedPromptDao
 import com.blogspot.yotsudev.prompttile.data.dao.ToppingDao
-import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
-import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
-import com.blogspot.yotsudev.prompttile.data.entity.SavedPromptEntity
-import com.blogspot.yotsudev.prompttile.data.entity.ToppingGroupEntity
-import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
+import com.blogspot.yotsudev.prompttile.data.entity.*
 
 @Database(
     entities = [
@@ -21,9 +18,10 @@ import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
         SavedPromptEntity::class,
         ToppingGroupEntity::class,
         ToppingItemEntity::class,
-        com.blogspot.yotsudev.prompttile.data.entity.ParentCategoryEntity::class,
+        ParentCategoryEntity::class,
+        HistoryEntity::class,
     ],
-    version = 13,
+    version = 14,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -31,6 +29,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun promptWordDao(): PromptWordDao
     abstract fun savedPromptDao(): SavedPromptDao
     abstract fun toppingDao(): ToppingDao
+    abstract fun historyDao(): HistoryDao
 
     companion object {
 

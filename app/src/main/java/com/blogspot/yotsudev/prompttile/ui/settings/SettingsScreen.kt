@@ -1,27 +1,40 @@
 package com.blogspot.yotsudev.prompttile.ui.settings
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.tooling.preview.Preview
+import com.blogspot.yotsudev.prompttile.ui.theme.PromptTileTheme
 import com.blogspot.yotsudev.prompttile.R
 import com.blogspot.yotsudev.prompttile.data.preferences.ThemeConfig
 import com.blogspot.yotsudev.prompttile.ui.components.PromptTileTopAppBar
+import com.blogspot.yotsudev.prompttile.ui.components.StyledDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,7 +42,64 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val prefs by viewModel.preferences.collectAsStateWithLifecycle()
+    val message by viewModel.message.collectAsStateWithLifecycle()
+    val isProcessing by viewModel.isProcessing.collectAsStateWithLifecycle()
     val isSystemDark = isSystemInDarkTheme()
+    val context = LocalContext.current
+    var showClearHistoryConfirm by remember { mutableStateOf(false) }
+
+    if (showClearHistoryConfirm) {
+        StyledDialog(
+            onDismissRequest = { showClearHistoryConfirm = false },
+            title = stringResource(R.string.main_history_clear_confirm_title),
+            icon = Icons.Default.Delete,
+            iconColor = MaterialTheme.colorScheme.error,
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.clearHistory()
+                    showClearHistoryConfirm = false
+                }) {
+                    Text(
+                        text = stringResource(R.string.dialog_delete),
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearHistoryConfirm = false }) {
+                    Text(stringResource(R.string.dialog_cancel))
+                }
+            }
+        ) {
+            Text(
+                text = stringResource(R.string.main_history_clear_confirm_msg),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+
+    // ファイル選択ランチャー (復元)
+    val pickFileLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let { viewModel.loadJsonFromUri(it) }
+    }
+
+    // ファイル保存ランチャー (バックアップ)
+    val createFileLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        uri?.let { viewModel.exportToJsonUri(it) }
+    }
+
+    LaunchedEffect(message) {
+        if (message.isNotBlank()) {
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            viewModel.consumeMessage()
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -61,6 +131,26 @@ fun SettingsScreen(
                 description = stringResource(R.string.settings_move_to_back_description),
                 checked = prefs?.moveToBackOnCopy ?: false,
                 onCheckedChange = viewModel::updateMoveToBack,
+            )
+            GridColumnsSelectionRow(
+                currentConfig = prefs?.gridColumnsConfig ?: com.blogspot.yotsudev.prompttile.data.preferences.GridColumnsConfig.AUTO,
+                onConfigSelected = viewModel::updateGridColumnsConfig
+            )
+
+            SettingsSectionHeader(title = stringResource(R.string.settings_header_history))
+            HistoryLimitRow(
+                currentLimit = prefs?.maxHistoryCount ?: 50,
+                onLimitSelected = viewModel::updateMaxHistoryCount
+            )
+            ClearHistoryRow(
+                onClear = { showClearHistoryConfirm = true }
+            )
+
+            SettingsSectionHeader(title = stringResource(R.string.settings_header_backup))
+            BackupOperationRow(
+                onExport = { createFileLauncher.launch("prompt_backup.json") },
+                onImport = { pickFileLauncher.launch("application/json") },
+                isProcessing = isProcessing
             )
         }
     }
@@ -176,6 +266,137 @@ private fun SwitchSettingRow(
                 checked = checked,
                 onCheckedChange = null,
             )
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun GridColumnsSelectionRow(
+    currentConfig: com.blogspot.yotsudev.prompttile.data.preferences.GridColumnsConfig,
+    onConfigSelected: (com.blogspot.yotsudev.prompttile.data.preferences.GridColumnsConfig) -> Unit
+) {
+    SettingsRow(
+        title = stringResource(R.string.settings_grid_columns_title),
+        description = stringResource(R.string.settings_grid_columns_description),
+        trailingContent = {
+            SingleChoiceSegmentedButtonRow {
+                com.blogspot.yotsudev.prompttile.data.preferences.GridColumnsConfig.entries.forEachIndexed { index, config ->
+                    val label = when (config) {
+                        com.blogspot.yotsudev.prompttile.data.preferences.GridColumnsConfig.AUTO -> stringResource(R.string.settings_grid_columns_auto)
+                        com.blogspot.yotsudev.prompttile.data.preferences.GridColumnsConfig.FIXED_2 -> stringResource(R.string.settings_grid_columns_2)
+                        com.blogspot.yotsudev.prompttile.data.preferences.GridColumnsConfig.FIXED_3 -> stringResource(R.string.settings_grid_columns_3)
+                    }
+                    SegmentedButton(
+                        selected = currentConfig == config,
+                        onClick = { onConfigSelected(config) },
+                        shape = SegmentedButtonDefaults.itemShape(
+                            index = index,
+                            count = com.blogspot.yotsudev.prompttile.data.preferences.GridColumnsConfig.entries.size
+                        ),
+                        label = { Text(label, style = MaterialTheme.typography.labelSmall) }
+                    )
+                }
+            }
+        }
+    )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun SettingsScreenPreview() {
+    PromptTileTheme {
+        SettingsScreen()
+    }
+}
+
+@Composable
+private fun BackupOperationRow(
+    onExport: () -> Unit,
+    onImport: () -> Unit,
+    isProcessing: Boolean
+) {
+    Column {
+        SettingsRow(
+            title = stringResource(R.string.settings_backup_title),
+            description = stringResource(R.string.settings_backup_description),
+            trailingContent = {
+                TextButton(
+                    onClick = onExport,
+                    enabled = !isProcessing
+                ) {
+                    Icon(Icons.Default.FileDownload, contentDescription = null)
+                    Spacer(Modifier.width(4.dp))
+                    Text(stringResource(R.string.settings_backup_export))
+                }
+            }
+        )
+        SettingsRow(
+            title = stringResource(R.string.settings_restore_title),
+            description = stringResource(R.string.settings_restore_description),
+            trailingContent = {
+                TextButton(
+                    onClick = onImport,
+                    enabled = !isProcessing
+                ) {
+                    Icon(Icons.Default.FileUpload, contentDescription = null)
+                    Spacer(Modifier.width(4.dp))
+                    Text(stringResource(R.string.settings_backup_restore))
+                }
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HistoryLimitRow(
+    currentLimit: Int,
+    onLimitSelected: (Int) -> Unit
+) {
+    SettingsRow(
+        title = stringResource(R.string.settings_history_limit_title),
+        description = stringResource(R.string.settings_history_limit_description),
+        trailingContent = {
+            SingleChoiceSegmentedButtonRow {
+                val limits = listOf(50, 100, 0)
+                limits.forEachIndexed { index, limit ->
+                    val label = when (limit) {
+                        50 -> stringResource(R.string.settings_history_limit_50)
+                        100 -> stringResource(R.string.settings_history_limit_100)
+                        else -> stringResource(R.string.settings_history_limit_unlimited)
+                    }
+                    SegmentedButton(
+                        selected = currentLimit == limit,
+                        onClick = { onLimitSelected(limit) },
+                        shape = SegmentedButtonDefaults.itemShape(
+                            index = index,
+                            count = limits.size
+                        ),
+                        label = { Text(label, style = MaterialTheme.typography.labelSmall) }
+                    )
+                }
+            }
+        }
+    )
+}
+
+@Composable
+private fun ClearHistoryRow(
+    onClear: () -> Unit
+) {
+    SettingsRow(
+        title = stringResource(R.string.settings_history_clear_title),
+        description = stringResource(R.string.settings_history_clear_description),
+        trailingContent = {
+            TextButton(
+                onClick = onClear,
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+            ) {
+                Icon(Icons.Default.Delete, contentDescription = null)
+                Spacer(Modifier.width(4.dp))
+                Text(stringResource(R.string.settings_history_clear_button))
+            }
         }
     )
 }

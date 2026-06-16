@@ -3,8 +3,11 @@ package com.blogspot.yotsudev.prompttile.ui.main
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -93,12 +96,13 @@ fun CategoryBar(
 
         // --- 2段目: 子カテゴリ ---
         AnimatedContent(
-            targetState = childCategories,
+            targetState = selectedParentId to childCategories,
             transitionSpec = {
-                fadeIn() togetherWith fadeOut()
+                (slideInHorizontally { -it / 5 } + fadeIn(tween(180))) togetherWith
+                (slideOutHorizontally { it / 5 } + fadeOut(tween(120)))
             },
             label = "childCategoriesTransition"
-        ) { currentChildren ->
+        ) { (_, currentChildren) ->
             LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -168,9 +172,11 @@ fun CategorySidebar(
                     onClick = { onParentSelected(parent.id) },
                     icon = {
                         Text(
-                            text = parent.nameJa.take(2), // 2文字に短縮
+                            text = parent.nameJa,
                             style = MaterialTheme.typography.labelSmall,
-                            maxLines = 1
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                     },
                     label = {},

@@ -9,10 +9,16 @@ enum class ManagementFilterMode {
     ALL, ENABLED_ONLY, DISABLED_ONLY
 }
 
+enum class GridColumnsConfig {
+    AUTO, FIXED_2, FIXED_3
+}
+
 data class UserPreferences(
     val themeConfig: ThemeConfig = ThemeConfig.FOLLOW_SYSTEM,
     val managementFilterMode: ManagementFilterMode = ManagementFilterMode.ALL,
     val moveToBackOnCopy: Boolean = false,
+    val gridColumnsConfig: GridColumnsConfig = GridColumnsConfig.AUTO,
+    val maxHistoryCount: Int = 50,
 
     /**
      * アプリ終了時に保持するポジティブ・ネガティブのアイテムリスト。

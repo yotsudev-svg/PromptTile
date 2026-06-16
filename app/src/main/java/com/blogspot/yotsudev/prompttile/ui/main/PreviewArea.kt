@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Redo
 import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material.icons.filled.Bookmarks
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -31,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import com.blogspot.yotsudev.prompttile.R
 import com.blogspot.yotsudev.prompttile.data.entity.SavedPromptEntity
@@ -52,6 +54,7 @@ fun PreviewArea(
     onCopyAll: () -> Unit,
     onUndo: () -> Unit,
     onRedo: () -> Unit,
+    onShowHistory: () -> Unit,
     onAddTemplate: (String) -> Unit,
     modifier: Modifier = Modifier,
     isVertical: Boolean = false,
@@ -152,6 +155,15 @@ fun PreviewArea(
 
                 // グループ2: 編集・補助
                 Row {
+                    IconButton(onClick = onShowHistory) {
+                        Icon(
+                            imageVector = Icons.Default.History,
+                            contentDescription = stringResource(R.string.preview_history),
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
                     IconButton(
                         onClick = { isDeleteMode = !isDeleteMode },
                         enabled = items.isNotEmpty(),
@@ -239,7 +251,7 @@ fun PreviewArea(
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp, vertical = 8.dp)
                 .then(if (isVertical) Modifier.heightIn(min = 72.dp, max = 240.dp) else Modifier.height(72.dp)),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
             shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
             border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)),
             tonalElevation = 1.dp
@@ -287,7 +299,12 @@ private fun ChipList(
 
     if (items.isEmpty()) {
         Box(
-            modifier = modifier.height(64.dp),
+            // height(64.dp) → isVertical に応じて非空状態と同じ指定にそろえる
+            modifier = if (isVertical) {
+                modifier.fillMaxSize()
+            } else {
+                modifier.heightIn(min = 48.dp, max = 96.dp)
+            },
             contentAlignment = Alignment.Center,
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -310,7 +327,13 @@ private fun ChipList(
             state = lazyListState,
             verticalArrangement = Arrangement.spacedBy(4.dp),
             contentPadding = PaddingValues(vertical = 8.dp),
-            modifier = modifier.fillMaxSize(),
+            modifier = modifier
+                .fillMaxSize()
+                .background(
+                    if (isDeleteMode) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.06f)
+                    else Color.Transparent,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                ),
         ) {
             itemsIndexed(
                 items = items,
@@ -335,7 +358,13 @@ private fun ChipList(
         LazyRow(
             state = lazyListState,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
-            modifier = modifier.height(64.dp),
+            modifier = modifier
+                .heightIn(min = 48.dp, max = 96.dp)
+                .background(
+                    if (isDeleteMode) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.06f)
+                    else Color.Transparent,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                ),
         ) {
             itemsIndexed(
                 items = items,

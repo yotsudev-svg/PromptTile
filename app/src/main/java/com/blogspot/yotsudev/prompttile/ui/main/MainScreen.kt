@@ -4,10 +4,13 @@ import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
@@ -22,12 +25,15 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.blogspot.yotsudev.prompttile.R
 import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
+import com.blogspot.yotsudev.prompttile.data.entity.HistoryEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
 import com.blogspot.yotsudev.prompttile.data.entity.ToppingGroupEntity
 import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
 import com.blogspot.yotsudev.prompttile.data.repository.UNCATEGORIZED_NEGATIVE_NAME
 import com.blogspot.yotsudev.prompttile.data.repository.UNCATEGORIZED_POSITIVE_NAME
+import com.blogspot.yotsudev.prompttile.ui.components.ConfirmDeleteDialog
 import com.blogspot.yotsudev.prompttile.ui.components.PromptTileTopAppBar
+import com.blogspot.yotsudev.prompttile.ui.components.StyledDialog
 import com.blogspot.yotsudev.prompttile.util.PromptFormatter
 import kotlinx.coroutines.launch
 
@@ -66,6 +72,7 @@ fun MainScreen(
 
     var showSaveDialog by rememberSaveable { mutableStateOf(false) }
     var showMoreMenu by remember { mutableStateOf(false) }
+    var showHistorySheet by remember { mutableStateOf(false) }
 
     if (showSaveDialog) {
         SavePromptDialog(
@@ -136,6 +143,20 @@ fun MainScreen(
                 viewModel.closeAdjustSheet()
             },
             onDismiss = viewModel::closeAdjustSheet
+        )
+    }
+
+    // 4. コピー履歴シート
+    if (showHistorySheet) {
+        HistoryBottomSheet(
+            histories = uiState.copyHistories,
+            onRestore = { history, append ->
+                viewModel.restoreHistory(history, append)
+                showHistorySheet = false
+            },
+            onDelete = viewModel::deleteHistoryItem,
+            onClearAll = viewModel::clearAllHistory,
+            onDismiss = { showHistorySheet = false }
         )
     }
 
@@ -263,6 +284,7 @@ fun MainScreen(
                                         }
                                     }
                                 },
+                                gridColumnsConfig = uiState.gridColumnsConfig,
                                 modifier = Modifier.fillMaxSize()
                             )
                         }
@@ -281,12 +303,14 @@ fun MainScreen(
                             onCopyAll = {
                                 val text = viewModel.buildPromptText()
                                 copyToClipboard(context, text)
+                                viewModel.saveToHistory()
                                 scope.launch { snackbarHostState.showSnackbar(msgPromptCopied) }
                             },
                             onUndo = viewModel::undo,
                             onRedo = viewModel::redo,
+                            onShowHistory = { showHistorySheet = true },
                             onAddTemplate = viewModel::addTemplateItems,
-                            modifier = Modifier.width(280.dp),
+                            modifier = Modifier.width(300.dp),
                             isVertical = true
                         )
                     }
@@ -307,6 +331,7 @@ fun MainScreen(
                             onCopyAll = {
                                 val text = viewModel.buildPromptText()
                                 copyToClipboard(context, text)
+                                viewModel.saveToHistory()
                                 scope.launch { snackbarHostState.showSnackbar(msgPromptCopied) }
                                 if (uiState.moveToBackOnCopy) {
                                     (context as? Activity)?.moveTaskToBack(true)
@@ -314,6 +339,7 @@ fun MainScreen(
                             },
                             onUndo = viewModel::undo,
                             onRedo = viewModel::redo,
+                            onShowHistory = { showHistorySheet = true },
                             onAddTemplate = viewModel::addTemplateItems,
                             modifier = Modifier.fillMaxWidth(),
                             isVertical = false
@@ -368,6 +394,7 @@ fun MainScreen(
                                     }
                                 }
                             },
+                            gridColumnsConfig = uiState.gridColumnsConfig,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f),
@@ -415,4 +442,204 @@ private fun copyToClipboard(context: Context, text: String) {
 private fun getClipboardText(context: Context): String? {
     val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     return cm.primaryClip?.getItemAt(0)?.text?.toString()
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HistoryBottomSheet(
+    histories: List<HistoryEntity>,
+    onRestore: (HistoryEntity, append: Boolean) -> Unit,
+    onDelete: (HistoryEntity) -> Unit,
+    onClearAll: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var historyToDelete by remember { mutableStateOf<HistoryEntity?>(null) }
+    var showClearAllConfirm by remember { mutableStateOf(false) }
+
+    if (historyToDelete != null) {
+        ConfirmDeleteDialog(
+            targetName = historyToDelete?.positivePrompt?.ifBlank { historyToDelete?.negativePrompt } ?: "",
+            onConfirm = {
+                historyToDelete?.let { onDelete(it) }
+                historyToDelete = null
+            },
+            onDismiss = { historyToDelete = null }
+        )
+    }
+
+    if (showClearAllConfirm) {
+        StyledDialog(
+            onDismissRequest = { showClearAllConfirm = false },
+            title = stringResource(R.string.main_history_clear_confirm_title),
+            icon = Icons.Default.Delete,
+            iconColor = MaterialTheme.colorScheme.error,
+            confirmButton = {
+                TextButton(onClick = {
+                    onClearAll()
+                    showClearAllConfirm = false
+                }) {
+                    Text(
+                        text = stringResource(R.string.dialog_delete),
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearAllConfirm = false }) {
+                    Text(stringResource(R.string.dialog_cancel))
+                }
+            }
+        ) {
+            Text(
+                text = stringResource(R.string.main_history_clear_confirm_msg),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        dragHandle = { BottomSheetDefaults.DragHandle() },
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 32.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.main_history_title),
+                    style = MaterialTheme.typography.titleMedium
+                )
+                if (histories.isNotEmpty()) {
+                    TextButton(onClick = { showClearAllConfirm = true }) {
+                        Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(stringResource(R.string.main_history_clear_all), color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            }
+
+            if (histories.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(48.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.main_history_empty),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                }
+            } else {
+                androidx.compose.foundation.lazy.LazyColumn(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(
+                        count = histories.size,
+                        key = { index -> histories[index].id }
+                    ) { index ->
+                        val history = histories[index]
+                        HistoryItem(
+                            history = history,
+                            onRestore = { append -> onRestore(history, append) },
+                            onDelete = { historyToDelete = history }
+                        )
+                        if (index < histories.size - 1) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                thickness = 0.5.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HistoryItem(
+    history: HistoryEntity,
+    onRestore: (Boolean) -> Unit,
+    onDelete: () -> Unit,
+) {
+    var showRestoreOptions by remember { mutableStateOf(false) }
+
+    ListItem(
+        headlineContent = {
+            Text(
+                text = history.positivePrompt.ifBlank { history.negativePrompt },
+                maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        },
+        supportingContent = {
+            val date = remember(history.timestamp) {
+                java.text.DateFormat.getDateTimeInstance(
+                    java.text.DateFormat.SHORT,
+                    java.text.DateFormat.SHORT
+                ).format(java.util.Date(history.timestamp))
+            }
+            Text(date, style = MaterialTheme.typography.labelSmall)
+        },
+        trailingContent = {
+            IconButton(onClick = onDelete) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                )
+            }
+        },
+        modifier = Modifier.clickable { showRestoreOptions = true }
+    )
+
+    if (showRestoreOptions) {
+        AlertDialog(
+            onDismissRequest = { showRestoreOptions = false },
+            title = { Text(stringResource(R.string.main_history_restore_title)) },
+            text = {
+                Column {
+                    Text(
+                        text = history.positivePrompt,
+                        maxLines = 3,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    if (history.negativePrompt.isNotBlank()) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "Neg: ${history.negativePrompt}",
+                            maxLines = 2,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { onRestore(true); showRestoreOptions = false }) {
+                    Text(stringResource(R.string.main_history_restore_append))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { onRestore(false); showRestoreOptions = false }) {
+                    Text(stringResource(R.string.main_history_restore_replace))
+                }
+            }
+        )
+    }
 }

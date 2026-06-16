@@ -1,10 +1,12 @@
 package com.blogspot.yotsudev.prompttile.data.repository
 
 import com.blogspot.yotsudev.prompttile.data.dao.CategoryDao
+import com.blogspot.yotsudev.prompttile.data.dao.HistoryDao
 import com.blogspot.yotsudev.prompttile.data.dao.PromptWordDao
 import com.blogspot.yotsudev.prompttile.data.dao.SavedPromptDao
 import com.blogspot.yotsudev.prompttile.data.dao.ToppingDao
 import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
+import com.blogspot.yotsudev.prompttile.data.entity.HistoryEntity
 import com.blogspot.yotsudev.prompttile.data.entity.ParentCategoryEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
 import com.blogspot.yotsudev.prompttile.data.entity.PromptWordWithCategory
@@ -14,6 +16,7 @@ import com.blogspot.yotsudev.prompttile.data.entity.ToppingItemEntity
 import com.blogspot.yotsudev.prompttile.util.PromptFormatter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -31,6 +34,7 @@ class PromptRepository @Inject constructor(
     private val promptWordDao: PromptWordDao,
     private val savedPromptDao: SavedPromptDao,
     private val toppingDao: ToppingDao,
+    private val historyDao: HistoryDao,
 ) {
     // ---- Parent Categories ----
 
@@ -167,6 +171,55 @@ class PromptRepository @Inject constructor(
     suspend fun getWordEnsByCategory(categoryId: Long): List<String> =
         withContext(Dispatchers.IO) { promptWordDao.getWordEnsByCategory(categoryId) }
 
+    /**
+     * インポート用データ（ImportCategoryのリスト）をDBにマージ保存する。
+     * 同名カテゴリがあれば再利用し、重複しない単語のみを追加する。
+     * @return Pair(追加されたカテゴリ数, 追加された単語数)
+     */
+    suspend fun importCategories(categories: List<com.blogspot.yotsudev.prompttile.data.importer.ImportCategory>): Pair<Int, Int> =
+        withContext(Dispatchers.IO) {
+            var addedCategories = 0
+            var addedWords = 0
+
+            categories.forEach { importCat ->
+                // 同名カテゴリが既にあれば再利用、なければ新規作成
+                val existing = categoryDao.getCategoryByNameEn(importCat.nameEn)
+                val categoryId = if (existing != null) {
+                    existing.id
+                } else {
+                    val maxOrder = categoryDao.getMaxSortOrder() ?: 0
+                    val newCat = CategoryEntity(
+                        nameJa = importCat.nameJa,
+                        nameEn = importCat.nameEn,
+                        parentId = importCat.parentId,
+                        isNegative = importCat.isNegative,
+                        sortOrder = maxOrder + 1,
+                    )
+                    addedCategories++
+                    categoryDao.insert(newCat)
+                }
+
+                // 既存単語と重複しないものだけ挿入
+                val existingWords = promptWordDao.getWordEnsByCategory(categoryId).toHashSet()
+                val newWords = importCat.words
+                    .filter { it.wordEn !in existingWords }
+                    .mapIndexed { i, w ->
+                        PromptWordEntity(
+                            categoryId = categoryId,
+                            wordEn = w.wordEn,
+                            wordJa = w.wordJa,
+                            sortOrder = i,
+                        )
+                    }
+
+                if (newWords.isNotEmpty()) {
+                    promptWordDao.insertAll(newWords)
+                    addedWords += newWords.size
+                }
+            }
+            Pair(addedCategories, addedWords)
+        }
+
     // ---- 保存済みプロンプト ------------------------------------
 
     suspend fun savePrompt(entity: SavedPromptEntity) =
@@ -183,4 +236,34 @@ class PromptRepository @Inject constructor(
 
     suspend fun resetSavedPromptOrder() =
         withContext(Dispatchers.IO) { savedPromptDao.resetOrderToId() }
+
+    // ---- コピー履歴 --------------------------------------------
+
+    val copyHistories: Flow<List<HistoryEntity>> = historyDao.observeAll().flowOn(Dispatchers.IO)
+
+    suspend fun saveHistory(positive: String, negative: String, limit: Int) = withContext(Dispatchers.IO) {
+        if (positive.isBlank() && negative.isBlank()) return@withContext
+        
+        // 重複チェック (最新のものと同じならスキップ)
+        val latest = historyDao.observeAll().first().firstOrNull()
+        if (latest?.positivePrompt == positive && latest.negativePrompt == negative) return@withContext
+
+        historyDao.insert(HistoryEntity(positivePrompt = positive, negativePrompt = negative))
+        
+        // 件数制御 (無制限=0 または 負の値 の場合はスキップ)
+        if (limit > 0) {
+            val count = historyDao.getCount()
+            if (count > limit) {
+                historyDao.deleteOldest(count - limit)
+            }
+        }
+    }
+
+    suspend fun deleteHistory(entity: HistoryEntity) = withContext(Dispatchers.IO) {
+        historyDao.delete(entity)
+    }
+
+    suspend fun clearAllHistory() = withContext(Dispatchers.IO) {
+        historyDao.deleteAll()
+    }
 }

@@ -11,6 +11,16 @@
     <string name="settings_theme_dark">ダークモード</string>
     <string name="settings_theme_system_full">システム設定に従う</string>
 
+    <string name="settings_header_history">履歴</string>
+    <string name="settings_history_limit_title">履歴の最大保存件数</string>
+    <string name="settings_history_limit_description">保存するコピー履歴の最大数を設定します</string>
+    <string name="settings_history_limit_50">50件</string>
+    <string name="settings_history_limit_100">100件</string>
+    <string name="settings_history_limit_unlimited">無制限</string>
+    <string name="settings_history_clear_title">コピー履歴をすべて消去</string>
+    <string name="settings_history_clear_description">保存されているすべての履歴を削除します</string>
+    <string name="settings_history_clear_button">履歴を消去</string>
+
     <!-- Navigation -->
     <string name="nav_main">メイン</string>
     <string name="nav_saved">保存済み</string>
@@ -25,6 +35,20 @@
     <string name="settings_header_operation">操作</string>
     <string name="settings_move_to_back_title">コピー後にバックグラウンドへ</string>
     <string name="settings_move_to_back_description">コピーボタンを押したあと自動でアプリを背面に移動します</string>
+
+    <string name="settings_grid_columns_title">グリッドの列数</string>
+    <string name="settings_grid_columns_description">単語一覧の表示列数を変更します</string>
+    <string name="settings_grid_columns_auto">自動</string>
+    <string name="settings_grid_columns_2">2列</string>
+    <string name="settings_grid_columns_3">3列</string>
+
+    <string name="settings_header_backup">データのバックアップと復元</string>
+    <string name="settings_backup_title">エクスポート（バックアップ）</string>
+    <string name="settings_backup_description">現在の単語データをJSONファイルとして保存します</string>
+    <string name="settings_restore_title">インポート（復元）</string>
+    <string name="settings_restore_description">JSONファイルから単語データを読み込みます（マージされます）</string>
+    <string name="settings_backup_export">バックアップ</string>
+    <string name="settings_backup_restore">復元</string>
 
     <!-- Template Management Sheet -->
     <string name="template_sheet_manage_title">テンプレートの管理</string>
@@ -78,6 +102,14 @@
     <string name="main_import_from_clipboard">クリップボードから追加</string>
     <string name="main_clear_all">全クリア</string>
     <string name="main_save">保存</string>
+    <string name="main_history_title">コピー履歴</string>
+    <string name="main_history_empty">履歴がありません</string>
+    <string name="main_history_clear_all">履歴をすべて消去</string>
+    <string name="main_history_clear_confirm_title">履歴の全消去</string>
+    <string name="main_history_clear_confirm_msg">すべてのコピー履歴を削除しますか？\nこの操作は取り消せません。</string>
+    <string name="main_history_restore_title">プロンプトを復元</string>
+    <string name="main_history_restore_replace">置き換え</string>
+    <string name="main_history_restore_append">末尾に追加</string>
     <string name="common_more_options">詳細メニュー</string>
 
     <!-- Preview Area -->
@@ -87,6 +119,7 @@
     <string name="preview_placeholder">ここにプロンプトが表示されます…</string>
     <string name="preview_undo">元に戻す</string>
     <string name="preview_redo">やり直す</string>
+    <string name="preview_history">コピー履歴</string>
     <string name="preview_delete_mode_on">削除モードON</string>
     <string name="preview_delete_mode_off">削除モードOFF</string>
     <string name="preview_copy">コピー</string>

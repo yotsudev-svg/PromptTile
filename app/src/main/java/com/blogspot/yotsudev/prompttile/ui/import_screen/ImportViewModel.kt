@@ -2,8 +2,6 @@ package com.blogspot.yotsudev.prompttile.ui.import_screen
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.blogspot.yotsudev.prompttile.data.entity.CategoryEntity
-import com.blogspot.yotsudev.prompttile.data.entity.PromptWordEntity
 import com.blogspot.yotsudev.prompttile.data.importer.ImportCategory
 import com.blogspot.yotsudev.prompttile.data.importer.ImportParseResult
 import com.blogspot.yotsudev.prompttile.data.importer.JsonImportParser
@@ -60,45 +58,7 @@ class ImportViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isImporting = true) }
 
-            var addedCategories = 0
-            var addedWords = 0
-
-            categories.forEach { importCat ->
-                // 同名カテゴリが既にあれば再利用、なければ新規作成
-                val existing = repository.getCategoryByNameEn(importCat.nameEn)
-                val categoryId = if (existing != null) {
-                    existing.id
-                } else {
-                    val maxOrder = repository.getMaxCategorySortOrder()
-                    val newCat = CategoryEntity(
-                        nameJa     = importCat.nameJa,
-                        nameEn     = importCat.nameEn,
-                        parentId   = importCat.parentId,
-                        isNegative = importCat.isNegative,
-                        sortOrder  = maxOrder + 1,
-                    )
-                    addedCategories++
-                    repository.insertCategory(newCat)
-                }
-
-                // 既存単語と重複しないものだけ挿入
-                val existingWords = repository.getWordEnsByCategory(categoryId).toHashSet()
-                val newWords = importCat.words
-                    .filter { it.wordEn !in existingWords }
-                    .mapIndexed { i, w ->
-                        PromptWordEntity(
-                            categoryId = categoryId,
-                            wordEn     = w.wordEn,
-                            wordJa     = w.wordJa,
-                            sortOrder  = i,
-                        )
-                    }
-
-                if (newWords.isNotEmpty()) {
-                    repository.insertWords(newWords)
-                    addedWords += newWords.size
-                }
-            }
+            val (addedCategories, addedWords) = repository.importCategories(categories)
 
             val summary = buildString {
                 if (addedCategories > 0) append("${addedCategories}カテゴリ、")

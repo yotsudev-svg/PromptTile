@@ -1,6 +1,5 @@
 package com.blogspot.yotsudev.prompttile.ui.import_screen
 
-import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -41,13 +40,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.blogspot.yotsudev.prompttile.data.importer.ImportCategory
 import com.blogspot.yotsudev.prompttile.ui.components.PromptTileTopAppBar
+import com.blogspot.yotsudev.prompttile.ui.theme.PromptTileTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,7 +65,7 @@ fun ImportScreen(
     Scaffold(
         topBar = {
             PromptTileTopAppBar(
-                title = "JSONインポート",
+                title = "JSON貼り付けインポート",
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "戻る")
@@ -124,7 +124,6 @@ private fun InputSection(
     onClear: () -> Unit,
 ) {
     val clipboardManager = LocalClipboardManager.current
-    val context = LocalContext.current
 
     // コピー対象となる、AIへの具体的なプロンプト文章（「」の内側）
     val promptTemplate = """
@@ -222,8 +221,6 @@ private fun InputSection(
                 .clickable {
                     // クリップボードにコピーを実行
                     clipboardManager.setText(AnnotatedString(promptTemplate))
-                    // ユーザーへのフィードバックトースト
-                    Toast.makeText(context, "指示文をコピーしました。AIに貼り付けてください！", Toast.LENGTH_SHORT).show()
                 }
         ) {
             Row(
@@ -331,6 +328,21 @@ private fun ImportButton(isImporting: Boolean, onClick: () -> Unit) {
             ) {
                 Text("インポートを実行する")
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun InputSectionPreview() {
+    PromptTileTheme {
+        Column(modifier = Modifier.padding(16.dp)) {
+            InputSection(
+                jsonInput = "",
+                parseError = null,
+                onInput = {},
+                onClear = {},
+            )
         }
     }
 }

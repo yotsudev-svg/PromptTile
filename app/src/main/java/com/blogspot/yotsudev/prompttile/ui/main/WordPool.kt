@@ -1,5 +1,6 @@
 package com.blogspot.yotsudev.prompttile.ui.main
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -24,6 +25,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -34,7 +36,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,28 +63,55 @@ fun WordPool(
     onWordLongPress: (PromptWordEntity) -> Unit,
     onToppingIconTap: (PromptWordEntity) -> Unit,
     modifier: Modifier = Modifier,
+    gridColumnsConfig: com.blogspot.yotsudev.prompttile.data.preferences.GridColumnsConfig = com.blogspot.yotsudev.prompttile.data.preferences.GridColumnsConfig.AUTO,
 ) {
-    LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 120.dp),
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        if (searchQuery.isNotBlank()) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                SectionHeader(stringResource(R.string.word_pool_search_results))
-            }
-            if (searchResults.isEmpty()) {
+    val gridKey = if (searchQuery.isNotBlank()) "search"
+    else (words.firstOrNull()?.categoryId ?: 0L).toString()
+
+    key(gridKey, gridColumnsConfig) {
+        val lazyGridState = rememberLazyGridState()
+        val columns = when (gridColumnsConfig) {
+            com.blogspot.yotsudev.prompttile.data.preferences.GridColumnsConfig.FIXED_2 -> GridCells.Fixed(2)
+            com.blogspot.yotsudev.prompttile.data.preferences.GridColumnsConfig.FIXED_3 -> GridCells.Fixed(3)
+            else -> GridCells.Adaptive(minSize = 120.dp)
+        }
+
+        LazyVerticalGrid(
+            state = lazyGridState,
+            columns = columns,
+            modifier = modifier.fillMaxSize(),
+            contentPadding = PaddingValues(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            if (searchQuery.isNotBlank()) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
-                    Text(
-                        text = stringResource(R.string.word_pool_no_results),
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(16.dp),
-                    )
+                    SectionHeader(stringResource(R.string.word_pool_search_results))
+                }
+                if (searchResults.isEmpty()) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        Text(
+                            text = stringResource(R.string.word_pool_no_results),
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(16.dp),
+                        )
+                    }
+                } else {
+                    items(items = searchResults, key = { "search_${it.id}" }) { word ->
+                        WordChipRouter(
+                            word = word,
+                            isSelected = word.id in selectedWordIds,
+                            isUncategorized = word.categoryId in uncategorizedIds,
+                            toppingGroupIds = resolveToppingConfig(word.tags).toppingGroupIds,
+                            onTap = { onWordTap(word) },
+                            onLongPress = { onWordLongPress(word) },
+                            onToppingIconTap = { onToppingIconTap(word) },
+                            modifier = Modifier.animateItem()
+                        )
+                    }
                 }
             } else {
-                items(items = searchResults, key = { "search_${it.id}" }) { word ->
+                items(items = words, key = { "cat_${it.id}" }) { word ->
                     WordChipRouter(
                         word = word,
                         isSelected = word.id in selectedWordIds,
@@ -89,20 +120,9 @@ fun WordPool(
                         onTap = { onWordTap(word) },
                         onLongPress = { onWordLongPress(word) },
                         onToppingIconTap = { onToppingIconTap(word) },
+                        modifier = Modifier.animateItem()
                     )
                 }
-            }
-        } else {
-            items(items = words, key = { "cat_${it.id}" }) { word ->
-                WordChipRouter(
-                    word = word,
-                    isSelected = word.id in selectedWordIds,
-                    isUncategorized = word.categoryId in uncategorizedIds,
-                    toppingGroupIds = resolveToppingConfig(word.tags).toppingGroupIds,
-                    onTap = { onWordTap(word) },
-                    onLongPress = { onWordLongPress(word) },
-                    onToppingIconTap = { onToppingIconTap(word) },
-                )
             }
         }
     }
@@ -118,6 +138,7 @@ private fun WordChipRouter(
     onTap: () -> Unit,
     onLongPress: () -> Unit,
     onToppingIconTap: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     if (toppingGroupIds.isNotEmpty()) {
         SplitWordChip(
@@ -127,6 +148,7 @@ private fun WordChipRouter(
             onTap = onTap,
             onLongPress = onLongPress,
             onToppingIconTap = onToppingIconTap,
+            modifier = modifier,
         )
     } else {
         WordChip(
@@ -135,6 +157,7 @@ private fun WordChipRouter(
             isUncategorized = isUncategorized,
             onTap = onTap,
             onLongPress = onLongPress,
+            modifier = modifier,
         )
     }
 }
@@ -159,10 +182,15 @@ private fun WordChip(
         label = "scale",
     )
     val (containerColor, contentColor) = chipColors(isSelected, isUncategorized)
+    val elevation by animateDpAsState(
+        targetValue = if (isSelected) 6.dp else 0.dp,
+        animationSpec = spring(dampingRatio = 0.5f, stiffness = 300f),
+        label = "elevation"
+    )
 
     Surface(
         color = containerColor,
-        tonalElevation = if (isSelected) 4.dp else 0.dp,
+        tonalElevation = elevation,
         shape = RoundedCornerShape(12.dp),
         border = androidx.compose.foundation.BorderStroke(
             width = 0.5.dp,
@@ -234,10 +262,15 @@ private fun SplitWordChip(
     )
     val (containerColor, contentColor) = chipColors(isSelected, isUncategorized)
     val dividerColor = contentColor.copy(alpha = 0.12f)
+    val elevation by animateDpAsState(
+        targetValue = if (isSelected) 6.dp else 0.dp,
+        animationSpec = spring(dampingRatio = 0.5f, stiffness = 300f),
+        label = "elevation"
+    )
 
     Surface(
         color = containerColor,
-        tonalElevation = if (isSelected) 4.dp else 0.dp,
+        tonalElevation = elevation,
         shape = RoundedCornerShape(12.dp),
         border = androidx.compose.foundation.BorderStroke(
             width = 0.5.dp,

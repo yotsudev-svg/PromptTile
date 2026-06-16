@@ -54,6 +54,8 @@ class PreferencesDataSource @Inject constructor(
     private object Keys {
         val THEME_CONFIG = stringPreferencesKey("theme_config")
         val MANAGEMENT_FILTER_MODE = stringPreferencesKey("management_filter_mode")
+        val GRID_COLUMNS_CONFIG = stringPreferencesKey("grid_columns_config")
+        val MAX_HISTORY_COUNT = androidx.datastore.preferences.core.intPreferencesKey("max_history_count")
         val MOVE_TO_BACK = booleanPreferencesKey("move_to_back_on_copy")
         val POSITIVE_ITEMS = stringPreferencesKey("positive_items_v2")
         val NEGATIVE_ITEMS = stringPreferencesKey("negative_items_v2")
@@ -70,10 +72,17 @@ class PreferencesDataSource @Inject constructor(
             ManagementFilterMode.valueOf(filterString)
         }.getOrDefault(ManagementFilterMode.ALL)
 
+        val gridString = prefs[Keys.GRID_COLUMNS_CONFIG] ?: GridColumnsConfig.AUTO.name
+        val gridConfig = runCatching {
+            GridColumnsConfig.valueOf(gridString)
+        }.getOrDefault(GridColumnsConfig.AUTO)
+
         UserPreferences(
             themeConfig = themeConfig,
             managementFilterMode = filterMode,
             moveToBackOnCopy = prefs[Keys.MOVE_TO_BACK] ?: false,
+            gridColumnsConfig = gridConfig,
+            maxHistoryCount = prefs[Keys.MAX_HISTORY_COUNT] ?: 50,
             persistedPositiveItems = decodeItems(prefs[Keys.POSITIVE_ITEMS] ?: ""),
             persistedNegativeItems = decodeItems(prefs[Keys.NEGATIVE_ITEMS] ?: ""),
         )
@@ -85,6 +94,14 @@ class PreferencesDataSource @Inject constructor(
 
     suspend fun updateManagementFilterMode(mode: ManagementFilterMode) {
         context.dataStore.edit { it[Keys.MANAGEMENT_FILTER_MODE] = mode.name }
+    }
+
+    suspend fun updateGridColumnsConfig(config: GridColumnsConfig) {
+        context.dataStore.edit { it[Keys.GRID_COLUMNS_CONFIG] = config.name }
+    }
+
+    suspend fun updateMaxHistoryCount(count: Int) {
+        context.dataStore.edit { it[Keys.MAX_HISTORY_COUNT] = count }
     }
 
     suspend fun updateMoveToBack(enabled: Boolean) {
