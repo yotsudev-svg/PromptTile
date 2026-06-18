@@ -261,4 +261,27 @@ class PromptFormatterTest {
     fun `cleanWord - 角括弧も除去`() {
         assertEquals("word", PromptFormatter.cleanWord("[word]"))
     }
+    // ---- PromptItem.baseText (トッピングの並び順) ----
+
+    @Test
+    fun `baseText - 優先度(priority)に従ってprefixが並ぶこと`() {
+        val item = PromptItem(
+            wordId = 1,
+            wordEn = "dress",
+            wordJa = "",
+            selectedToppings = listOf(
+                SelectedTopping(groupId = 2, valueEn = "silk", isPrefix = true, priority = 500),
+                SelectedTopping(groupId = 1, valueEn = "red", isPrefix = true, priority = 400),
+            )
+        )
+        // 登録順に関わらず、priority 400(red) -> 500(silk) の順になるべき
+        assertEquals("red silk dress", item.baseText)
+    }
+
+    // ---- parsePromptText (ノイズ除去) ----
+    @Test
+    fun `parsePromptText - 余計なカンマや空白があっても正しく分割される`() {
+        val result = PromptFormatter.parsePromptText("masterpiece, ,  , smile, \n, blush")
+        assertEquals(listOf("masterpiece", "smile", "blush"), result)
+    }
 }

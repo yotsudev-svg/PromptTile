@@ -55,6 +55,10 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { dataSource.updateGridColumnsConfig(config) }
     }
 
+    fun updateStartupBehavior(behavior: com.blogspot.yotsudev.prompttile.data.preferences.StartupBehavior) {
+        viewModelScope.launch { dataSource.updateStartupBehavior(behavior) }
+    }
+
     fun updateMaxHistoryCount(count: Int) {
         viewModelScope.launch { dataSource.updateMaxHistoryCount(count) }
     }

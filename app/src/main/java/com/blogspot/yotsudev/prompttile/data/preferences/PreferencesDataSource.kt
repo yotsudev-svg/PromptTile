@@ -55,6 +55,7 @@ class PreferencesDataSource @Inject constructor(
         val THEME_CONFIG = stringPreferencesKey("theme_config")
         val MANAGEMENT_FILTER_MODE = stringPreferencesKey("management_filter_mode")
         val GRID_COLUMNS_CONFIG = stringPreferencesKey("grid_columns_config")
+        val STARTUP_BEHAVIOR = stringPreferencesKey("startup_behavior")
         val MAX_HISTORY_COUNT = androidx.datastore.preferences.core.intPreferencesKey("max_history_count")
         val MOVE_TO_BACK = booleanPreferencesKey("move_to_back_on_copy")
         val POSITIVE_ITEMS = stringPreferencesKey("positive_items_v2")
@@ -77,12 +78,18 @@ class PreferencesDataSource @Inject constructor(
             GridColumnsConfig.valueOf(gridString)
         }.getOrDefault(GridColumnsConfig.AUTO)
 
+        val startupString = prefs[Keys.STARTUP_BEHAVIOR] ?: StartupBehavior.RESTORE.name
+        val startupBehavior = runCatching {
+            StartupBehavior.valueOf(startupString)
+        }.getOrDefault(StartupBehavior.RESTORE)
+
         UserPreferences(
             themeConfig = themeConfig,
             managementFilterMode = filterMode,
             moveToBackOnCopy = prefs[Keys.MOVE_TO_BACK] ?: false,
             gridColumnsConfig = gridConfig,
             maxHistoryCount = prefs[Keys.MAX_HISTORY_COUNT] ?: 50,
+            startupBehavior = startupBehavior,
             persistedPositiveItems = decodeItems(prefs[Keys.POSITIVE_ITEMS] ?: ""),
             persistedNegativeItems = decodeItems(prefs[Keys.NEGATIVE_ITEMS] ?: ""),
         )
@@ -98,6 +105,10 @@ class PreferencesDataSource @Inject constructor(
 
     suspend fun updateGridColumnsConfig(config: GridColumnsConfig) {
         context.dataStore.edit { it[Keys.GRID_COLUMNS_CONFIG] = config.name }
+    }
+
+    suspend fun updateStartupBehavior(behavior: StartupBehavior) {
+        context.dataStore.edit { it[Keys.STARTUP_BEHAVIOR] = behavior.name }
     }
 
     suspend fun updateMaxHistoryCount(count: Int) {

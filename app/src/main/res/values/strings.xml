@@ -42,6 +42,11 @@
     <string name="settings_grid_columns_2">2列</string>
     <string name="settings_grid_columns_3">3列</string>
 
+    <string name="settings_startup_behavior_title">起動時の状態</string>
+    <string name="settings_startup_behavior_description">アプリ起動時に前回のプロンプトを復元するか設定します</string>
+    <string name="settings_startup_behavior_restore">引き継ぐ</string>
+    <string name="settings_startup_behavior_clear">空にする</string>
+
     <string name="settings_header_backup">データのバックアップと復元</string>
     <string name="settings_backup_title">エクスポート（バックアップ）</string>
     <string name="settings_backup_description">現在の単語データをJSONファイルとして保存します</string>

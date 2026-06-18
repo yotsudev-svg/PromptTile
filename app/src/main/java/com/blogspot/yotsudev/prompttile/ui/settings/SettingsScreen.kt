@@ -3,38 +3,45 @@ package com.blogspot.yotsudev.prompttile.ui.settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.ui.tooling.preview.Preview
-import com.blogspot.yotsudev.prompttile.ui.theme.PromptTileTheme
 import com.blogspot.yotsudev.prompttile.R
+import com.blogspot.yotsudev.prompttile.data.preferences.GridColumnsConfig
+import com.blogspot.yotsudev.prompttile.data.preferences.StartupBehavior
 import com.blogspot.yotsudev.prompttile.data.preferences.ThemeConfig
 import com.blogspot.yotsudev.prompttile.ui.components.PromptTileTopAppBar
 import com.blogspot.yotsudev.prompttile.ui.components.StyledDialog
+import com.blogspot.yotsudev.prompttile.ui.theme.PromptTileTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,7 +69,7 @@ fun SettingsScreen(
                     Text(
                         text = stringResource(R.string.dialog_delete),
                         color = MaterialTheme.colorScheme.error,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
                     )
                 }
             },
@@ -75,24 +82,18 @@ fun SettingsScreen(
             Text(
                 text = stringResource(R.string.main_history_clear_confirm_msg),
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
 
-    // ファイル選択ランチャー (復元)
     val pickFileLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri ->
-        uri?.let { viewModel.loadJsonFromUri(it) }
-    }
+        ActivityResultContracts.GetContent()
+    ) { uri -> uri?.let { viewModel.loadJsonFromUri(it) } }
 
-    // ファイル保存ランチャー (バックアップ)
     val createFileLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/json")
-    ) { uri ->
-        uri?.let { viewModel.exportToJsonUri(it) }
-    }
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri -> uri?.let { viewModel.exportToJsonUri(it) } }
 
     LaunchedEffect(message) {
         if (message.isNotBlank()) {
@@ -105,9 +106,7 @@ fun SettingsScreen(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             key(prefs?.themeConfig ?: ThemeConfig.FOLLOW_SYSTEM, isSystemDark) {
-                PromptTileTopAppBar(
-                    title = stringResource(R.string.settings_title)
-                )
+                PromptTileTopAppBar(title = stringResource(R.string.settings_title))
             }
         },
     ) { innerPadding ->
@@ -119,66 +118,278 @@ fun SettingsScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            SettingsSectionHeader(title = stringResource(R.string.settings_header_appearance))
-            ThemeSelectionRow(
-                currentTheme = prefs?.themeConfig ?: ThemeConfig.FOLLOW_SYSTEM,
-                onThemeSelected = viewModel::updateThemeConfig
-            )
+            // ---- 外観 ----
+            SettingsSectionHeader(stringResource(R.string.settings_header_appearance))
+            SettingsGroup {
+                ThemeSelectionRow(
+                    currentTheme = prefs?.themeConfig ?: ThemeConfig.FOLLOW_SYSTEM,
+                    onThemeSelected = viewModel::updateThemeConfig,
+                )
+            }
 
-            SettingsSectionHeader(title = stringResource(R.string.settings_header_operation))
-            SwitchSettingRow(
-                title = stringResource(R.string.settings_move_to_back_title),
-                description = stringResource(R.string.settings_move_to_back_description),
-                checked = prefs?.moveToBackOnCopy ?: false,
-                onCheckedChange = viewModel::updateMoveToBack,
-            )
-            GridColumnsSelectionRow(
-                currentConfig = prefs?.gridColumnsConfig ?: com.blogspot.yotsudev.prompttile.data.preferences.GridColumnsConfig.AUTO,
-                onConfigSelected = viewModel::updateGridColumnsConfig
-            )
+            // ---- 操作 ----
+            SettingsSectionHeader(stringResource(R.string.settings_header_operation))
+            SettingsGroup {
+                SwitchSettingRow(
+                    icon = Icons.Default.PhoneAndroid,
+                    iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    title = stringResource(R.string.settings_move_to_back_title),
+                    description = stringResource(R.string.settings_move_to_back_description),
+                    checked = prefs?.moveToBackOnCopy ?: false,
+                    onCheckedChange = viewModel::updateMoveToBack,
+                )
+                SettingsGroupDivider()
+                GridColumnsSelectionRow(
+                    currentConfig = prefs?.gridColumnsConfig ?: GridColumnsConfig.AUTO,
+                    onConfigSelected = viewModel::updateGridColumnsConfig,
+                )
+                SettingsGroupDivider()
+                StartupBehaviorSelectionRow(
+                    currentBehavior = prefs?.startupBehavior ?: StartupBehavior.RESTORE,
+                    onBehaviorSelected = viewModel::updateStartupBehavior,
+                )
+            }
 
-            SettingsSectionHeader(title = stringResource(R.string.settings_header_history))
-            HistoryLimitRow(
-                currentLimit = prefs?.maxHistoryCount ?: 50,
-                onLimitSelected = viewModel::updateMaxHistoryCount
-            )
-            ClearHistoryRow(
-                onClear = { showClearHistoryConfirm = true }
-            )
+            // ---- 履歴 ----
+            SettingsSectionHeader(stringResource(R.string.settings_header_history))
+            SettingsGroup {
+                HistoryLimitRow(
+                    currentLimit = prefs?.maxHistoryCount ?: 50,
+                    onLimitSelected = viewModel::updateMaxHistoryCount,
+                )
+                SettingsGroupDivider()
+                ClearHistoryRow(onClear = { showClearHistoryConfirm = true })
+            }
 
-            SettingsSectionHeader(title = stringResource(R.string.settings_header_backup))
-            BackupOperationRow(
-                onExport = { createFileLauncher.launch("prompt_backup.json") },
-                onImport = { pickFileLauncher.launch("application/json") },
-                isProcessing = isProcessing
+            // ---- バックアップ ----
+            SettingsSectionHeader(stringResource(R.string.settings_header_backup))
+            SettingsGroup {
+                SettingsRow(
+                    icon = Icons.Default.FileDownload,
+                    iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    title = stringResource(R.string.settings_backup_title),
+                    description = stringResource(R.string.settings_backup_description),
+                    trailingContent = {
+                        FilledTonalButton(
+                            onClick = { createFileLauncher.launch("prompt_backup.json") },
+                            enabled = !isProcessing,
+                        ) {
+                            Icon(
+                                Icons.Default.FileDownload,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                stringResource(R.string.settings_backup_export),
+                                style = MaterialTheme.typography.labelMedium,
+                            )
+                        }
+                    }
+                )
+                SettingsGroupDivider()
+                SettingsRow(
+                    icon = Icons.Default.FileUpload,
+                    iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    iconContentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                    title = stringResource(R.string.settings_restore_title),
+                    description = stringResource(R.string.settings_restore_description),
+                    trailingContent = {
+                        FilledTonalButton(
+                            onClick = { pickFileLauncher.launch("application/json") },
+                            enabled = !isProcessing,
+                        ) {
+                            Icon(
+                                Icons.Default.FileUpload,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                stringResource(R.string.settings_backup_restore),
+                                style = MaterialTheme.typography.labelMedium,
+                            )
+                        }
+                    }
+                )
+            }
+
+            Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
+// ─── グループコンテナ ────────────────────────────────────────────────────────────
+
+@Composable
+private fun SettingsGroup(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.background,
+        border = BorderStroke(
+            0.5.dp,
+            MaterialTheme.colorScheme.outline.copy(alpha = 0.15f),
+        ),
+        tonalElevation = 0.dp,
+    ) {
+        Column(content = content)
+    }
+}
+
+// インセット区切り線。ListItem のテキスト開始位置 (16 + 36icon + 16gap = 68dp) に合わせる
+@Composable
+private fun SettingsGroupDivider() {
+    HorizontalDivider(
+        modifier = Modifier.padding(start = 68.dp),
+        thickness = 0.5.dp,
+        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
+    )
+}
+
+// ─── セクションヘッダー ──────────────────────────────────────────────────────────
+
+@Composable
+private fun SettingsSectionHeader(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+        modifier = Modifier.padding(start = 4.dp, top = 16.dp, bottom = 6.dp),
+    )
+}
+
+// ─── 共通ウィジェット ─────────────────────────────────────────────────────────────
+
+/** M3カラートークンを使ったカラーアイコンコンテナ */
+@Composable
+private fun SettingsLeadingIcon(
+    icon: ImageVector,
+    containerColor: Color,
+    contentColor: Color,
+) {
+    Surface(
+        color = containerColor,
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier.size(36.dp),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = contentColor,
+                modifier = Modifier.size(20.dp),
             )
         }
     }
 }
 
+/** 右側にトレーリングコンテンツを置く標準行（Switch / DropdownMenu / Button 向け）*/
 @Composable
 private fun SettingsRow(
+    icon: ImageVector,
+    iconContainerColor: Color,
+    iconContentColor: Color,
     title: String,
-    description: String,
+    description: String = "",
     modifier: Modifier = Modifier,
-    leadingIcon: (@Composable () -> Unit)? = null,
     trailingContent: @Composable (() -> Unit)? = null,
 ) {
     ListItem(
-        headlineContent = { Text(text = title, style = MaterialTheme.typography.bodyLarge) },
-        supportingContent = {
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+        headlineContent = {
+            Text(text = title, style = MaterialTheme.typography.bodyLarge)
         },
-        leadingContent = leadingIcon,
+        supportingContent = if (description.isNotBlank()) {
+            {
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        } else null,
+        leadingContent = {
+            SettingsLeadingIcon(icon, iconContainerColor, iconContentColor)
+        },
         trailingContent = trailingContent,
-        colors = ListItemDefaults.colors(
-            containerColor = Color.Transparent, // 背景はScaffoldの色に任せる
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        modifier = modifier.fillMaxWidth(),
+    )
+}
+
+/**
+ * セグメントボタンなど幅広コントロール用。
+ * テキストブロックの下にコントロールをフル幅で配置する。
+ */
+@Composable
+private fun ExpandedSettingsRow(
+    icon: ImageVector,
+    iconContainerColor: Color,
+    iconContentColor: Color,
+    title: String,
+    description: String = "",
+    content: @Composable () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            SettingsLeadingIcon(icon, iconContainerColor, iconContentColor)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = title, style = MaterialTheme.typography.bodyLarge)
+                if (description.isNotBlank()) {
+                    Text(
+                        text = description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+        // コントロールをアイコン幅分だけインデント
+        Box(modifier = Modifier.padding(start = 36.dp + 16.dp)) {
+            content()
+        }
+    }
+}
+
+// ─── 各設定行 ───────────────────────────────────────────────────────────────────
+
+@Composable
+private fun SwitchSettingRow(
+    icon: ImageVector,
+    iconContainerColor: Color,
+    iconContentColor: Color,
+    title: String,
+    description: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    SettingsRow(
+        icon = icon,
+        iconContainerColor = iconContainerColor,
+        iconContentColor = iconContentColor,
+        title = title,
+        description = description,
+        modifier = Modifier.toggleable(
+            value = checked,
+            onValueChange = onCheckedChange,
+            role = Role.Switch,
         ),
-        modifier = modifier.fillMaxWidth()
+        trailingContent = {
+            Switch(checked = checked, onCheckedChange = null)
+        },
     )
 }
 
@@ -186,17 +397,19 @@ private fun SettingsRow(
 @Composable
 private fun ThemeSelectionRow(
     currentTheme: ThemeConfig,
-    onThemeSelected: (ThemeConfig) -> Unit
+    onThemeSelected: (ThemeConfig) -> Unit,
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
-
     val themeLabel = when (currentTheme) {
         ThemeConfig.FOLLOW_SYSTEM -> stringResource(R.string.settings_theme_system)
-        ThemeConfig.LIGHT -> stringResource(R.string.settings_theme_light)
-        ThemeConfig.DARK -> stringResource(R.string.settings_theme_dark)
+        ThemeConfig.LIGHT         -> stringResource(R.string.settings_theme_light)
+        ThemeConfig.DARK          -> stringResource(R.string.settings_theme_dark)
     }
 
     SettingsRow(
+        icon = Icons.Default.Palette,
+        iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
+        iconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         title = stringResource(R.string.settings_theme_title),
         description = stringResource(R.string.settings_theme_description),
         trailingContent = {
@@ -205,100 +418,154 @@ private fun ThemeSelectionRow(
                 onExpandedChange = { expanded = !expanded },
             ) {
                 TextButton(
-                    onClick = { },
-                    modifier = Modifier.menuAnchor()
+                    onClick = {},
+                    modifier = Modifier.menuAnchor(),
                 ) {
                     Text(themeLabel)
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                 }
-
                 ExposedDropdownMenu(
                     expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                    onDismissRequest = { expanded = false },
                 ) {
                     ThemeConfig.entries.forEach { config ->
                         val label = when (config) {
                             ThemeConfig.FOLLOW_SYSTEM -> stringResource(R.string.settings_theme_system_full)
-                            ThemeConfig.LIGHT -> stringResource(R.string.settings_theme_light)
-                            ThemeConfig.DARK -> stringResource(R.string.settings_theme_dark)
+                            ThemeConfig.LIGHT         -> stringResource(R.string.settings_theme_light)
+                            ThemeConfig.DARK          -> stringResource(R.string.settings_theme_dark)
                         }
                         DropdownMenuItem(
                             text = { Text(label) },
-                            onClick = {
-                                onThemeSelected(config)
-                                expanded = false
-                            }
+                            onClick = { onThemeSelected(config); expanded = false },
                         )
                     }
                 }
             }
-        }
-    )
-}
-
-@Composable
-private fun SettingsSectionHeader(title: String) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.labelMedium, // 少し小さめに
-        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
-        modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
-    )
-}
-
-@Composable
-private fun SwitchSettingRow(
-    title: String,
-    description: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-) {
-    SettingsRow(
-        title = title,
-        description = description,
-        modifier = Modifier.toggleable(
-            value = checked,
-            onValueChange = onCheckedChange,
-            role = Role.Switch
-        ),
-        trailingContent = {
-            Switch(
-                checked = checked,
-                onCheckedChange = null,
-            )
-        }
+        },
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun GridColumnsSelectionRow(
-    currentConfig: com.blogspot.yotsudev.prompttile.data.preferences.GridColumnsConfig,
-    onConfigSelected: (com.blogspot.yotsudev.prompttile.data.preferences.GridColumnsConfig) -> Unit
+    currentConfig: GridColumnsConfig,
+    onConfigSelected: (GridColumnsConfig) -> Unit,
 ) {
-    SettingsRow(
+    ExpandedSettingsRow(
+        icon = Icons.Default.GridView,
+        iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+        iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
         title = stringResource(R.string.settings_grid_columns_title),
         description = stringResource(R.string.settings_grid_columns_description),
-        trailingContent = {
-            SingleChoiceSegmentedButtonRow {
-                com.blogspot.yotsudev.prompttile.data.preferences.GridColumnsConfig.entries.forEachIndexed { index, config ->
-                    val label = when (config) {
-                        com.blogspot.yotsudev.prompttile.data.preferences.GridColumnsConfig.AUTO -> stringResource(R.string.settings_grid_columns_auto)
-                        com.blogspot.yotsudev.prompttile.data.preferences.GridColumnsConfig.FIXED_2 -> stringResource(R.string.settings_grid_columns_2)
-                        com.blogspot.yotsudev.prompttile.data.preferences.GridColumnsConfig.FIXED_3 -> stringResource(R.string.settings_grid_columns_3)
-                    }
-                    SegmentedButton(
-                        selected = currentConfig == config,
-                        onClick = { onConfigSelected(config) },
-                        shape = SegmentedButtonDefaults.itemShape(
-                            index = index,
-                            count = com.blogspot.yotsudev.prompttile.data.preferences.GridColumnsConfig.entries.size
-                        ),
-                        label = { Text(label, style = MaterialTheme.typography.labelSmall) }
-                    )
+    ) {
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            GridColumnsConfig.entries.forEachIndexed { idx, config ->
+                val label = when (config) {
+                    GridColumnsConfig.AUTO    -> stringResource(R.string.settings_grid_columns_auto)
+                    GridColumnsConfig.FIXED_2 -> stringResource(R.string.settings_grid_columns_2)
+                    GridColumnsConfig.FIXED_3 -> stringResource(R.string.settings_grid_columns_3)
                 }
+                SegmentedButton(
+                    selected = currentConfig == config,
+                    onClick = { onConfigSelected(config) },
+                    shape = SegmentedButtonDefaults.itemShape(idx, GridColumnsConfig.entries.size),
+                    label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                )
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun StartupBehaviorSelectionRow(
+    currentBehavior: StartupBehavior,
+    onBehaviorSelected: (StartupBehavior) -> Unit,
+) {
+    ExpandedSettingsRow(
+        icon = Icons.Default.Restore,
+        iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+        iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        title = stringResource(R.string.settings_startup_behavior_title),
+        description = stringResource(R.string.settings_startup_behavior_description),
+    ) {
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            StartupBehavior.entries.forEachIndexed { idx, behavior ->
+                val label = when (behavior) {
+                    StartupBehavior.RESTORE -> stringResource(R.string.settings_startup_behavior_restore)
+                    StartupBehavior.CLEAR   -> stringResource(R.string.settings_startup_behavior_clear)
+                }
+                SegmentedButton(
+                    selected = currentBehavior == behavior,
+                    onClick = { onBehaviorSelected(behavior) },
+                    shape = SegmentedButtonDefaults.itemShape(idx, StartupBehavior.entries.size),
+                    label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun HistoryLimitRow(
+    currentLimit: Int,
+    onLimitSelected: (Int) -> Unit,
+) {
+    val limits = listOf(50, 100, 0)
+    ExpandedSettingsRow(
+        icon = Icons.Default.History,
+        iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+        iconContentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+        title = stringResource(R.string.settings_history_limit_title),
+        description = stringResource(R.string.settings_history_limit_description),
+    ) {
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            limits.forEachIndexed { idx, limit ->
+                val label = when (limit) {
+                    50   -> stringResource(R.string.settings_history_limit_50)
+                    100  -> stringResource(R.string.settings_history_limit_100)
+                    else -> stringResource(R.string.settings_history_limit_unlimited)
+                }
+                SegmentedButton(
+                    selected = currentLimit == limit,
+                    onClick = { onLimitSelected(limit) },
+                    shape = SegmentedButtonDefaults.itemShape(idx, limits.size),
+                    label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ClearHistoryRow(onClear: () -> Unit) {
+    SettingsRow(
+        icon = Icons.Default.DeleteSweep,
+        iconContainerColor = MaterialTheme.colorScheme.errorContainer,
+        iconContentColor = MaterialTheme.colorScheme.onErrorContainer,
+        title = stringResource(R.string.settings_history_clear_title),
+        description = stringResource(R.string.settings_history_clear_description),
+        trailingContent = {
+            FilledTonalButton(
+                onClick = onClear,
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                ),
+            ) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    stringResource(R.string.settings_history_clear_button),
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
+        },
     )
 }
 
@@ -308,95 +575,4 @@ private fun SettingsScreenPreview() {
     PromptTileTheme {
         SettingsScreen()
     }
-}
-
-@Composable
-private fun BackupOperationRow(
-    onExport: () -> Unit,
-    onImport: () -> Unit,
-    isProcessing: Boolean
-) {
-    Column {
-        SettingsRow(
-            title = stringResource(R.string.settings_backup_title),
-            description = stringResource(R.string.settings_backup_description),
-            trailingContent = {
-                TextButton(
-                    onClick = onExport,
-                    enabled = !isProcessing
-                ) {
-                    Icon(Icons.Default.FileDownload, contentDescription = null)
-                    Spacer(Modifier.width(4.dp))
-                    Text(stringResource(R.string.settings_backup_export))
-                }
-            }
-        )
-        SettingsRow(
-            title = stringResource(R.string.settings_restore_title),
-            description = stringResource(R.string.settings_restore_description),
-            trailingContent = {
-                TextButton(
-                    onClick = onImport,
-                    enabled = !isProcessing
-                ) {
-                    Icon(Icons.Default.FileUpload, contentDescription = null)
-                    Spacer(Modifier.width(4.dp))
-                    Text(stringResource(R.string.settings_backup_restore))
-                }
-            }
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun HistoryLimitRow(
-    currentLimit: Int,
-    onLimitSelected: (Int) -> Unit
-) {
-    SettingsRow(
-        title = stringResource(R.string.settings_history_limit_title),
-        description = stringResource(R.string.settings_history_limit_description),
-        trailingContent = {
-            SingleChoiceSegmentedButtonRow {
-                val limits = listOf(50, 100, 0)
-                limits.forEachIndexed { index, limit ->
-                    val label = when (limit) {
-                        50 -> stringResource(R.string.settings_history_limit_50)
-                        100 -> stringResource(R.string.settings_history_limit_100)
-                        else -> stringResource(R.string.settings_history_limit_unlimited)
-                    }
-                    SegmentedButton(
-                        selected = currentLimit == limit,
-                        onClick = { onLimitSelected(limit) },
-                        shape = SegmentedButtonDefaults.itemShape(
-                            index = index,
-                            count = limits.size
-                        ),
-                        label = { Text(label, style = MaterialTheme.typography.labelSmall) }
-                    )
-                }
-            }
-        }
-    )
-}
-
-@Composable
-private fun ClearHistoryRow(
-    onClear: () -> Unit
-) {
-    SettingsRow(
-        title = stringResource(R.string.settings_history_clear_title),
-        description = stringResource(R.string.settings_history_clear_description),
-        trailingContent = {
-            TextButton(
-                onClick = onClear,
-                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-            ) {
-                Icon(Icons.Default.Delete, contentDescription = null)
-                Spacer(Modifier.width(4.dp))
-                Text(stringResource(R.string.settings_history_clear_button))
-            }
-        }
-    )
 }

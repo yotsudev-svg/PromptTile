@@ -211,10 +211,12 @@ class PromptViewModel @Inject constructor(
             launch { loadDefaultTemplates() }
             launch { loadTagRules() }
             val prefs = dataSource.userPreferences.first()
-            if (prefs.persistedPositiveItems.isNotEmpty())
-                _positiveItems.value = prefs.persistedPositiveItems.map { it.toPromptItem() }
-            if (prefs.persistedNegativeItems.isNotEmpty())
-                _negativeItems.value = prefs.persistedNegativeItems.map { it.toPromptItem() }
+            if (prefs.startupBehavior == com.blogspot.yotsudev.prompttile.data.preferences.StartupBehavior.RESTORE) {
+                if (prefs.persistedPositiveItems.isNotEmpty())
+                    _positiveItems.value = prefs.persistedPositiveItems.map { it.toPromptItem() }
+                if (prefs.persistedNegativeItems.isNotEmpty())
+                    _negativeItems.value = prefs.persistedNegativeItems.map { it.toPromptItem() }
+            }
         }
     }
 
